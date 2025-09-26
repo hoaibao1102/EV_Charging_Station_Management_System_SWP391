@@ -1,12 +1,13 @@
 package com.swp391.gr3.ev_management.config;
 
-import com.swp391.gr3.ev_management.entity.Users;
-import com.swp391.gr3.ev_management.repository.UserRepository;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +17,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.swp391.gr3.ev_management.entity.Users;
+import com.swp391.gr3.ev_management.repository.UserRepository;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -61,9 +68,7 @@ public class SecurityConfig {
         provider.setUserDetailsService(uds);
         provider.setPasswordEncoder(encoder);
         return provider;
-    }
-
-    @Bean
+    }@Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
@@ -76,6 +81,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
+                "http://localhost:5174",    // 👈 thêm dòng này
+                "http://127.0.0.1:5174",    // 👈 thêm dòng này
                 "http://localhost:3000",
                 "http://127.0.0.1:3000"
         ));
@@ -122,8 +129,7 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
                     res.setStatus(401);
-                    res.setContentType("application/json");
-                    res.getWriter().write("{\"message\":\"Unauthorized\"}");
+                    res.setContentType("application/json");res.getWriter().write("{\"message\":\"Unauthorized\"}");
                 }))
                 .logout(AbstractHttpConfigurer::disable);
 

@@ -5,7 +5,10 @@ import { useNavigate } from "react-router-dom";
 // import { jwtDecode } from "jwt-decode";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
+// Cấu hình axios để luôn gửi credentials (cookies) nếu backend cần
+axios.defaults.withCredentials = true;
 const Login = () => {
 	const [form, setForm] = useState({
 		phone: "",
@@ -40,8 +43,8 @@ const Login = () => {
 			});
 			return;
 		}
-		if (trimmedPassword.length < 6) {
-			toast.error("Mật khẩu phải có ít nhất 6 ký tự!", {
+		if (trimmedPassword.length < 5) {
+			toast.error("Mật khẩu phải có ít nhất 5 ký tự!", {
 				position: "top-center",
 				autoClose: 2500,
 				theme: "colored",
@@ -49,19 +52,63 @@ const Login = () => {
 			return;
 		}
 
-			// Chưa có API backend, giả lập đăng nhập thành công
-			setLoading(true);
-			setTimeout(() => {
-				toast.success("Đăng nhập thành công! (giả lập)", {
+		setLoading(true);
+		try {
+			const response = await axios.post(
+				"http://localhost:8080/api/users/login",
+				{
+					phoneNumber: trimmedPhone,
+					password: trimmedPassword,
+				},
+				{
+					// Nếu backend yêu cầu credentials/cookies
+					withCredentials: true,
+					headers: {
+						"Content-Type": "application/json",
+					},
+				}
+			);
+			if (response.data && response.data.message && response.data.message.toLowerCase().includes("thành công")) {
+				toast.success("Đăng nhập thành công!", {
 					position: "top-center",
 					autoClose: 2000,
 					theme: "colored",
 				});
-
+				// Lưu trạng thái đăng nhập và thông tin người dùng
+				localStorage.setItem("isLoggedIn", "true");
+				localStorage.setItem("userPhone", trimmedPhone);
+				localStorage.setItem("userId", response.data.data.userId);
+				localStorage.setItem("userName", response.data.data.firstName || "");
 				setTimeout(() => {
 					navigate("/");
 				}, 2000);
-			}, 1200);
+			} else {
+				toast.error(response.data.message || "Đăng nhập thất bại!", {
+					position: "top-center",
+					autoClose: 2500,
+					theme: "colored",
+				});
+			}
+		} catch (error: any) {
+			// Hiển thị chi tiết lỗi trả về từ server (nếu có)
+			if (error.response) {
+				const status = error.response.status;
+				const msg = error.response.data?.message || error.message;
+				toast.error(`Lỗi server (${status}): ${msg}`, {
+					position: "top-center",
+					autoClose: 3500,
+					theme: "colored",
+				});
+			} else {
+				toast.error("Lỗi kết nối đến server!", {
+					position: "top-center",
+					autoClose: 2500,
+					theme: "colored",
+				});
+			}
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
