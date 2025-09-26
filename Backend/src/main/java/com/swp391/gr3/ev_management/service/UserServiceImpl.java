@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService{
         if (r.getEmail() != null && userRepository.existsByEmail(r.getEmail()))
             throw new IllegalStateException("Email already in use");
 
-        Roles role = roleRepository.findByRoleId(r.getRoleId());
+        Roles role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
         if (role == null) throw new IllegalStateException("Role not found");
 
         Users u = new Users();
