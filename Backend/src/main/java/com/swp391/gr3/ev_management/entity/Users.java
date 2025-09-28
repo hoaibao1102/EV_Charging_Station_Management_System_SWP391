@@ -3,11 +3,14 @@ package com.swp391.gr3.ev_management.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.processing.Pattern;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -29,10 +32,10 @@ public class Users implements UserDetails {
     @Column(name = "password_hash", length = 255, nullable = true)
     private String password;
 
-    @Column(name = "first_name", length = 100, nullable = true)
+    @Column(name = "first_name", columnDefinition = "NVARCHAR(100)", nullable = true)
     private String firstName;
 
-    @Column(name = "last_name", length = 100, nullable = true)
+    @Column(name = "last_name", columnDefinition = "NVARCHAR(100)", nullable = true)
     private String lastName;
 
     @Column(name = "date_of_birth", nullable = true)
@@ -44,8 +47,11 @@ public class Users implements UserDetails {
     @Column(name = "address", length = 100, nullable = true)
     private String address;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "RoleId", nullable = false)
