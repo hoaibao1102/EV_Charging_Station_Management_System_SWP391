@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public ResponseEntity<?> createUser(RegisterRequest r) {
-        Roles role = roleRepository.findByRoleId(r.getRoleId());
+        Roles role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
         if (role == null) throw new IllegalStateException("Default role not found");
 
         Users u = new Users();

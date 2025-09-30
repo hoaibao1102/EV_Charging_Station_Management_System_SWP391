@@ -6,7 +6,6 @@ import java.util.Date;
 
 @Data
 public class RegisterRequest {
-    private Long userId;          // có thể bỏ nếu không cần
     private String email;
     private String phoneNumber;
     private String password;
@@ -15,7 +14,6 @@ public class RegisterRequest {
     private Date dateOfBirth; // "2001-09-26"
     private String gender;         // có thể dùng enum
     private String address;
-    private Long roleId;
 }
 
 
