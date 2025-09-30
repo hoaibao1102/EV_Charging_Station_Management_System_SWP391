@@ -4,11 +4,16 @@ import com.swp391.gr3.ev_management.entity.Users;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.function.Function;
 
@@ -17,28 +22,32 @@ public class TokenService {
 
     private final UserRepository userRepository;
 
+    // Lấy secret từ properties (đề nghị lưu base64)
+    @Value("${app.jwtSecret}")
+    private String jwtSecret;
+
     public TokenService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    public SecretKey getSignInKey(){
-        // Replace with your actual secret key
-        String SECRET_KEY = "0c69ea7993456174304d1b49a3a31e2f70cd424c6cbc77176e4ee046bec9e7d2";
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+    private SecretKey getSignInKey() {
+        // jwtSecret nên là Base64-encoded (recommended).
+        // Nếu bạn muốn dùng hex, đổi phần decode tương ứng.
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(Users users) {
         return Jwts.builder()
-                .subject(users.getUserId() + "")
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hours
-                .signWith(getSignInKey())
+                .setSubject(String.valueOf(users.getUserId()))
+                .setIssuedAt(new Date())
+                .setExpiration(Date.from(Instant.now().plusSeconds(3600))) // 1 hour
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public Users extractToken(String token) {
-        String value = extractClaim(token,Claims::getSubject);
+        String value = extractClaim(token, Claims::getSubject);
         long userId = Long.parseLong(value);
         return userRepository.findUserByUserId(userId);
     }
@@ -50,8 +59,34 @@ public class TokenService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
-    public <T> T extractClaim(String token, Function<Claims,T> resolver){
+
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         Claims claims = extractAllClaims(token);
-        return  resolver.apply(claims);
+        return resolver.apply(claims);
+    }
+
+    public Instant getExpirationFromJwt(String token) {
+        Claims claims = extractAllClaims(token);
+        Date exp = claims.getExpiration();
+        return (exp == null) ? null : exp.toInstant();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            // validate signature + expiry by parsing
+            extractAllClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private String stripBearer(String token) {
+        if (token == null) return null;
+        token = token.trim();
+        if (token.toLowerCase().startsWith("bearer ")) {
+            return token.substring(7).trim();
+        }
+        return token;
     }
 }

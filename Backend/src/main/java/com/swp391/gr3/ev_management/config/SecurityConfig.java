@@ -111,15 +111,20 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // NHỚ có dấu "/" đầu path
+                        // Cho phép truy cập không cần auth
                         .requestMatchers(
-                                "/api/users/login",
-                                "/api/users/register",
-                                "/public/**",
-                                "/error",
-                                // Swagger / springdoc
-                                "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml",
-                                // Cho phép preflight
-                                "/**/*.css","/**/*.js","/","/index.html"
+                                "/",                  // root
+                                "/index.html",        // file index
+                                "/static/**",         // static resources (css/js/images)
+                                "/public/**",         // public folder
+                                "/error",             // error page
+                                "/swagger-ui.html",   // swagger
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml",
+                                "/api/users/login",   // login API
+                                "/api/users/logout",
+                                "/api/users/register" // register API
                         ).permitAll()
                         // (tuỳ) nếu có healthcheck
                         .requestMatchers("/actuator/**").permitAll()
