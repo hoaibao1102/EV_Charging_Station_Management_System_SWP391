@@ -6,13 +6,19 @@ import com.swp391.gr3.ev_management.entity.Roles;
 import com.swp391.gr3.ev_management.entity.Users;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -21,12 +27,16 @@ public class UserServiceImpl implements UserService{
     private final RoleRepository roleRepository;
     AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
+    private final RedisTemplate<String, String> redisTemplate;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, TokenService tokenService, org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
+        this.tokenService = tokenService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -116,6 +126,49 @@ public class UserServiceImpl implements UserService{
     public boolean existsByEmail(String email) {
         if (email == null) return false;
         return userRepository.existsByEmail(email.trim().toLowerCase());
+    }
+
+    @Override
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("No Bearer token found");
+        }
+
+        String token = authHeader.substring(7).trim();
+        // Lấy thời điểm expire từ token
+        Instant expiry;
+        try {
+            expiry = tokenService.getExpirationFromJwt(token); // trả về Instant
+        } catch (Exception ex) {
+            // Nếu token không hợp lệ, vẫn xóa cookie/client side nhưng server-side không cần lưu
+            return ResponseEntity.badRequest().body("Invalid token");
+        }
+
+        long ttlSeconds = expiry.getEpochSecond() - Instant.now().getEpochSecond();
+        if (ttlSeconds <= 0) {
+            // token đã hết hạn => không cần blacklist
+            return ResponseEntity.ok("Token already expired");
+        }
+
+        // nếu bạn đang gửi token qua cookie, trả cookie xoá ở đây (tùy app)
+        return ResponseEntity.ok("Logged out successfully");
+    }
+
+    @Override
+    public Users authenticate(String phoneNumber, String rawPassword) {
+        // Tìm user theo số điện thoại
+        Users user = userRepository.findUsersByPhoneNumber(phoneNumber);
+        if (user == null) {
+            throw new IllegalArgumentException("Số điện thoại không tồn tại");
+        }
+
+        // So sánh mật khẩu nhập vào với mật khẩu đã mã hoá trong DB
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu không chính xác");
+        }
+
+        return user; // trả về user nếu đăng nhập thành công
     }
 
 
