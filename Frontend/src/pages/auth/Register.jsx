@@ -1,9 +1,9 @@
 import "../../assets/css/login.css";
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useRegister } from "../../hooks/useAuth"; // Thêm import này
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -15,110 +15,27 @@ const Register = () => {
     lastName: "",
     dateOfBirth: "",
     gender: "",
-    address: ""
+    address: "",
   });
-  const [loading, setLoading] = useState(false);
+
+  const { register, loading } = useRegister(); // Sử dụng custom hook đăng ký
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const trimmedPhone = form.phoneNumber.trim();
-    const trimmedPassword = form.password.trim();
-    const trimmedConfirm = form.confirmPassword.trim();
-    const trimmedEmail = form.email.trim();
-    const trimmedFirstName = form.firstName.trim();
-    const trimmedLastName = form.lastName.trim();
-    const trimmedDOB = form.dateOfBirth.trim();
-    const trimmedGender = form.gender.trim();
-    const trimmedAddress = form.address.trim();
+    const { success, message } = await register(form);
 
-    if (!trimmedPhone || !trimmedPassword || !trimmedConfirm || !trimmedEmail || !trimmedFirstName || !trimmedLastName || !trimmedDOB || !trimmedGender || !trimmedAddress) {
-      toast.error("Vui lòng nhập đầy đủ thông tin!", {
-        position: "top-center",
-        autoClose: 2500,
-        theme: "colored",
-      });
-      return;
-    }
-    const phoneRegex = /^0[0-9]{9}$/;
-    if (!phoneRegex.test(trimmedPhone)) {
-      toast.error("Số điện thoại không hợp lệ!", {
-        position: "top-center",
-        autoClose: 2500,
-        theme: "colored",
-      });
-      return;
-    }
-    if (trimmedPassword.length < 6) {
-      toast.error("Mật khẩu phải có ít nhất 6 ký tự!", {
-        position: "top-center",
-        autoClose: 2500,
-        theme: "colored",
-      });
-      return;
-    }
-    if (trimmedPassword !== trimmedConfirm) {
-      toast.error("Mật khẩu xác nhận không khớp!", {
-        position: "top-center",
-        autoClose: 2500,
-        theme: "colored",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const payload = {
-        email: trimmedEmail,
-        phoneNumber: trimmedPhone,
-        password: trimmedPassword,
-        firstName: trimmedFirstName,
-        lastName: trimmedLastName,
-        dateOfBirth: trimmedDOB,
-        gender: trimmedGender,
-        address: trimmedAddress,
-        roleId: 3
-      };
-      const response = await axios.post("http://localhost:8080/api/users/register", payload, {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true
-      });
-      if (response.data && response.data.message && response.data.message.toLowerCase().includes("thành công")) {
-        toast.success("Đăng ký thành công!", {
-          position: "top-center",
-          autoClose: 2000,
-          theme: "colored",
-        });
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-      } else {
-        toast.error(response.data.message || "Đăng ký thất bại!", {
-          position: "top-center",
-          autoClose: 2500,
-          theme: "colored",
-        });
-      }
-    } catch (error: any) {
-      if (error.response && error.response.data && error.response.data.message) {
-        toast.error(error.response.data.message, {
-          position: "top-center",
-          autoClose: 2500,
-          theme: "colored",
-        });
-      } else {
-        toast.error("Lỗi kết nối đến server!", {
-          position: "top-center",
-          autoClose: 2500,
-          theme: "colored",
-        });
-      }
-    } finally {
-      setLoading(false);
+    if (success) {
+      toast.success("Đăng ký thành công!");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } else {
+      toast.error(message || "Đăng ký thất bại!");
     }
   };
 
