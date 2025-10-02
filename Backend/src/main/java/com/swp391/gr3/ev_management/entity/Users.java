@@ -57,6 +57,12 @@ public class Users implements UserDetails {
     @JoinColumn(name = "RoleId", nullable = false)
     private Roles roles;
 
+    @OneToOne(mappedBy = "users")
+    private Admin admin;
+
+    @OneToMany(mappedBy = "users")
+    private List<Notification> notifications;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
