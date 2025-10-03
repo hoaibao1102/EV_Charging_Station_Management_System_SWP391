@@ -40,8 +40,10 @@ public class TokenService {
     public String generateToken(Users users) {
         return Jwts.builder()
                 .setSubject(String.valueOf(users.getUserId()))
+                .claim("fullName", users.getFullName())
+                .claim("role", users.getRoles().getRoleName())
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plusSeconds(3600))) // 1 hour
+                .setExpiration(Date.from(Instant.now().plusSeconds(900))) // 15 phút
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

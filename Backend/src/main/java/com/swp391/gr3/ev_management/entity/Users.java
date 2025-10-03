@@ -41,10 +41,10 @@ public class Users implements UserDetails {
     @Column(name = "date_of_birth", nullable = true)
     private Date dateOfBirth;
 
-    @Column(name = "gender", length = 100, nullable = true)
+    @Column(name = "gender", columnDefinition = "NVARCHAR(10)", nullable = true)
     private String gender;
 
-    @Column(name = "address", length = 100, nullable = true)
+    @Column(name = "address", columnDefinition = "NVARCHAR(100)", nullable = true)
     private String address;
 
     @CreationTimestamp
@@ -71,5 +71,9 @@ public class Users implements UserDetails {
     @Override
     public String getUsername() {
         return this.getPhoneNumber();
+    }
+
+    public String getFullName() {
+        return this.firstName + this.lastName;
     }
 }
