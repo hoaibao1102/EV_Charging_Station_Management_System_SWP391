@@ -62,7 +62,7 @@ public class UsersController {
             // Sinh JWT token
             String token = tokenService.generateToken(user);
 
-            LoginResponse response = new LoginResponse(token, user);
+            LoginResponse response = new LoginResponse(token, user.getFullName(), user.getUsername());
 
             return ResponseEntity.ok(response);
 
