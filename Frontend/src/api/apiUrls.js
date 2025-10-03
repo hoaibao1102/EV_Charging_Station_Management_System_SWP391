@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8080';  // Bỏ /api ở đây
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -10,7 +10,11 @@ const apiClient = axios.create({
     },
 });
 
+// Thêm debug log
 apiClient.interceptors.request.use((config) => {
+    console.log('Making request to:', config.baseURL + config.url);  // Debug log
+    console.log('Request data:', config.data);  // Debug log
+    
     const token = localStorage.getItem('accessToken');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -22,9 +26,12 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
     (response) => {
+        console.log('Response received:', response.status, response.data);  // Debug log
         return response;
     },
     async (error) => {
+        console.error('API Error:', error.response?.status, error.response?.data);  // Debug log
+        
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -40,20 +47,20 @@ apiClient.interceptors.response.use(
                     const { accessToken } = refreshResponse.data;
                     
                     if (accessToken) {
-                        localStorage.setItem('accessToken', accessToken); // Changed from 'token' to 'accessToken'
+                        localStorage.setItem('accessToken', accessToken);
                         
                         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                         return apiClient(originalRequest);
                     }
                 } catch (refreshError) {
                     console.error('Auto refresh token failed:', refreshError);
-                    localStorage.removeItem('accessToken'); // Changed from 'token' to 'accessToken'
+                    localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
                     localStorage.removeItem('userProfile');
                     window.location.href = '/login'; 
                 }
             } else {
-                localStorage.removeItem('accessToken'); // Changed from 'token' to 'accessToken'
+                localStorage.removeItem('accessToken');
                 window.location.href = '/login';
             }
         }
@@ -62,4 +69,4 @@ apiClient.interceptors.response.use(
     }
 );
 
-export default apiClient;  
+export default apiClient;
