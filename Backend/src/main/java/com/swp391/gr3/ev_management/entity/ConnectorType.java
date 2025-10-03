@@ -36,7 +36,7 @@ public class ConnectorType {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "model")
+    @OneToMany(mappedBy = "connectortype")
     private List<VehicleModel> vehicleModel;
 
     @OneToOne(mappedBy = "connectortype")
@@ -45,6 +45,4 @@ public class ConnectorType {
     @OneToOne(mappedBy = "connectortype")
     private Tariffs tariffs;
 
-    @OneToOne(mappedBy = "connectortype")
-    private VehicleModel vehiclemodel;
 }
