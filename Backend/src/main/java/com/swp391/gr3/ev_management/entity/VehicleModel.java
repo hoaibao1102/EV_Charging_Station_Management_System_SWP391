@@ -26,7 +26,7 @@ public class VehicleModel {
     @OneToMany(mappedBy = "vehiclemodel", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "ConnectorTypeId")
     private ConnectorType connectortype;
 }

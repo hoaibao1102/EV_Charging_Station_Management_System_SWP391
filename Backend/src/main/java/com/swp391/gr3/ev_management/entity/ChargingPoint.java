@@ -42,7 +42,7 @@ public class ChargingPoint {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "PointId")
+    @OneToMany(mappedBy = "point")
     private List<Booking>  booking;
 
     @ManyToOne
