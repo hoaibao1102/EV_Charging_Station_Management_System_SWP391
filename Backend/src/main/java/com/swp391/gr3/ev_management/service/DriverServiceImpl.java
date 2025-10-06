@@ -10,5 +10,5 @@ public interface DriverServiceImpl {
     DriverResponse getById(Long driverId);
     List<DriverResponse> getAll();
     DriverResponse updateStatus(Long driverId, String status);
-    void delete(Long driverId);
+    //void delete(Long driverId);
 }

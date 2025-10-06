@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Driver_Wallets")
 @Data
+@NoArgsConstructor
 public class DriverWallet {
 
     @Id
