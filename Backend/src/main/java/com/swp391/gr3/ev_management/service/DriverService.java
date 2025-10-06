@@ -4,8 +4,11 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.entity.Driver;
+import com.swp391.gr3.ev_management.entity.DriverStatus;
 import com.swp391.gr3.ev_management.entity.DriverWallet;
 import com.swp391.gr3.ev_management.entity.Users;
+import com.swp391.gr3.ev_management.exception.ConflictException;
+import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.DriverWalletRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
@@ -34,12 +37,11 @@ public class DriverService {
      * @throws ConflictException if user is already a driver
      */
     @Transactional
-    public DriverResponse upgradeToDriver(Long userId, DriverRequest request) {
+    public DriverResponse upgradeToDriver(Long userId, DriverRequest request) throws ChangeSetPersister.NotFoundException {
         log.info("Attempting to upgrade user {} to driver", userId);
 
         // 1. Check user exists
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new ChangeSetPersister.NotFoundException("User not found with ID: " + userId));
+        Users user = userRepository.findUserById(userId).orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
 
         // 2. Check if already a driver
         if (driverRepository.existsByUser_UserId(userId)) {
@@ -50,7 +52,7 @@ public class DriverService {
         Driver driver = new Driver();
         driver.setUser(user);
         driver.setDriverId(userId); // Explicitly set to match userId
-        driver.setStatus(request.getStatus() != null ? request.getStatus() : "Pending");
+        driver.setDriverStatus(request.getDriverStatus() != null ? request.getDriverStatus() : DriverStatus.PENDING);
 
         Driver savedDriver = driverRepository.save(driver);
         log.info("Driver created with ID: {}", savedDriver.getDriverId());

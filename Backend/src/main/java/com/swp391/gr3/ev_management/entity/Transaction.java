@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Transactions")
 @Data
+@NoArgsConstructor
 public class Transaction {
 
     @Id
@@ -45,4 +46,9 @@ public class Transaction {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Thêm vào
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "method_id")
+    private PaymentMethod paymentMethod;
 }

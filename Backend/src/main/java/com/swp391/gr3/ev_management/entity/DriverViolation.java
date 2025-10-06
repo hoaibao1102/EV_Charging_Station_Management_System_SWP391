@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Driver_Violations")
 @Data
+@NoArgsConstructor
 public class DriverViolation {
 
     @Id

@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,12 +17,14 @@ import java.util.List;
 @Entity
 @Table(name = "Drivers")
 @Data
+@NoArgsConstructor
 public class Driver {
 
     @Id
     @Column(name = "driver_id")
     private Long driverId;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId // driverId = userId (shared PK)
     @JoinColumn(name = "user_id", nullable = false)
@@ -54,4 +57,8 @@ public class Driver {
 
     @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
     private List<DriverViolation> violations = new ArrayList<>();
+
+    // Thêm vào
+    @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL)
+    private List<PaymentMethod> paymentMethods;
 }
