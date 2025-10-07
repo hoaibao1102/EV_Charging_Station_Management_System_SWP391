@@ -34,14 +34,14 @@ public class SecurityConfig {
             User u = userRepository.findUsersByPhoneNumber(username);
             if (u == null) throw new UsernameNotFoundException("User not found: " + username);
 
-            String roleName = (u.getRoles() != null && u.getRoles().getRoleName() != null)
-                    ? u.getRoles().getRoleName()
+            String roleName = (u.getRole() != null && u.getRole().getRoleName() != null)
+                    ? u.getRole().getRoleName()
                     : "USER";
             if (!roleName.startsWith("ROLE_")) roleName = "ROLE_" + roleName;
 
             return org.springframework.security.core.userdetails.User
                     .withUsername(u.getPhoneNumber())
-                    .password(u.getPassword())
+                    .password(u.getPasswordHash())
                     .authorities(roleName)
                     .accountExpired(false)
                     .accountLocked(false)
