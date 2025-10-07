@@ -12,23 +12,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "Transactions")
-@Data @NoArgsConstructor
-@AllArgsConstructor @Builder
-public class Transaction {
+@Table(name = "Invoices")
+@Data
+@NoArgsConstructor @AllArgsConstructor @Builder
+public class Invoice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TransactionID")
-    private Long transactionId;
+    @Column(name = "InvoiceID")
+    private Long invoiceId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "InvoiceID")
-    private Invoice invoice;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PaymentMethodID")
-    private PaymentMethod paymentMethod;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SessionID", unique = true)
+    private ChargingSession session;
 
     @Column(name = "Amount")
     private double amount;
@@ -39,12 +35,18 @@ public class Transaction {
     @Column(name = "Status", length = 20)
     private String status;
 
+    @Column(name = "IssuedAt")
+    private LocalDateTime issuedAt;
+
+    @Column(name = "PaidAt")
+    private LocalDateTime paidAt;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "transaction", fetch = FetchType.LAZY)
-    private List<Notification> notifications;
+    @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY)
+    private List<Transaction> transactions;
 }

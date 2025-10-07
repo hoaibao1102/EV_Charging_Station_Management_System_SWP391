@@ -1,32 +1,37 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Entity
 @Table(name = "VehicleModels")
-@Data
+@Data @NoArgsConstructor
+@AllArgsConstructor @Builder
 public class VehicleModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long vehicleModelId;
+    @Column(name = "ModelID")
+    private Long modelId;
 
-    @Column(name = "brand", length = 100, nullable = true)
+    @Column(name = "Brand", length = 100)
     private String brand;
 
-    @Column(name = "model_name", length = 100, nullable = true)
-    private String modelName;
+    @Column(name = "Model", length = 100)
+    private String model;
 
-    @Column(name = "battery_capacity_kwh")
-    private Double batteryCapacityKwh;
+    @Column(name = "Year")
+    private int year;
 
-    @OneToMany(mappedBy = "vehiclemodel", cascade = CascadeType.ALL)
-    private List<Vehicle> vehicles;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ConnectorTypeID")
+    private ConnectorType connectorType;
 
-    @ManyToOne
-    @JoinColumn(name = "ConnectorTypeId")
-    private ConnectorType connectortype;
+    @OneToMany(mappedBy = "model", fetch = FetchType.LAZY)
+    private List<UserVehicle> userVehicles;
 }

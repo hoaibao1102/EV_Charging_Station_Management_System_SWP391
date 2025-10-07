@@ -2,8 +2,9 @@ package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Notifications")
@@ -12,33 +13,40 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "NotiID")
     private Long notiId;
 
-    @Column(name = "type", columnDefinition = "NVARCHAR(30)")
-    private String type;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserID")
+    private User user;
 
-    @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
-    private String content;
-
-    @Column(name = "title", columnDefinition = "NVARCHAR(200)")
-    private String title;
-
-    @Column(name = "status", columnDefinition = "NVARCHAR(15)")
-    private String status;
-
-    @ManyToOne
-    @JoinColumn(name = "BookingId", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BookingID")
     private Booking booking;
 
-    @ManyToOne
-    @JoinColumn(name = "UserId", nullable = false)
-    private Users users;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SessionID")
+    private ChargingSession session;
 
-    @ManyToOne
-    @JoinColumn(name = "TransactionId", nullable = false)
-    private Transaction transactions;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "TransactionID")
+    private Transaction transaction;
 
-    @ManyToOne
-    @JoinColumn(name = "SessionId", nullable = false)
-    private ChargingSession chargingsession;
+    @Column(name = "Type", length = 50)
+    private String type;
+
+    @Column(name = "Title", length = 255)
+    private String title;
+
+    @Column(name = "ContentNoti", columnDefinition = "NTEXT")
+    private String contentNoti;
+
+    @Column(name = "Status", length = 20)
+    private String status;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @Column(name = "ReadAt")
+    private LocalDateTime readAt;
 }

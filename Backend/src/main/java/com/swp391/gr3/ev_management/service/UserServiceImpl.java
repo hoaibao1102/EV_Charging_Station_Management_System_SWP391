@@ -2,8 +2,8 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
-import com.swp391.gr3.ev_management.entity.Roles;
-import com.swp391.gr3.ev_management.entity.Users;
+import com.swp391.gr3.ev_management.entity.Role;
+import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,67 +35,64 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public Users findUsersByPhone(String phoneNumber) {
+    public User findUsersByPhone(String phoneNumber) {
         return userRepository.findUsersByPhoneNumber(phoneNumber);
     }
 
-    public Users findUsersById(Long userId) {
+    public User findUsersById(Long userId) {
         return userRepository.findUserByUserId(userId);
     }
 
     @Override
-    public Users getUser(String phoneNumber, String password) {
-        return userRepository.findUsersByPhoneNumberAndPassword(phoneNumber, password);
+    public User getUser(String phoneNumber, String password) {
+        return userRepository.findUsersByPhoneNumberAndPasswordHash(phoneNumber, password);
     }
 
     @Transactional
     @Override
-    public Users register(RegisterRequest r) {
-        if (r.getPassword() == null || r.getPassword().isBlank())
+    public User register(RegisterRequest r) {
+        if (r.getPasswordHash() == null || r.getPasswordHash().isBlank())
             throw new IllegalArgumentException("Password is required");
         if (userRepository.existsByPhoneNumber(r.getPhoneNumber()))
             throw new IllegalStateException("Phone number already in use");
         if (r.getEmail() != null && userRepository.existsByEmail(r.getEmail()))
             throw new IllegalStateException("Email already in use");
 
-        Roles role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
+        Role role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
         if (role == null) throw new IllegalStateException("Role not found");
 
-        Users u = new Users();
+        User u = new User();
         u.setEmail(r.getEmail());
         u.setPhoneNumber(r.getPhoneNumber());
-        u.setPassword(passwordEncoder.encode(r.getPassword()));
-        u.setFirstName(r.getFirstName());
-        u.setLastName(r.getLastName());
+        u.setPasswordHash(passwordEncoder.encode(r.getPasswordHash()));
         u.setDateOfBirth(r.getDateOfBirth());
         u.setGender(r.getGender());
         u.setAddress(r.getAddress());
-        u.setRoles(role);
+        u.setRole(role);
 
         return userRepository.save(u);
     }
 
     @Override
     public ResponseEntity<?> createUser(RegisterRequest r) {
-        Roles role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
+        Role role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
         if (role == null) throw new IllegalStateException("Default role not found");
 
-        Users u = new Users();
+        User u = new User();
         u.setEmail(r.getEmail());
         u.setPhoneNumber(r.getPhoneNumber());
-        u.setPassword(passwordEncoder.encode(r.getPassword()));
-        u.setFirstName(r.getFirstName());
-        u.setLastName(r.getLastName());
+        u.setPasswordHash(passwordEncoder.encode(r.getPasswordHash()));
+        u.setName(r.getName());
         u.setDateOfBirth(r.getDateOfBirth());
         u.setGender(r.getGender());
         u.setAddress(r.getAddress());
-        u.setRoles(role);
+        u.setRole(role);
         userRepository.save(u);
 
         return ResponseEntity.ok("User created successfully");
     }
 
-    public Users login(LoginRequest loginRequest) {
+    public User login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getPhoneNumber(),
@@ -151,19 +148,24 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public Users authenticate(String phoneNumber, String rawPassword) {
+    public User authenticate(String phoneNumber, String rawPassword) {
         // Tìm user theo số điện thoại
-        Users user = userRepository.findUsersByPhoneNumber(phoneNumber);
+        User user = userRepository.findUsersByPhoneNumber(phoneNumber);
         if (user == null) {
             throw new IllegalArgumentException("Số điện thoại không tồn tại");
         }
 
         // So sánh mật khẩu nhập vào với mật khẩu đã mã hoá trong DB
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+        if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new IllegalArgumentException("Mật khẩu không chính xác");
         }
 
         return user; // trả về user nếu đăng nhập thành công
+    }
+
+    @Override
+    public User addUser(User user) {
+        return userRepository.save(user);
     }
 
 

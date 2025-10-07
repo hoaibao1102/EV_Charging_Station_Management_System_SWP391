@@ -1,55 +1,61 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "ChargingPoints")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor @Builder
 public class ChargingPoint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "PointID")
     private Long pointId;
 
-    @Column(name = "point_number", columnDefinition = "NVARCHAR(20)", nullable = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "StationID")
+    private ChargingStation station;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ConnectorTypeID")
+    private ConnectorType connectorType;
+
+    @Column(name = "PointNumber", length = 20)
     private String pointNumber;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(12)", nullable = true)
+    @Column(name = "Status", length = 20)
     private String status;
 
-    @Column(name = "serial_number", columnDefinition = "NVARCHAR(64)", nullable = true)
+    @Column(name = "SerialNumber", length = 100)
     private String serialNumber;
 
-    @Column(name = "installation_date")
+    @Column(name = "InstallationDate")
     private LocalDateTime installationDate;
 
-    @Column(name = "last_maintenance_date")
+    @Column(name = "LastMaintenanceDate")
     private LocalDateTime lastMaintenanceDate;
 
-    @Column(name = "qr_code")
+    @Column(name = "QRCode", length = 255)
     private String qrCode;
 
-    @Column(name = "max_power_kw")
-    private Double maxPowerKw;
+    @Column(name = "MaxPowerKW")
+    private double maxPowerKW;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "point")
-    private List<Booking>  booking;
-
-    @ManyToOne
-    @JoinColumn(name = "StationId", nullable = false)
-    private ChargingStation chargingstation;
-
-    @OneToOne
-    @JoinColumn(name = "ConnectorTypeId")
-    private ConnectorType connectortype;
 }

@@ -1,37 +1,53 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "Bookings")
-@Data
+@Data @NoArgsConstructor @AllArgsConstructor
+@Builder
 public class Booking {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "BookingID")
     private Long bookingId;
 
-    @Column(name = "booking_time")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "StationID")
+    private ChargingStation station;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "VehicleID")
+    private UserVehicle vehicle;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SlotID", unique = true)
+    private SlotAvailability slot;
+
+    @Column(name = "BookingTime")
     private LocalDateTime bookingTime;
 
-    @Column(name = "scheduled_start_time")
+    @Column(name = "ScheduledStartTime")
     private LocalDateTime scheduledStartTime;
 
-    @Column(name = "scheduled_end_time")
+    @Column(name = "ScheduledEndTime")
     private LocalDateTime scheduledEndTime;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "Status", length = 20)
     private String status;
 
-    @Column(name = "note", columnDefinition = "NVARCHAR(255)")
-    private String note;
+    @Column(name = "Notes", columnDefinition = "NTEXT")
+    private String notes;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -39,17 +55,9 @@ public class Booking {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToOne(mappedBy = "booking")
-    private ChargingSession chargingsession;
+    @OneToOne(mappedBy = "booking", fetch = FetchType.LAZY)
+    private ChargingSession chargingSession;
 
-    @OneToMany(mappedBy = "booking")
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
     private List<Notification> notifications;
-
-    @ManyToOne
-    @JoinColumn(name = "StationId")
-    private ChargingStation chargingstation;
-
-    @ManyToOne
-    @JoinColumn(name = "PointId")
-    private ChargingPoint point;
 }
