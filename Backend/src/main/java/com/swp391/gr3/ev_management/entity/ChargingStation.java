@@ -1,46 +1,64 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "ChargingStations")
-@Data
+@Data @NoArgsConstructor
+@AllArgsConstructor @Builder
 public class ChargingStation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "StationID")
     private Long stationId;
 
-    @Column(name = "station_name", columnDefinition = "NVARCHAR(200)", nullable = true)
+    @Column(name = "StationName", length = 255)
     private String stationName;
 
-    @Column(name = "address", columnDefinition = "NVARCHAR(400)", nullable = true)
+    @Column(name = "Address", length = 500)
     private String address;
 
-    @Column(name = "latitude")
-    private Double latitude;
+    @Column(name = "Latitude")
+    private double latitude;
 
-    @Column(name = "longitude")
-    private Double longitude;
+    @Column(name = "Longitude")
+    private double longitude;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(10)")
+    @Column(name = "OperatingHours", length = 50)
+    private String operatingHours;
+
+    @Column(name = "Status", length = 20)
     private String status;
 
     @CreationTimestamp
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "chargingstation")
-    private List<Booking> booking;
+    @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
+    private List<ChargingPoint> points;
 
-    @OneToMany(mappedBy = "chargingstation")
-    private List<ChargingPoint> chargingpoint;
+    @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
+    private List<SlotConfig> slotConfigs;
+
+    @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
+    private List<StationStaff> stationStaffs;
+
+    @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
+    private List<Incident> incidents;
+
+    @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
+    private List<Booking> bookings;
 }

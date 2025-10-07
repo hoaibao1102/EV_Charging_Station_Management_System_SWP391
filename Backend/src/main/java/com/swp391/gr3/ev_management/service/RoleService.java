@@ -1,16 +1,14 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
-import com.swp391.gr3.ev_management.entity.Roles;
-import org.springframework.http.ResponseEntity;
+import com.swp391.gr3.ev_management.entity.Role;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public interface RoleService {
-    List<Roles> findAll();
-    public boolean addRole(Roles Role);
-    public Roles findByRoleName(String roleName);
+    List<Role> findAll();
+    public boolean addRole(Role Role);
+    public Role findByRoleName(String roleName);
 
 }

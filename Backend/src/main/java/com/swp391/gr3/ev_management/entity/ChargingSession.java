@@ -1,6 +1,10 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,28 +13,35 @@ import java.util.List;
 
 @Entity
 @Table(name = "ChargingSession")
+@Data
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class ChargingSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "SessionID")
     private Long sessionId;
 
-    @Column(name = "start_time")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BookingID", unique = true)
+    private Booking booking;
+
+    @Column(name = "StartTime")
     private LocalDateTime startTime;
 
-    @Column(name = "end_time")
+    @Column(name = "EndTime")
     private LocalDateTime endTime;
 
-    @Column(name = "energy_kwh")
-    private Double energyKwh;
+    @Column(name = "EnergyKWh")
+    private double energyKWh;
 
-    @Column(name = "duration_minutes")
-    private Integer durationMinutes;
+    @Column(name = "DurationMinutes")
+    private int durationMinutes;
 
-    @Column(name = "cost")
-    private Double cost;
+    @Column(name = "Cost")
+    private double cost;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(15)")
+    @Column(name = "Status", length = 20)
     private String status;
 
     @CreationTimestamp
@@ -39,10 +50,9 @@ public class ChargingSession {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToOne
-    @JoinColumn(name = "BookingId", nullable = false)
-    private Booking booking;
+    @OneToOne(mappedBy = "session", fetch = FetchType.LAZY)
+    private Invoice invoice;
 
-    @OneToMany(mappedBy = "chargingsession")
+    @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
     private List<Notification> notifications;
 }

@@ -1,7 +1,10 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,23 +12,29 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Tariffs")
-@Data
-public class Tariffs {
+@Data @NoArgsConstructor
+@AllArgsConstructor @Builder
+public class Tariff {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "TariffID")
     private Long tariffId;
 
-    @Column(name = "price_per_kwh")
-    private Double pricePerKwh;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ConnectorTypeID")
+    private ConnectorType connectorType;
 
-    @Column(name = "currency", columnDefinition = "NVARCHAR(200)")
+    @Column(name = "PricePerKWh")
+    private double pricePerKWh;
+
+    @Column(name = "Currency", length = 10)
     private String currency;
 
-    @Column(name = "effective_from")
+    @Column(name = "EffectiveFrom")
     private LocalDateTime effectiveFrom;
 
-    @Column(name = "effective_to")
+    @Column(name = "EffectiveTo")
     private LocalDateTime effectiveTo;
 
     @CreationTimestamp
@@ -33,9 +42,5 @@ public class Tariffs {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @OneToOne
-    @JoinColumn(name = "ConnectorTypeId")
-    private ConnectorType connectortype;
 
 }
