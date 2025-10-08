@@ -19,17 +19,17 @@ public class VehicleModel {
     @Column(name = "ModelID")
     private Long modelId;
 
-    @Column(name = "Brand", length = 100)
+    @Column(name = "Brand", columnDefinition = "NVARCHAR(100)",nullable = false)
     private String brand;
 
-    @Column(name = "Model", length = 100)
+    @Column(name = "Model", columnDefinition = "NVARCHAR(100)",nullable = false)
     private String model;
 
-    @Column(name = "Year")
+    @Column(name = "Year",nullable = false)
     private int year;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ConnectorTypeID")
+    @JoinColumn(name = "ConnectorTypeID",nullable = false)
     private ConnectorType connectorType;
 
     @OneToMany(mappedBy = "model", fetch = FetchType.LAZY)

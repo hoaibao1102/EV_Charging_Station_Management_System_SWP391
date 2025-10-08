@@ -27,7 +27,7 @@ public class SlotAvailability {
     @JoinColumn(name = "ConnectorTypeID")
     private ConnectorType connectorType;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)")
     private String status;
 
     @Column(name = "Date")

@@ -17,7 +17,7 @@ public class Notification {
     private Long notiId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID")
+    @JoinColumn(name = "UserID", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,19 +32,20 @@ public class Notification {
     @JoinColumn(name = "TransactionID")
     private Transaction transaction;
 
-    @Column(name = "Type", length = 50)
+    @Column(name = "Type", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String type;
 
-    @Column(name = "Title", length = 255)
+    @Column(name = "Title", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String title;
 
-    @Column(name = "ContentNoti", columnDefinition = "NTEXT")
+    @Column(name = "ContentNoti", columnDefinition = "NVARCHAR(1000)", nullable = false)
     private String contentNoti;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "ReadAt")

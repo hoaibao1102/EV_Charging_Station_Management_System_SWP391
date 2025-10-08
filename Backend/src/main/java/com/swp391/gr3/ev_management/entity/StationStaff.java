@@ -22,20 +22,20 @@ public class StationStaff {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stationID")
+    @JoinColumn(name = "stationID", nullable = false)
     private ChargingStation station;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID")
+    @JoinColumn(name = "UserID", nullable = false)
     private User user;
 
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(20)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
 
-    @Column(name = "assigned_at")
+    @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt;
 
 

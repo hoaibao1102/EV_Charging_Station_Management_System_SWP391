@@ -20,15 +20,15 @@ public class DriverViolation {
     private Long violationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DriverID")
+    @JoinColumn(name = "DriverID",nullable = false)
     private Driver driver;
 
-    @Column(name = "OccurredAt")
+    @Column(name = "OccurredAt",nullable = false)
     private LocalDateTime occurredAt;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)",nullable = false)
     private String status;
 
-    @Column(name = "Description", columnDefinition = "TEXT")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     private String description;
 }

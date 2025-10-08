@@ -22,25 +22,27 @@ public class Tariff {
     private Long tariffId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ConnectorTypeID")
+    @JoinColumn(name = "ConnectorTypeID", nullable = false)
     private ConnectorType connectorType;
 
-    @Column(name = "PricePerKWh")
+    @Column(name = "PricePerKWh", nullable = false)
     private double pricePerKWh;
 
-    @Column(name = "Currency", length = 10)
+    @Column(name = "Currency", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String currency;
 
-    @Column(name = "EffectiveFrom")
+    @Column(name = "EffectiveFrom", nullable = false)
     private LocalDateTime effectiveFrom;
 
-    @Column(name = "EffectiveTo")
+    @Column(name = "EffectiveTo", nullable = false)
     private LocalDateTime effectiveTo;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
 }

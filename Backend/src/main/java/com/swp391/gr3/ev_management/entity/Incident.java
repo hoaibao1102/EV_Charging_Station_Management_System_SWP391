@@ -26,11 +26,11 @@ public class Incident {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "StationID")
+    @JoinColumn(name = "StationID", nullable = false)
     private ChargingStation station;
 
 
-    @Column(name = "title", length = 255)
+    @Column(name = "title", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String title;
 
 
@@ -38,15 +38,15 @@ public class Incident {
     private String description;
 
 
-    @Column(name = "severity", columnDefinition = "NVARCHAR(20)")
+    @Column(name = "severity", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String severity;
 
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(20)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
 
-    @Column(name = "reported_at")
+    @Column(name = "reported_at", nullable = false)
     private LocalDateTime reportedAt;
 
 

@@ -23,26 +23,28 @@ public class Transaction {
     private Long transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "InvoiceID")
+    @JoinColumn(name = "InvoiceID", nullable = false)
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PaymentMethodID")
+    @JoinColumn(name = "PaymentMethodID", nullable = false)
     private PaymentMethod paymentMethod;
 
-    @Column(name = "Amount")
+    @Column(name = "Amount", nullable = false)
     private double amount;
 
-    @Column(name = "Currency", length = 10)
+    @Column(name = "Currency", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String currency;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "transaction", fetch = FetchType.LAZY)

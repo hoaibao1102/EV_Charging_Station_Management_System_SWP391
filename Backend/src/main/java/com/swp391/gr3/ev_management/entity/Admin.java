@@ -22,17 +22,17 @@ public class Admin {
     private Long adminId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", unique = true)
+    @JoinColumn(name = "UserID", unique = true,nullable = false)
     private User user;
 
-    @Column(name = "RoleLevel", length = 50)
+    @Column(name = "RoleLevel", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String roleLevel;
 
     @CreationTimestamp
-    @Column(name = "CreatedAt")
+    @Column(name = "CreatedAt",nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "UpdatedAt")
+    @Column(name = "UpdatedAt",nullable = false)
     private LocalDateTime updatedAt;
 }

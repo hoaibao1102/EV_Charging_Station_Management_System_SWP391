@@ -25,33 +25,33 @@ public class User {
     @Column(name = "UserID")
     private Long userId;
 
-    @Column(name = "Email", length = 255, unique = true)
+    @Column(name = "Email", unique = true, nullable = false, columnDefinition = "NVARCHAR(255)")
     private String email;
 
-    @Column(name = "Phone_number", length = 15, unique = true)
+    @Column(name = "Phone_number", unique = true, columnDefinition = "NVARCHAR(15)")
     private String phoneNumber;
 
-    @Column(name = "Password_hash", length = 255)
+    @Column(name = "Password_hash", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String passwordHash;
 
-    @Column(name = "Name", length = 100)
+    @Column(name = "Name", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String name;
 
     @Column(name = "Date_of_birth")
     private LocalDateTime dateOfBirth;
 
-    @Column(name = "Gender", length = 1)
+    @Column(name = "Gender", columnDefinition = "NVARCHAR(1)")
     private String gender;
 
-    @Column(name = "Address", length = 500)
+    @Column(name = "Address", columnDefinition = "NVARCHAR(50)")
     private String address;
 
     @CreationTimestamp
-    @Column(name = "CreatedAt")
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "UpdatedAt")
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
