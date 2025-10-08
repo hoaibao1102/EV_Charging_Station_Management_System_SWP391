@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.entity.Users;
+import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.function.Function;
@@ -37,18 +36,18 @@ public class TokenService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Users users) {
+    public String generateToken(User users) {
         return Jwts.builder()
                 .setSubject(String.valueOf(users.getUserId()))
-                .claim("fullName", users.getFullName())
-                .claim("role", users.getRoles().getRoleName())
+                .claim("fullName", users.getName())
+                .claim("role", users.getRole().getRoleName())
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(900))) // 15 phút
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public Users extractToken(String token) {
+    public User extractToken(String token) {
         String value = extractClaim(token, Claims::getSubject);
         long userId = Long.parseLong(value);
         return userRepository.findUserByUserId(userId);
