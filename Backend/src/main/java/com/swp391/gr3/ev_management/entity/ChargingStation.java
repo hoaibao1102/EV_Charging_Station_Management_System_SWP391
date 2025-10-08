@@ -23,28 +23,30 @@ public class ChargingStation {
     @Column(name = "StationID")
     private Long stationId;
 
-    @Column(name = "StationName", length = 255)
+    @Column(name = "StationName", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String stationName;
 
-    @Column(name = "Address", length = 500)
+    @Column(name = "Address", columnDefinition = "NVARCHAR(500)", nullable = false)
     private String address;
 
-    @Column(name = "Latitude")
+    @Column(name = "Latitude", nullable = false)
     private double latitude;
 
-    @Column(name = "Longitude")
+    @Column(name = "Longitude", nullable = false)
     private double longitude;
 
-    @Column(name = "OperatingHours", length = 50)
+    @Column(name = "OperatingHours", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String operatingHours;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)

@@ -19,14 +19,14 @@ public class UserVehicle {
     private Long vehicleId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DriverID")
+    @JoinColumn(name = "DriverID",nullable = false)
     private Driver driver;
 
-    @Column(name = "VehiclePlate", length = 20, unique = true)
+    @Column(name = "VehiclePlate", unique = true, nullable = false, columnDefinition = "NVARCHAR(20)")
     private String vehiclePlate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ModelID")
+    @JoinColumn(name = "ModelID",nullable = false)
     private VehicleModel model;
 
     @OneToMany(mappedBy = "vehicle", fetch = FetchType.LAZY)

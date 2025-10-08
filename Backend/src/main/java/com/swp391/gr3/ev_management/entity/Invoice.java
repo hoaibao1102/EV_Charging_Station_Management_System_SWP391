@@ -23,28 +23,30 @@ public class Invoice {
     private Long invoiceId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SessionID", unique = true)
+    @JoinColumn(name = "SessionID", unique = true, nullable = false)
     private ChargingSession session;
 
-    @Column(name = "Amount")
+    @Column(name = "Amount", nullable = false)
     private double amount;
 
-    @Column(name = "Currency", length = 10)
+    @Column(name = "Currency", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String currency;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
-    @Column(name = "IssuedAt")
+    @Column(name = "IssuedAt", nullable = false)
     private LocalDateTime issuedAt;
 
     @Column(name = "PaidAt")
     private LocalDateTime paidAt;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY)

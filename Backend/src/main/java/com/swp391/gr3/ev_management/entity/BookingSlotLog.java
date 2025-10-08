@@ -21,15 +21,16 @@ public class BookingSlotLog {
     private Long logId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BookingID")
+    @JoinColumn(name = "BookingID", nullable = false)
     private Booking booking;
 
-    @Column(name = "SlotIndex")
+    @Column(name = "SlotIndex", nullable = false)
     private int slotIndex;
 
-    @Column(name = "SlotDurationMin")
+    @Column(name = "SlotDurationMin", nullable = false)
     private int slotDurationMin;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

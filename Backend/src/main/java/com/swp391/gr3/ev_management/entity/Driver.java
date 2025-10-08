@@ -21,10 +21,10 @@ public class Driver {
     private Long driverId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", unique = true)
+    @JoinColumn(name = "UserID", unique = true, nullable = false)
     private User user;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
     @Column(name = "LastActiveAt")

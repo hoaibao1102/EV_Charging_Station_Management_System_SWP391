@@ -23,36 +23,38 @@ public class Booking {
     private Long bookingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "StationID")
+    @JoinColumn(name = "StationID", nullable = false)
     private ChargingStation station;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "VehicleID")
+    @JoinColumn(name = "VehicleID", nullable = false)
     private UserVehicle vehicle;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SlotID", unique = true)
+    @JoinColumn(name = "SlotID", unique = true, nullable = false)
     private SlotAvailability slot;
 
-    @Column(name = "BookingTime")
+    @Column(name = "BookingTime", nullable = false)
     private LocalDateTime bookingTime;
 
-    @Column(name = "ScheduledStartTime")
+    @Column(name = "ScheduledStartTime", nullable = false)
     private LocalDateTime scheduledStartTime;
 
-    @Column(name = "ScheduledEndTime")
+    @Column(name = "ScheduledEndTime", nullable = false)
     private LocalDateTime scheduledEndTime;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
-    @Column(name = "Notes", columnDefinition = "NTEXT")
+    @Column(name = "Notes", columnDefinition = "NVARCHAR(255)")
     private String notes;
 
     @CreationTimestamp
+    @Column( name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToOne(mappedBy = "booking", fetch = FetchType.LAZY)

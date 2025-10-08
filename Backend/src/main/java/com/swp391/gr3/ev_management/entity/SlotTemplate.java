@@ -20,17 +20,17 @@ public class SlotTemplate {
     @Column(name = "TemplateID")
     private Long templateId;
 
-    @Column(name = "Slot_index")
+    @Column(name = "Slot_index", nullable = false)
     private int slotIndex;
 
-    @Column(name = "Start_time")
+    @Column(name = "Start_time", nullable = false)
     private LocalDateTime startTime;
 
-    @Column(name = "End_time")
+    @Column(name = "End_time" , nullable = false)
     private LocalDateTime endTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ConfigID")
+    @JoinColumn(name = "ConfigID", nullable = false)
     private SlotConfig config;
 
     @OneToMany(mappedBy = "template", fetch = FetchType.LAZY)

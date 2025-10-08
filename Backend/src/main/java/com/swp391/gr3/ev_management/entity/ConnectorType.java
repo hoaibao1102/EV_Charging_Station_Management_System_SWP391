@@ -24,25 +24,27 @@ public class ConnectorType {
     @Column(name = "ConnectorTypeID")
     private Integer connectorTypeId;
 
-    @Column(name = "Code", length = 20)
+    @Column(name = "Code", columnDefinition = "NVARCHAR(20)", unique = true, nullable = false)
     private String code;
 
-    @Column(name = "Mode", length = 10)
+    @Column(name = "Mode", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String mode;
 
-    @Column(name = "DisplayName", length = 100)
+    @Column(name = "DisplayName", columnDefinition = "NVARCHAR(100)", nullable = false)
     private String displayName;
 
-    @Column(name = "DefaultMaxPowerKW", precision = 5, scale = 2)
-    private BigDecimal defaultMaxPowerKW;
+    @Column(name = "DefaultMaxPowerKW", nullable = false)
+    private double defaultMaxPowerKW;
 
-    @Column(name = "IsDeprecated")
+    @Column(name = "IsDeprecated", nullable = false)
     private Boolean isDeprecated;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "connectorType", fetch = FetchType.LAZY)

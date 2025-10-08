@@ -25,37 +25,39 @@ public class ChargingPoint {
     private Long pointId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "StationID")
+    @JoinColumn(name = "StationID", nullable = false)
     private ChargingStation station;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ConnectorTypeID")
+    @JoinColumn(name = "ConnectorTypeID", nullable = false)
     private ConnectorType connectorType;
 
-    @Column(name = "PointNumber", length = 20)
+    @Column(name = "PointNumber", columnDefinition = "NVARCHAR(20)", nullable = false, unique = true)
     private String pointNumber;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
-    @Column(name = "SerialNumber", length = 100)
+    @Column(name = "SerialNumber", columnDefinition = "NVARCHAR(100)", nullable = false, unique = true)
     private String serialNumber;
 
-    @Column(name = "InstallationDate")
+    @Column(name = "InstallationDate", nullable = false)
     private LocalDateTime installationDate;
 
     @Column(name = "LastMaintenanceDate")
     private LocalDateTime lastMaintenanceDate;
 
-    @Column(name = "QRCode", length = 255)
+    @Column(name = "QRCode", columnDefinition = "NVARCHAR(255)")
     private String qrCode;
 
-    @Column(name = "MaxPowerKW")
+    @Column(name = "MaxPowerKW", nullable = false)
     private double maxPowerKW;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 }

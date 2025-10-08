@@ -23,7 +23,7 @@ public class ChargingSession {
     private Long sessionId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BookingID", unique = true)
+    @JoinColumn(name = "BookingID", unique = true, nullable = false)
     private Booking booking;
 
     @Column(name = "StartTime")
@@ -41,13 +41,15 @@ public class ChargingSession {
     @Column(name = "Cost")
     private double cost;
 
-    @Column(name = "Status", length = 20)
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
     private String status;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToOne(mappedBy = "session", fetch = FetchType.LAZY)

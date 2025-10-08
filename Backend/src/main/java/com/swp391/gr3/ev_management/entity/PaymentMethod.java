@@ -21,22 +21,24 @@ public class PaymentMethod {
     @Column(name = "PaymentMethodID")
     private Long paymentMethodId;
 
-    @Column(name = "MethodType", length = 50)
+    @Column(name = "MethodType", columnDefinition = "NVARCHAR(50)", nullable = false)
     private String methodType;
 
-    @Column(name = "Provider", length = 100)
+    @Column(name = "Provider", columnDefinition = "NVARCHAR(100)", nullable = false)
     private String provider;
 
-    @Column(name = "AccountNo", length = 100)
+    @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false, unique = true)
     private String accountNo;
 
     @Column(name = "ExpiryDate")
     private LocalDateTime expiryDate;
 
     @CreationTimestamp
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "paymentMethod", fetch = FetchType.LAZY)

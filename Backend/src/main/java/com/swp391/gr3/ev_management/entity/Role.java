@@ -20,7 +20,7 @@ public class Role {
     private String roleName; // ADMIN, STAFF, EV_DRIVER
 
 
-    @Column(name = "Description", columnDefinition = "NTEXT")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String description;
 
 
