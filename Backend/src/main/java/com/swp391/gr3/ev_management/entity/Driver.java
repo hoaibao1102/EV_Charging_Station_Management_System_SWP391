@@ -16,49 +16,44 @@ import java.util.List;
  */
 @Entity
 @Table(name = "Drivers")
-@Data
-@NoArgsConstructor
+@Data @NoArgsConstructor
+@AllArgsConstructor @Builder
 public class Driver {
 
     @Id
-    @Column(name = "driver_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "DriverID")
     private Long driverId;
 
     @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId // driverId = userId (shared PK)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users user;
+    @JoinColumn(name = "UserID", unique = true, nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private DriverStatus driverStatus = DriverStatus.PENDING;
+    @Column(name = "Status", nullable = false)
+    private DriverStatus Status = DriverStatus.PENDING;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "LastActiveAt")
+    private LocalDateTime lastActiveAt;
 
     // Relationships
-    @OneToOne(mappedBy = "driver", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private DriverWallet wallet;
+//    @OneToOne(mappedBy = "driver", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    private DriverWallet wallet;
 
-    @OneToMany(mappedBy = "driver", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-    private List<Vehicle> vehicles = new ArrayList<>();
+    @OneToMany(mappedBy = "driver",cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    private List<UserVehicle> vehicles;
 
     @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
     private List<Transaction> transactions = new ArrayList<>();
 
     @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
-    private List<Invoice> invoices = new ArrayList<>();
+    private List<DriverViolation> violations;
 
     @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
-    private List<DriverViolation> violations = new ArrayList<>();
+    private List<Invoice> invoices = new ArrayList<>();
 
-    // Thêm vào
     @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL)
-    private List<PaymentMethod> paymentMethods;
+    private List<PaymentMethod> paymentMethods = new ArrayList<>();
 }

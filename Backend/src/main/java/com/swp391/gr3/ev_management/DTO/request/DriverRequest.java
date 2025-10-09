@@ -15,6 +15,4 @@ public class DriverRequest {
     @Enumerated(EnumType.STRING)
     @NotBlank(message = "Status is required")
     private DriverStatus driverStatus =  DriverStatus.PENDING; // Initial status when upgrading
-
-    private String currency = "VND"; // Wallet currency
 }

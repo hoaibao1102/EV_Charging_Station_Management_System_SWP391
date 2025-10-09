@@ -6,7 +6,7 @@ import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.DriverStatus;
 import com.swp391.gr3.ev_management.entity.DriverWallet;
-import com.swp391.gr3.ev_management.entity.Users;
+import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
@@ -41,7 +41,7 @@ public class DriverService {
         log.info("Attempting to upgrade user {} to driver", userId);
 
         // 1. Check user exists
-        Users user = userRepository.findUserById(userId).orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
+        User user = userRepository.findUserById(userId).orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
 
         // 2. Check if already a driver
         if (driverRepository.existsByUser_UserId(userId)) {
@@ -52,19 +52,20 @@ public class DriverService {
         Driver driver = new Driver();
         driver.setUser(user);
         driver.setDriverId(userId); // Explicitly set to match userId
-        driver.setDriverStatus(request.getDriverStatus() != null ? request.getDriverStatus() : DriverStatus.PENDING);
+        driver.setStatus(request.getDriverStatus() != null ? request.getDriverStatus() : DriverStatus.ACTIVE);
 
         Driver savedDriver = driverRepository.save(driver);
         log.info("Driver created with ID: {}", savedDriver.getDriverId());
 
-        // 4. Create Driver_Wallet with balance = 0
-        DriverWallet wallet = new DriverWallet();
-        wallet.setDriver(savedDriver);
-        wallet.setBalance(BigDecimal.ZERO);
-        wallet.setCurrency(request.getCurrency() != null ? request.getCurrency() : "VND");
+        //TODO: tương lai sẽ làm (nếu còn time để thêm wallet)
 
-        walletRepository.save(wallet);
-        log.info("Wallet created for driver {}", savedDriver.getDriverId());
+        // 4. Create Driver_Wallet with balance = 0
+//        DriverWallet wallet = new DriverWallet();
+//        wallet.setDriver(savedDriver);
+//        wallet.setBalance(BigDecimal.ZERO);
+//        wallet.setCurrency(request.getCurrency() != null ? request.getCurrency() : "VND");
+//        walletRepository.save(wallet);
+//        log.info("Wallet created for driver {}", savedDriver.getDriverId());
 
         return mapToDriverResponse(savedDriver);
     }
@@ -86,11 +87,10 @@ public class DriverService {
                 .userId(driver.getUser().getUserId())
                 .email(driver.getUser().getEmail())
                 .phoneNumber(driver.getUser().getPhoneNumber())
-                .firstName(driver.getUser().getFirstName())
-                .lastName(driver.getUser().getLastName())
-                .status(String.valueOf(driver.getDriverStatus()))
-                .createdAt(driver.getCreatedAt())
-                .updatedAt(driver.getUpdatedAt())
+                .name(driver.getUser().getName())
+                .status(String.valueOf(driver.getStatus()))
+                .createdAt(driver.getUser().getCreatedAt())
+                .updatedAt(driver.getUser().getUpdatedAt())
                 .build();
     }
 }
