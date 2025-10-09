@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 public class DriverResponse {
     private Long driverId;
     private Long userId;
-    private String firstName;
-    private String lastName;
+    private String name;
     private String email;
     private String phoneNumber;
     private String status;

@@ -4,34 +4,34 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Driver_Violations")
-@Data
-@NoArgsConstructor
+@Table(name = "DriverViolation")
+@Data @NoArgsConstructor
+@AllArgsConstructor @Builder
 public class DriverViolation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "violation_id")
+    @Column(name = "ViolationID")
     private Long violationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "driver_id", nullable = false)
+    @JoinColumn(name = "DriverID",nullable = false)
     private Driver driver;
 
-    @Column(name = "violation_type", columnDefinition = "NVARCHAR(100)", nullable = false)
-    private String violationType;
+    @CreationTimestamp
+    @Column(name = "OccurredAt",nullable = false)
+    private LocalDateTime occurredAt;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(500)")
+    @Column(name = "Status", columnDefinition = "NVARCHAR(20)",nullable = false)
+    private String status;
+
+    @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     private String description;
 
-    @Column(name = "penalty_amount", precision = 19, scale = 2)
-    private BigDecimal penaltyAmount;
+//    @Column(name = "penalty_amount", precision = 19, scale = 2)
+//    private BigDecimal penaltyAmount;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 }

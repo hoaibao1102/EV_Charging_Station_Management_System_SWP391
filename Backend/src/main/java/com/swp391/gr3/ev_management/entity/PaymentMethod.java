@@ -8,51 +8,46 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "PaymentMethods")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class PaymentMethod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "method_id")
+    @Column(name = "MethodID")
     private Long methodId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "driver_id", nullable = false)
-    private Driver driver;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "method_type", nullable = false, length = 50)
+    @Column(name = "MethodType", columnDefinition = "NVARCHAR(50)", nullable = false)
     private PaymentType methodType;
 
-    @Column(name = "provider_name", nullable = false, length = 100)
-    private String providerName;
+    @Column(name = "ProviderName", columnDefinition = "NVARCHAR(100)", nullable = false)
+    private String provider;
 
-    @Column(name = "account_number", length = 100)
-    private String accountNumber;
+    @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false, unique = true)
+    private String accountNo;
 
-    @Column(name = "expiry_date")
-    private LocalDate expiryDate;
-
-    @Column(name = "is_default", nullable = false)
-    private Boolean isDefault = false;
+    @Column(name = "ExpiryDate")
+    private LocalDateTime expiryDate;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL)
+    //
+
+    @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactions;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DriverId", nullable = false)
+    private Driver driver;
 }
