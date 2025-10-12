@@ -21,10 +21,10 @@ import java.util.List;
 public class Driver {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "DriverID")
     private Long driverId;
 
+    //@MapsId
     @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", unique = true, nullable = false)
@@ -32,7 +32,7 @@ public class Driver {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "Status", nullable = false)
-    private DriverStatus Status = DriverStatus.PENDING;
+    private DriverStatus status;
 
 
     @Column(name = "LastActiveAt")

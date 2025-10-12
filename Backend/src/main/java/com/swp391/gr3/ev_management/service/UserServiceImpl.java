@@ -1,13 +1,16 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
-import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverRequest;
+import com.swp391.gr3.ev_management.dto.request.LoginRequest;
+import com.swp391.gr3.ev_management.dto.request.RegisterRequest;
+import com.swp391.gr3.ev_management.entity.DriverStatus;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,21 +20,24 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final DriverService driverService;
     AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, TokenService tokenService) {
+    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, TokenService tokenService, DriverService driverService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.driverService = driverService;
     }
 
     @Override
@@ -71,7 +77,19 @@ public class UserServiceImpl implements UserService{
         u.setAddress(r.getAddress());
         u.setRole(role);
 
-        return userRepository.save(u);
+        User userSaved = userRepository.save(u);
+
+        //If là role driver create profile driver-active
+        if(userSaved.getRole().getRoleId() == 3L) {
+            log.info("Auto-driver profile for user{} ", userSaved.getUserId());
+
+            DriverRequest driverReq = new DriverRequest();
+            driverReq.setDriverStatus(DriverStatus.ACTIVE);
+
+            driverService.createDriverProfile(userSaved.getUserId(), driverReq);
+        }
+
+        return userSaved;
     }
 
     @Override

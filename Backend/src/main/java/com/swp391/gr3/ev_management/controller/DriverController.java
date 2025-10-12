@@ -1,28 +1,67 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
+import com.swp391.gr3.ev_management.dto.request.DriverRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.dto.response.DriverResponse;
+import com.swp391.gr3.ev_management.entity.DriverStatus;
 import com.swp391.gr3.ev_management.service.DriverService;
-import io.swagger.v3.oas.annotations.Operation;
+import com.swp391.gr3.ev_management.service.TokenService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api")
-@RequiredArgsConstructor
+@RequestMapping("/api/driver")
 public class DriverController {
 
-    private final DriverService driverService;
+    @Autowired
+    private DriverService driverService;
 
-    @PostMapping("/user/{id}/upgrade-to-driver")
-    @Operation(summary = "Upgrade user to driver",
-            description = "Creates a Driver record and auto-initializes wallet with balance 0")
-    public ResponseEntity<DriverResponse> UpgradeDriver(@PathVariable("id") Long idDriver,@Valid @RequestBody DriverRequest request) throws ChangeSetPersister.NotFoundException {
-        DriverResponse response = driverService.upgradeToDriver(idDriver, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @Autowired
+    private TokenService tokenService;
+
+    // ✅ Driver xem hồ sơ chính mình (qua token)
+    @GetMapping("/profile")
+    public ResponseEntity<DriverResponse> getOwnProfile(HttpServletRequest request) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        DriverResponse driver = driverService.getById(userId);
+        return ResponseEntity.ok(driver);
     }
+
+    // ✅ Driver cập nhật hồ sơ
+    @PutMapping("/profile")
+    public ResponseEntity<DriverResponse> updateOwnProfile(
+            HttpServletRequest request,
+            @Valid @RequestBody DriverUpdateRequest updateRequest) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        DriverResponse updated = driverService.updateDriverProfile(userId, updateRequest);
+        return ResponseEntity.ok(updated);
+    }
+
+    // ✅ Admin xem chi tiết driver
+    @GetMapping("/{driverId}")
+    public ResponseEntity<DriverResponse> getDriverById(@PathVariable Long driverId) {
+        return ResponseEntity.ok(driverService.getById(driverId));
+    }
+
+    // ✅ Admin xem tất cả driver
+    @GetMapping
+    public ResponseEntity<List<DriverResponse>> getAllDrivers() {
+        return ResponseEntity.ok(driverService.getAllDrivers());
+    }
+
+    // ✅ Admin cập nhật trạng thái driver (ACTIVE, SUSPENDED,...)
+    @PutMapping("/{userId}/status")
+    public ResponseEntity<DriverResponse> updateDriverStatus(
+            @PathVariable Long userId,
+            @RequestParam("status") DriverStatus status) {
+        return ResponseEntity.ok(driverService.updateStatus(userId, status));
+    }
+
+
 }

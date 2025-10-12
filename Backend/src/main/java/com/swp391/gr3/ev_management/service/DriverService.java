@@ -1,96 +1,25 @@
 package com.swp391.gr3.ev_management.service;
 
-
-import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.entity.Driver;
+import com.swp391.gr3.ev_management.dto.request.DriverRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.dto.response.DriverResponse;
 import com.swp391.gr3.ev_management.entity.DriverStatus;
-import com.swp391.gr3.ev_management.entity.DriverWallet;
 import com.swp391.gr3.ev_management.entity.User;
-import com.swp391.gr3.ev_management.exception.ConflictException;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
-import com.swp391.gr3.ev_management.repository.DriverRepository;
-import com.swp391.gr3.ev_management.repository.DriverWalletRepository;
-import com.swp391.gr3.ev_management.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.validation.Valid;
 
-import java.math.BigDecimal;
+import java.util.List;
 
-@Service
-@RequiredArgsConstructor
-@Slf4j
-public class DriverService {
+public interface DriverService {
+    // CRUD
+    DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
+    DriverResponse getById(Long driverId);
+    List<DriverResponse> getAllDrivers();
+    DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
+    DriverResponse updateStatus(Long userId, DriverStatus newStatus);
 
-    private final DriverRepository driverRepository;
-    private final UserRepository userRepository;
-    private final DriverWalletRepository walletRepository;
-
-    /**
-     * Upgrade a User to Driver.
-     * Creates Driver entity and auto-creates DriverWallet with balance = 0.
-     * 
-     * @throws NotFoundException if user doesn't exist
-     * @throws ConflictException if user is already a driver
-     */
-    @Transactional
-    public DriverResponse upgradeToDriver(Long userId, DriverRequest request) throws ChangeSetPersister.NotFoundException {
-        log.info("Attempting to upgrade user {} to driver", userId);
-
-        // 1. Check user exists
-        User user = userRepository.findUserById(userId).orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
-
-        // 2. Check if already a driver
-        if (driverRepository.existsByUser_UserId(userId)) {
-            throw new ConflictException("User is already a driver with ID: " + userId);
-        }
-
-        // 3. Create Driver entity (driverId will be set to userId via @MapsId)
-        Driver driver = new Driver();
-        driver.setUser(user);
-        driver.setDriverId(userId); // Explicitly set to match userId
-        driver.setStatus(request.getDriverStatus() != null ? request.getDriverStatus() : DriverStatus.ACTIVE);
-
-        Driver savedDriver = driverRepository.save(driver);
-        log.info("Driver created with ID: {}", savedDriver.getDriverId());
-
-        //TODO: tương lai sẽ làm (nếu còn time để thêm wallet)
-
-        // 4. Create Driver_Wallet with balance = 0
-//        DriverWallet wallet = new DriverWallet();
-//        wallet.setDriver(savedDriver);
-//        wallet.setBalance(BigDecimal.ZERO);
-//        wallet.setCurrency(request.getCurrency() != null ? request.getCurrency() : "VND");
-//        walletRepository.save(wallet);
-//        log.info("Wallet created for driver {}", savedDriver.getDriverId());
-
-        return mapToDriverResponse(savedDriver);
-    }
-
-    /**
-     * Get driver profile by ID
-     */
-    @Transactional(readOnly = true)
-    public DriverResponse getDriverProfile(Long driverId) {
-        Driver driver = driverRepository.findByIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with ID: " + driverId));
-        
-        return mapToDriverResponse(driver);
-    }
-
-    private DriverResponse mapToDriverResponse(Driver driver) {
-        return DriverResponse.builder()
-                .driverId(driver.getDriverId())
-                .userId(driver.getUser().getUserId())
-                .email(driver.getUser().getEmail())
-                .phoneNumber(driver.getUser().getPhoneNumber())
-                .name(driver.getUser().getName())
-                .status(String.valueOf(driver.getStatus()))
-                .createdAt(driver.getUser().getCreatedAt())
-                .updatedAt(driver.getUser().getUpdatedAt())
-                .build();
-    }
+    // Filter
+    List<DriverResponse> getDriversByStatus(DriverStatus status);
+    List<DriverResponse> getDriversByName(String name);
+    List<DriverResponse> getDriversByPhoneNumber(String phoneNumber);
 }
+
