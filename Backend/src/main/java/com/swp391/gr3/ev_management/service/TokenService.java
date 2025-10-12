@@ -8,6 +8,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class TokenService {
         this.userRepository = userRepository;
     }
 
+    //Tạo key Ký JWT với thuật toán HS256 và secret được cung cấp (đã decode từ Base64)
     private SecretKey getSignInKey() {
         // jwtSecret nên là Base64-encoded (recommended).
         // Nếu bạn muốn dùng hex, đổi phần decode tương ứng.
@@ -36,6 +38,7 @@ public class TokenService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // 🎫 Sinh token khi user login
     public String generateToken(User users) {
         return Jwts.builder()
                 .setSubject(String.valueOf(users.getUserId()))
@@ -89,5 +92,23 @@ public class TokenService {
             return token.substring(7).trim();
         }
         return token;
+    }
+
+    //Lấy userId từ HttpServletRequest
+    public Long extractUserIdFromRequest(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) throw new JwtException("Invalid Authorization Header");
+        String token = stripBearer(header);
+        Claims claims = extractAllClaims(token);
+        return Long.parseLong(claims.getSubject());
+    }
+
+    //lấy role (để check phần quyền)
+    public String extractUserRoleFromRequest(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) throw new JwtException("Invalid Authorization Header");
+        String token = stripBearer(header);
+        Claims claims = extractAllClaims(token);
+        return claims.get("role", String.class);
     }
 }

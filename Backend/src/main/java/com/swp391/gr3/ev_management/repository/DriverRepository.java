@@ -12,6 +12,5 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     
     @Query("SELECT d FROM Driver d JOIN FETCH d.user WHERE d.driverId = :driverId")
     Optional<Driver> findByIdWithUser(Long driverId);
-    
-    boolean existsByUser_UserId(Long userId);
+    boolean existsByDriverId(Long driverId);
 }
