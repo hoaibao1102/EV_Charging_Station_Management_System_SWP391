@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { loginApi, registerApi } from '../api/authApi'; // Import từ authApi
+import { useState } from "react";
+import { loginApi, registerApi } from "../api/authApi"; // Import từ authApi
 
 // Custom hook đăng nhập
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
 
   const validatePhone = (phone) => {
-    const phoneRegex = /^0[0-9]{9}$/;  // Kiểm tra số điện thoại đúng định dạng
+    const phoneRegex = /^0[0-9]{9}$/; // Kiểm tra số điện thoại đúng định dạng
     return phoneRegex.test(phone);
   };
 
   const validatePassword = (password) => {
-    return password.length >= 6;  // Kiểm tra mật khẩu có ít nhất 6 ký tự
+    return password.length >= 5; // Kiểm tra mật khẩu có ít nhất 6 ký tự
   };
 
   const login = async (phone, password) => {
@@ -25,16 +25,16 @@ export const useLogin = () => {
 
     setLoading(true);
     try {
-      const response = await loginApi(phone, password);  // Gọi API đăng nhập
+      const response = await loginApi(phone, password); // Gọi API đăng nhập
       if (response.success) {
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userPhone', phone);
-        localStorage.setItem('userId', response.data.userId);
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userPhone", phone);
+        localStorage.setItem("userId", response.data.userId);
         return { success: true };
       }
       return { success: false, message: "Đăng nhập thất bại!" };
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error("Error during login:", error);
       return { success: false, message: "Lỗi trong quá trình đăng nhập!" };
     } finally {
       setLoading(false);
@@ -78,13 +78,13 @@ export const useRegister = () => {
 
     setLoading(true);
     try {
-      const response = await registerApi(formData);  // Gọi API đăng ký
+      const response = await registerApi(formData); // Gọi API đăng ký
       if (response.success) {
         return { success: true };
       }
       return { success: false, message: "Đăng ký thất bại!" };
     } catch (error) {
-      console.error('Error during registration:', error);
+      console.error("Error during registration:", error);
       return { success: false, message: "Lỗi trong quá trình đăng ký!" };
     } finally {
       setLoading(false);
