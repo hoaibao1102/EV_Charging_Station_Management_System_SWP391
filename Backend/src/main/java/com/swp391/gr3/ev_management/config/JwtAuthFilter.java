@@ -108,8 +108,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(roleName));
 
+        // principal = userId trong token (subject), dưới dạng String
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(u.getPhoneNumber(), null, authorities);
+                new UsernamePasswordAuthenticationToken(String.valueOf(u.getUserId()), null, authorities);
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
 
