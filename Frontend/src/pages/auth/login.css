@@ -86,55 +86,12 @@
   font-weight: 500;
 }
 
-/* Input Container Styles - giống hình */
-.input-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: white;
-  border: 2px solid #2dd4bf;
-  border-radius: 30px;
-  padding: 0 20px;
-  min-height: 56px;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
-}
-
-.input-container:focus-within {
-  border-color: #0891b2;
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
-}
-
-.input-icon {
-  color: #2dd4bf;
-  margin-right: 15px;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.input-container input {
-  flex: 1;
-  padding: 16px 0;
-  border: none;
-  outline: none;
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   font-size: 16px;
-  background: transparent;
-  color: #333 !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-.input-container input::placeholder {
-  color: #94a3b8;
-  font-size: 14px;
-}
-
-.eye-icon {
-  color: #2dd4bf;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 4px;
 }
 
 .forgot-password {
@@ -149,31 +106,81 @@
 }
 
 .login-btn {
-  width: 100%;
-  padding: 10px;
-  background: #1976d2;
+  width: auto;
+  min-width: 200px;
+  padding: 16px 32px;
+  background: #2dd4bf;
   color: #fff;
-  border: none;
-  border-radius: 4px;
+  border: 2px solid #2dd4bf;
+  border-radius: 30px;
   font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 8px;
-  transition: background 0.2s;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(45, 212, 191, 0.2);
 }
 
 .login-btn:disabled {
-  background: #90caf9;
+  background: #9ca3af;
+  border-color: #9ca3af;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #1565c0;
+  background: #0891b2;
+  border-color: #0891b2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Button container để center button */
+.button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 20px;
 }
 
 .register-link {
   text-align: center;
   margin-top: 16px;
   font-size: 0.98rem;
+}
+
+/* Xóa màu xám của autocomplete cho desktop */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #333 !important;
+  background-color: transparent !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* Eye icon styling */
+.eye-icon {
+  color: #2dd4bf;
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.eye-icon:hover {
+  color: #0891b2;
+  transform: scale(1.1);
 }
 
 /* Mobile Responsive - Giống hình bạn gửi */
@@ -289,9 +296,14 @@
     color: #333 !important;
   }
 
-  .input-container input::placeholder {
-    color: #94a3b8 !important;
-    font-size: 14px !important;
+  /* Xóa màu xám của autocomplete */
+  .input-container input:-webkit-autofill,
+  .input-container input:-webkit-autofill:hover,
+  .input-container input:-webkit-autofill:focus,
+  .input-container input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #333 !important;
+    background-color: transparent !important;
   }
 
   .eye-icon {
@@ -310,9 +322,10 @@
 
   .remember-me {
     display: flex !important;
-    align-items: center !important;
+    align-items: left  !important;
     cursor: pointer !important;
-    color: #64748b !important;
+    border: 2px solid #2dd4bf !important;
+    color: rgb(251, 247, 247) !important;
   }
 
   .checkmark {
@@ -329,20 +342,36 @@
     font-weight: 500 !important;
   }
 
+  .button-container {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin-top: 20px !important;
+  }
+
   .login-btn {
     width: 100% !important;
+    min-width: unset !important;
     background: #2dd4bf !important;
     color: white !important;
-    border: none !important;
+    border: 2px solid #2dd4bf !important;
     border-radius: 30px !important;
-    padding: 15px !important;
-    font-size: 15px !important;
+    padding: 16px 20px !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
     cursor: pointer !important;
+    margin-top: 20px !important;
     margin-bottom: 20px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(45, 212, 191, 0.2) !important;
+    transition: all 0.3s ease !important;
   }
+
+  .login-btn:hover:not(:disabled) {
+    background: #0891b2 !important;
+    border-color: #0891b2 !important;
+    box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3) !important;
+  }
+
 
   .biometric-login {
     text-align: center !important;
