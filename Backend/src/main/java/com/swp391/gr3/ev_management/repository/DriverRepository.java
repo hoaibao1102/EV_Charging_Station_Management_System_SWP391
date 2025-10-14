@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.entity.Driver;
-import com.swp391.gr3.ev_management.entity.DriverStatus;
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

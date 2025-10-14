@@ -1,10 +1,9 @@
 package com.swp391.gr3.ev_management.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

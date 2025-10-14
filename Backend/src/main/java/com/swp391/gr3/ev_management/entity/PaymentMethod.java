@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.emuns.PaymentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,7 @@ public class PaymentMethod {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "MethodType", columnDefinition = "NVARCHAR(50)", nullable = false)
-    private PaymentType methodType;
+    private PaymentType methodType ;
 
     @Column(name = "ProviderName", columnDefinition = "NVARCHAR(100)", nullable = false)
     private String provider;
