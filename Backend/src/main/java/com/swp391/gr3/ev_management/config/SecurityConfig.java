@@ -125,7 +125,9 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml",
                                 "/api/users/login",   // login API
                                 "/api/users/logout",
-                                "/api/users/register" // register API
+                                "/api/users/register", // register API
+                                "/api/bookings/{id}/qr",
+                                "/api/bookings/{id}/qr-string"
 //                                "/api/staff/payments/confirm", // payment confirm API
 //                                "/api/staff/payments/unpaid", //  unpaid  API
 //                                "/api/staff/sessions/stop",
