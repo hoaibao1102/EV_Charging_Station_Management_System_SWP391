@@ -4,9 +4,9 @@ import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
-import com.swp391.gr3.ev_management.service.RoleService;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
+import com.swp391.gr3.ev_management.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,9 +32,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-//        initConnectorTypes();
-//        initRoles();
-//        initAdmins();
+        initConnectorTypes();
+        initRoles();
+        initAdmins();
     }
 
     private void initConnectorTypes() {
