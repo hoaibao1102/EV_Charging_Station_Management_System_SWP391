@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.dto.response.ConnectorTypeResponse;
+import com.swp391.gr3.ev_management.DTO.response.ConnectorTypeResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;

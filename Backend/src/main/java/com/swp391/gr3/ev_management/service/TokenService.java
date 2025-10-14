@@ -2,10 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.UserRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +27,6 @@ public class TokenService {
         this.userRepository = userRepository;
     }
 
-    //Tạo key Ký JWT với thuật toán HS256 và secret được cung cấp (đã decode từ Base64)
     private SecretKey getSignInKey() {
         // jwtSecret nên là Base64-encoded (recommended).
         // Nếu bạn muốn dùng hex, đổi phần decode tương ứng.
@@ -38,7 +34,6 @@ public class TokenService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // 🎫 Sinh token khi user login
     public String generateToken(User users) {
         return Jwts.builder()
                 .setSubject(String.valueOf(users.getUserId()))
