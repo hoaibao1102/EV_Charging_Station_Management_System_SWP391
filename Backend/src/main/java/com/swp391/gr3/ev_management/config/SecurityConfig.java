@@ -116,7 +116,11 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml",
                                 "/api/users/login",   // login API
                                 "/api/users/logout",
-                                "/api/users/register" // register API
+                                "/api/users/register", // register API
+                                "/api/staff/payments/confirm", // payment confirm API
+                                "/api/staff/payments/unpaid", //  unpaid  API
+                                "/api/staff/sessions/stop",
+                                "/api/staff/sessions/start" // stop/start session API
                         ).permitAll()
                         // (tuỳ) nếu có healthcheck
                         .requestMatchers("/actuator/**").permitAll()

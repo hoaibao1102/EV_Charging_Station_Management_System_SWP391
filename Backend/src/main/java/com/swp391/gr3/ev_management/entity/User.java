@@ -2,6 +2,8 @@ package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
