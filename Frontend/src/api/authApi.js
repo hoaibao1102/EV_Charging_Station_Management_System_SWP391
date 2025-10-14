@@ -3,7 +3,7 @@ import apiClient from './apiUrls.js';
 // Gọi API đăng nhập
 export const loginApi = async (phone, password) => {
     try {
-        const response = await apiClient.post('/api/users/login', {  // Thêm /api/ vào đầu
+        const response = await apiClient.post('/api/users/login', {  
             phoneNumber: phone,
             password: password,
         });
@@ -23,7 +23,7 @@ export const loginApi = async (phone, password) => {
 // Gọi API đăng ký
 export const registerApi = async (formData) => {
     try {
-        const response = await apiClient.post('/api/users/register', formData);  // Thêm /api/ vào đầu
+        const response = await apiClient.post('/api/users/register', formData);  
         return {
             success: true,
             data: response.data
