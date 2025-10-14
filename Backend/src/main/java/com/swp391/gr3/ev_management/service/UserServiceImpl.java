@@ -2,12 +2,18 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
+import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.Role;
+import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.User;
+import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
+import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
+import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,22 +22,38 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final StationStaffRepository staffRepo;
+    private final ChargingStationRepository stationRepo;
+    private final ApplicationEventPublisher publisher;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, TokenService tokenService) {
+    public UserServiceImpl(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            AuthenticationManager authenticationManager,
+            PasswordEncoder passwordEncoder,
+            TokenService tokenService,
+            StationStaffRepository stationStaffRepository,
+            ChargingStationRepository chargingStationRepository, ApplicationEventPublisher publisher){
+
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.staffRepo = stationStaffRepository;
+        this.stationRepo = chargingStationRepository;
+        this.publisher = publisher;
     }
 
     @Override
@@ -58,7 +80,7 @@ public class UserServiceImpl implements UserService{
         if (r.getEmail() != null && userRepository.existsByEmail(r.getEmail()))
             throw new IllegalStateException("Email already in use");
 
-        Role role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
+        Role role = roleRepository.findByRoleId(3L); // default USER
         if (role == null) throw new IllegalStateException("Role not found");
 
         User u = new User();
@@ -71,26 +93,13 @@ public class UserServiceImpl implements UserService{
         u.setAddress(r.getAddress());
         u.setRole(role);
 
-        return userRepository.save(u);
-    }
+        // 1) SAVE trước để có ID
+        u = userRepository.save(u);
 
-    @Override
-    public ResponseEntity<?> createUser(RegisterRequest r) {
-        Role role = roleRepository.findByRoleId(3L); // Default role is USER with roleId = 3
-        if (role == null) throw new IllegalStateException("Default role not found");
+        // 2) PUBLISH event (listener sẽ tự tạo Notification)
+        publisher.publishEvent(new UserRegisteredEvent(u.getUserId(), u.getEmail(), u.getName()));
 
-        User u = new User();
-        u.setEmail(r.getEmail());
-        u.setPhoneNumber(r.getPhoneNumber());
-        u.setPasswordHash(passwordEncoder.encode(r.getPasswordHash()));
-        u.setName(r.getName());
-        u.setDateOfBirth(r.getDateOfBirth());
-        u.setGender(r.getGender());
-        u.setAddress(r.getAddress());
-        u.setRole(role);
-        userRepository.save(u);
-
-        return ResponseEntity.ok("User created successfully");
+        return u;
     }
 
     public User login(LoginRequest loginRequest) {
@@ -167,6 +176,50 @@ public class UserServiceImpl implements UserService{
     @Override
     public User addUser(User user) {
         return userRepository.save(user);
+    }
+
+    @Override
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
+    // ===== ADMIN: đăng ký user và biến thành StationStaff của một trạm =====
+    @Override
+    @Transactional
+    public User registerAsStaff(RegisterRequest req, Long stationId, LocalDateTime assignedAt) {
+        if (userRepository.existsByEmail(req.getEmail())) throw new IllegalArgumentException("Email đã tồn tại");
+        if (userRepository.existsByPhoneNumber(req.getPhoneNumber())) throw new IllegalArgumentException("Số điện thoại đã tồn tại");
+
+        Role staffRole = roleRepository.findByRoleName("STAFF");
+        if (staffRole == null) throw new IllegalStateException("Role STAFF chưa được seed");
+
+        ChargingStation station = stationRepo.findById(stationId)
+                .orElseThrow(() -> new IllegalArgumentException("Trạm không tồn tại"));
+
+        User user = User.builder()
+                .email(req.getEmail())
+                .phoneNumber(req.getPhoneNumber())
+                .passwordHash(passwordEncoder.encode(req.getPasswordHash()))
+                .name(req.getName())
+                .dateOfBirth(req.getDateOfBirth())
+                .gender(req.getGender())
+                .address(req.getAddress())
+                .role(staffRole)
+                .build();
+        user = userRepository.save(user);
+
+        StationStaff staff = StationStaff.builder()
+                .user(user)
+                .station(station)
+                .assignedAt(assignedAt != null ? assignedAt : LocalDateTime.now())
+                .unassignedAt(null)
+                .build();
+        staffRepo.save(staff);
+
+        // Thông báo cho staff mới
+        publisher.publishEvent(new UserRegisteredEvent(user.getUserId(), user.getEmail(), user.getName()));
+
+        return user;
     }
 
 

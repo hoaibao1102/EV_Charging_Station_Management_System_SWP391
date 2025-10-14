@@ -3,12 +3,13 @@ package com.swp391.gr3.ev_management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "ROLES")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "Roles")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +26,5 @@ public class Role {
 
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<User> users = new ArrayList<>();
+    private List<User> users;
 }
