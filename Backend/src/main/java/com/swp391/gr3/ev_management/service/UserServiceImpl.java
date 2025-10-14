@@ -6,13 +6,14 @@ import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.User;
+import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional; // <-- dùng Spring
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;

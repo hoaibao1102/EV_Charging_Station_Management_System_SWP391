@@ -6,6 +6,7 @@ import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +19,11 @@ public class NotificationEventHandler {
 
     private final NotificationsRepository notificationsRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher publisher;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onUserRegistered(UserRegisteredEvent event) {
-//        System.out.println("🔥 NotificationEventHandler triggered for userId=" + event.userId());
 
         User user = userRepository.findById(event.userId())
                 .orElseThrow(() -> new IllegalStateException("User not found"));
@@ -35,6 +36,7 @@ public class NotificationEventHandler {
         noti.setStatus(Notification.STATUS_UNREAD);
 
         notificationsRepository.save(noti);
-//        System.out.println("✅ Notification saved & committed for userId=" + event.userId());
+        // ✅ Bây giờ mới publish event thông báo đã được tạo
+        publisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
     }
 }

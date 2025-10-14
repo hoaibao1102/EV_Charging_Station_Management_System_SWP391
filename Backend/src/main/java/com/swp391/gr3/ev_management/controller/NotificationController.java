@@ -1,70 +1,60 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.CreateNotificationRequest;
 import com.swp391.gr3.ev_management.DTO.response.CreateNotificationResponse;
-import com.swp391.gr3.ev_management.service.StaffNotificationService;
+import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
+import com.swp391.gr3.ev_management.service.NotificationsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/staff/notifications")
+@RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-@Tag(name = "Staff Notification", description = "APIs for staff to manage notifications")
+@Tag(name = "Notifications", description = "APIs for managing notifications")
 public class NotificationController {
 
-    private final StaffNotificationService notificationService;
-
-    @PostMapping
-    @Operation(summary = "Create notification", description = "Create a new notification for a user")
-    public ResponseEntity<CreateNotificationResponse> createNotification(
-            @Valid @RequestBody CreateNotificationRequest request
-    ) {
-        CreateNotificationResponse response = notificationService.createNotification(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+    private final NotificationsService notificationsService;
 
     @GetMapping
-    @Operation(summary = "Get all notifications", description = "Get all notifications for a staff member")
-    public ResponseEntity<List<CreateNotificationResponse>> getAllNotifications(
-            @Parameter(description = "Staff ID") @RequestParam Long staffId
-    ) {
-        List<CreateNotificationResponse> notifications = notificationService.getNotificationsByUser(staffId);
+    @Operation(summary = "Get all notifications", description = "Get all notifications for the logged-in user")
+    public ResponseEntity<?> getAllNotifications(org.springframework.security.core.Authentication auth) {
+        Long userId = Long.valueOf(auth.getName()); // vì principal = userId string
+        var notifications = notificationsService.getNotificationsByUser(userId);
+
+        if (notifications == null || notifications.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "Không có thông báo"));
+        }
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread")
-    @Operation(summary = "Get unread notifications", description = "Get unread notifications for a staff member")
-    public ResponseEntity<List<CreateNotificationResponse>> getUnreadNotifications(
-            @Parameter(description = "Staff ID") @RequestParam Long staffId
-    ) {
-        List<CreateNotificationResponse> notifications = notificationService.getUnreadNotificationsByUser(staffId);
+    public ResponseEntity<?> getUnreadNotifications(Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        var notifications = notificationsService.getUnreadNotificationsByUser(userId);
+        if (notifications == null || notifications.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "Không có thông báo chưa đọc"));
+        }
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread/count")
-    @Operation(summary = "Get unread count", description = "Get count of unread notifications")
-    public ResponseEntity<Long> getUnreadCount(
-            @Parameter(description = "Staff ID") @RequestParam Long staffId
-    ) {
-        Long count = notificationService.getUnreadCount(staffId);
-        return ResponseEntity.ok(count);
+    public ResponseEntity<Long> getUnreadCount(Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        return ResponseEntity.ok(notificationsService.getUnreadCount(userId));
     }
 
     @PutMapping("/{notificationId}/read")
-    @Operation(summary = "Mark as read", description = "Mark a notification as read")
-    public ResponseEntity<Void> markAsRead(
-            @Parameter(description = "Notification ID") @PathVariable Long notificationId,
-            @Parameter(description = "Staff ID") @RequestParam Long staffId
-    ) {
-        notificationService.markAsRead(notificationId, staffId);
+    public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId, Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        notificationsService.markAsRead(notificationId, userId);
         return ResponseEntity.noContent().build();
     }
 
