@@ -21,10 +21,11 @@ import java.util.List;
 public class Driver {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "DriverID")
     private Long driverId;
 
-    //@MapsId
+    @MapsId
     @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", unique = true, nullable = false)

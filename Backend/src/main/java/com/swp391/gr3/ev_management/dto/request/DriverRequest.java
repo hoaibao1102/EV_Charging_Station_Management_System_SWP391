@@ -19,7 +19,5 @@ public class DriverRequest {
 
     private long driverId;
 
-    private User user;
-
     private String driverName;
 }

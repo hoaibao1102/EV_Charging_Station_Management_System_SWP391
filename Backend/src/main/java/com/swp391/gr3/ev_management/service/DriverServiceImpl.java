@@ -46,7 +46,6 @@ public class DriverServiceImpl implements DriverService {
             throw new ConflictException("Driver already exists for userId " + userId);
 
         Driver driver = new Driver();
-        driver.setDriverId(userId);
         driver.setUser(user);
         driver.setStatus(request.getDriverStatus() != null ? request.getDriverStatus() : DriverStatus.ACTIVE);
 
@@ -55,7 +54,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public DriverResponse getById(Long driverId) {
+    public DriverResponse getByUserId(Long driverId) {
         Driver driver = driverRepository.findByIdWithUser(driverId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with ID " + driverId));
         return mapToDriverResponse(driver);
@@ -87,8 +86,13 @@ public class DriverServiceImpl implements DriverService {
         return mapToDriverResponse(updated);
     }
     @Override
+    @Transactional
     public DriverResponse updateStatus(Long userId, DriverStatus status) {
-        return null;
+        Driver driver = driverRepository.findByIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found"));
+        driver.setStatus(status);
+        driverRepository.save(driver);
+        return mapToDriverResponse(driver);
     }
 
 
@@ -105,17 +109,26 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public List<DriverResponse> getDriversByStatus(DriverStatus status) {
-        return List.of();
+        return driverRepository.findByStatus(status)
+                .stream()
+                .map(this::mapToDriverResponse)
+                .toList();
     }
 
     @Override
     public List<DriverResponse> getDriversByName(String name) {
-        return List.of();
+        return driverRepository.findByUser_NameContainingIgnoreCase(name)
+                .stream()
+                .map(this::mapToDriverResponse)
+                .toList();
     }
 
     @Override
     public List<DriverResponse> getDriversByPhoneNumber(String phoneNumber) {
-        return List.of();
+        return driverRepository.findByUser_PhoneNumberContaining(phoneNumber)
+                .stream()
+                .map(this::mapToDriverResponse)
+                .toList();
     }
 
     private DriverResponse mapToDriverResponse(Driver driver) {
