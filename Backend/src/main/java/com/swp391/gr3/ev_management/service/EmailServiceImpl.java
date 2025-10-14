@@ -86,5 +86,8 @@ public class EmailServiceImpl implements EmailService {
                 n.getStatus(),
                 n.getCreatedAt()
         );
+
+        // 👉 GỌI hàm gửi thật sự
+        sendNotificationEmail(user.getEmail(), subject, html);
     }
 }
