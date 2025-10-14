@@ -2,10 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.UserRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,4 +87,5 @@ public class TokenService {
         }
         return token;
     }
+
 }
