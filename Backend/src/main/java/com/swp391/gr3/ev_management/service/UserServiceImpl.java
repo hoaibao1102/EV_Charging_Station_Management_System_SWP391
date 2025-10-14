@@ -6,7 +6,6 @@ import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.User;
-import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
