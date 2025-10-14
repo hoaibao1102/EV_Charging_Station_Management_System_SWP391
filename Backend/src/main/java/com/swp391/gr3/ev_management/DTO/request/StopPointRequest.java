@@ -6,5 +6,5 @@ import lombok.Data;
 public class StopPointRequest {
     private Long pointId;
     private Long staffId;
-    private String reason;
+    private String newStatus;
 }

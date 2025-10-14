@@ -15,7 +15,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff,Long>
     // Tìm staff assignment active theo user ID
     @Query("SELECT ss FROM StationStaff ss " +
             "WHERE ss.user.userId = :userId " +
-            "AND ss.status = 'active'")
+            "AND LOWER(ss.status) = 'active'")
     Optional<StationStaff> findActiveByUserId(@Param("userId") Long userId);
 
     // Tìm tất cả staff của trạm
