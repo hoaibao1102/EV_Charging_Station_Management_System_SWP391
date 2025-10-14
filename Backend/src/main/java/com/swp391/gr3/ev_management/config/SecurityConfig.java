@@ -2,6 +2,10 @@ package com.swp391.gr3.ev_management.config;
 
 import java.util.List;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,6 +21,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -94,42 +99,47 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider provider) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   AuthenticationProvider provider,
+                                                   JwtAuthFilter jwtAuthFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults())                      // <-- BẬT CORS
+                .cors(withDefaults())
                 .authenticationProvider(provider)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // NHỚ có dấu "/" đầu path
-                        // Cho phép truy cập không cần auth
                         .requestMatchers(
-                                "/",                  // root
-                                "/index.html",        // file index
-                                "/static/**",         // static resources (css/js/images)
-                                "/public/**",         // public folder
-                                "/error",             // error page
-                                "/swagger-ui.html",   // swagger
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs.yaml",
-                                "/api/users/login",   // login API
-                                "/api/users/logout",
-                                "/api/users/register" // register API
+                                "/", "/index.html", "/static/**", "/public/**", "/error",
+                                "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs/**", "/v3/api-docs.yaml",
+                                "/api/users/login", "/api/users/logout", "/api/users/register"
                         ).permitAll()
-                        // (tuỳ) nếu có healthcheck
                         .requestMatchers("/actuator/**").permitAll()
-                        // Cho phép request OPTIONS (preflight) đi qua
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/staff/**").hasRole("STAFF")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
                     res.setStatus(401);
-                    res.setContentType("application/json");res.getWriter().write("{\"message\":\"Unauthorized\"}");
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"message\":\"Unauthorized\"}");
                 }))
-                .logout(AbstractHttpConfigurer::disable);
+                .logout(AbstractHttpConfigurer::disable)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public OpenAPI openApi() {
+        return new OpenAPI()
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(new Components().addSecuritySchemes("bearerAuth",
+                        new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")));
     }
 }
