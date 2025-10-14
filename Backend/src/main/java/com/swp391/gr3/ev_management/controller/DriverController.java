@@ -29,8 +29,8 @@ public class DriverController {
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/profile")
     public ResponseEntity<DriverResponse> getOwnProfile(HttpServletRequest request) {
-        Long userId = tokenService.extractUserIdFromRequest(request);
-        DriverResponse driver = driverService.getByUserId(userId);
+        Long driverId = tokenService.extractUserIdFromRequest(request);
+        DriverResponse driver = driverService.getByDriverId(driverId);
         return ResponseEntity.ok(driver);
     }
 
