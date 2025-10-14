@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,8 +25,9 @@ public class Driver {
     @JoinColumn(name = "UserID", unique = true, nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    private DriverStatus status;
 
     @Column(name = "LastActiveAt")
     private LocalDateTime lastActiveAt;
