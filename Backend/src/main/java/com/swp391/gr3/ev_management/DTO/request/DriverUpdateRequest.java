@@ -1,7 +1,10 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
 import com.swp391.gr3.ev_management.emuns.DriverStatus;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor

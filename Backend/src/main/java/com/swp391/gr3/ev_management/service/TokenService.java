@@ -98,12 +98,4 @@ public class TokenService {
         return Long.parseLong(claims.getSubject());
     }
 
-    //lấy role (để check phần quyền)
-    public String extractUserRoleFromRequest(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) throw new JwtException("Invalid Authorization Header");
-        String token = stripBearer(header);
-        Claims claims = extractAllClaims(token);
-        return claims.get("role", String.class);
-    }
 }
