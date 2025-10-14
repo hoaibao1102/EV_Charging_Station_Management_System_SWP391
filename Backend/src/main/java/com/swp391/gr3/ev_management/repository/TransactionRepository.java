@@ -38,25 +38,4 @@ public interface TransactionRepository extends JpaRepository<Transaction,Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
-
-    // Đếm transaction thành công hôm nay của trạm
-//    @Query("SELECT COUNT(t) FROM Transaction t " +
-//            "WHERE t.invoice.session.booking.station.stationId = :stationId " +
-//            "AND t.status = 'success' " +
-//            "AND DATE(t.createdAt) = CURRENT_DATE")
-//    Long countSuccessfulTransactionsTodayByStation(@Param("stationId") Long stationId);
-
-    // Tổng doanh thu hôm nay
-//    @Query("SELECT SUM(t.amount) FROM Transaction t " +
-//            "WHERE t.invoice.session.booking.station.stationId = :stationId " +
-//            "AND t.status = 'success' " +
-//            "AND DATE(t.createdAt) = CURRENT_DATE")
-//    Double getTotalRevenueTodayByStation(@Param("stationId") Long stationId);
-
-    // Đếm transaction failed hôm nay
-//    @Query("SELECT COUNT(t) FROM Transaction t " +
-//            "WHERE t.invoice.session.booking.station.stationId = :stationId " +
-//            "AND t.status = 'failed' " +
-//            "AND DATE(t.createdAt) = CURRENT_DATE")
-//    Long countFailedTransactionsTodayByStation(@Param("stationId") Long stationId);
 }

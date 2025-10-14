@@ -113,7 +113,7 @@ public class SecurityConfig {
                                 "/", "/index.html", "/static/**", "/public/**", "/error",
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/v3/api-docs/**", "/v3/api-docs.yaml",
-                                "/api/users/login", "/api/users/logout", "/api/users/register"
+                                "/api/users/login", "/api/users/logout", "/api/users/register",
                                 "/",                  // root
                                 "/index.html",        // file index
                                 "/static/**",         // static resources (css/js/images)
@@ -125,11 +125,11 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml",
                                 "/api/users/login",   // login API
                                 "/api/users/logout",
-                                "/api/users/register", // register API
-                                "/api/staff/payments/confirm", // payment confirm API
-                                "/api/staff/payments/unpaid", //  unpaid  API
-                                "/api/staff/sessions/stop",
-                                "/api/staff/sessions/start" // stop/start session API
+                                "/api/users/register" // register API
+//                                "/api/staff/payments/confirm", // payment confirm API
+//                                "/api/staff/payments/unpaid", //  unpaid  API
+//                                "/api/staff/sessions/stop",
+//                                "/api/staff/sessions/start" // stop/start session API
                         ).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
