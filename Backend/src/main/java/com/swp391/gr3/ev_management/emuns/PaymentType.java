@@ -1,4 +1,4 @@
-package com.swp391.gr3.ev_management.entity;
+package com.swp391.gr3.ev_management.emuns;
 
 public enum PaymentType {
     MOMO,

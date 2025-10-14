@@ -4,7 +4,7 @@ import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
-import com.swp391.gr3.ev_management.entity.DriverStatus;
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.User;

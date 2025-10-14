@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.emuns.PaymentType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,7 +14,7 @@ public class ConfirmPaymentResponse {
     private Long sessionId;
     private Long staffId;
     private String staffName;
-    private String paymentMethod;
+    private PaymentType paymentMethod;
     private LocalDateTime paidAt;
     private double amount;
     private String currency;

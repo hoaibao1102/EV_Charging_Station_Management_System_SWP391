@@ -3,7 +3,7 @@ package com.swp391.gr3.ev_management.controller;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.entity.DriverStatus;
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import com.swp391.gr3.ev_management.service.DriverService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;

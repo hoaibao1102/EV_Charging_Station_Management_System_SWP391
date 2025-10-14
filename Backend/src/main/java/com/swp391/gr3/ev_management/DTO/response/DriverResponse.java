@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
-import com.swp391.gr3.ev_management.entity.DriverStatus;
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import lombok.*;
 import java.time.LocalDateTime;
 
