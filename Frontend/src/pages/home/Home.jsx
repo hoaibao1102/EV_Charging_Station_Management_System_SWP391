@@ -18,7 +18,10 @@ const Home = () => {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", background: "#f5f5f5" }}>
-      <h1>Chào mừng đến với hệ thống quản lý trạm sạc xe điện</h1>
+      <div>
+        <h2>Chào mừng trở lại</h2>
+        <hr></hr>
+      </div> 
       {isLoggedIn ? (
         <>
           <h2 style={{ marginTop: "32px", color: "#1976d2" }}>Xin chào {userName ? userName : "bạn"}!</h2>
