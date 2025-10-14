@@ -11,7 +11,8 @@ import java.util.List;
 public interface DriverService {
     // CRUD
     DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
-    DriverResponse getByUserId(Long driverId);
+    DriverResponse getByUserId(Long userId);
+    DriverResponse getByDriverId(Long driverId);
     List<DriverResponse> getAllDrivers();
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
