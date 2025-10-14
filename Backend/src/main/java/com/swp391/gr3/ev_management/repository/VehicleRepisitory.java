@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface VehicleRepisitory extends JpaRepository<UserVehicle, Long> {
     List<UserVehicle> findDriverByDriver(Driver driver);
+
+    long countByModel_ModelId(Long modelId);
 }
-
-

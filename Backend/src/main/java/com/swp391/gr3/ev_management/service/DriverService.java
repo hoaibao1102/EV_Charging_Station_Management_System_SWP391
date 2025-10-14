@@ -12,7 +12,7 @@ import java.util.List;
 public interface DriverService {
     // CRUD
     DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
-    DriverResponse getById(Long driverId);
+    DriverResponse getByUserId(Long driverId);
     List<DriverResponse> getAllDrivers();
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
