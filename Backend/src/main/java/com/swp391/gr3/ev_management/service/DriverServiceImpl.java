@@ -1,6 +1,5 @@
 package com.swp391.gr3.ev_management.service;
 
-
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
@@ -13,6 +12,7 @@ import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +27,7 @@ public class DriverServiceImpl implements DriverService {
     private final UserRepository userRepository;
 
     /**
-     * Upgrade a User to Driver.
-     * Creates Driver entity and domino affect by create user
-     *
-     * @throws NotFoundException if the user doesn't exist
-     * @throws ConflictException if the user is already a driver
+     * Tạo driver profile cho 1 user (nâng cấp thành Driver)
      */
     @Override
     @Transactional
@@ -39,28 +35,55 @@ public class DriverServiceImpl implements DriverService {
         log.info("Creating driver for user {}", userId);
 
         User user = userRepository.findUserByUserId(userId);
-        if (user == null)
+        if (user == null) {
             throw new NotFoundException("User not found with ID: " + userId);
+        }
 
-        if (driverRepository.existsByDriverId(userId))
+        // Check trùng đúng cách theo userId
+        if (driverRepository.existsByUser_UserId(userId)) {
             throw new ConflictException("Driver already exists for userId " + userId);
+        }
 
         Driver driver = new Driver();
         driver.setUser(user);
-        driver.setStatus(request.getDriverStatus() != null ? request.getDriverStatus() : DriverStatus.ACTIVE);
+        DriverStatus status = (request != null && request.getDriverStatus() != null)
+                ? request.getDriverStatus()
+                : DriverStatus.ACTIVE;
+        driver.setStatus(status);
 
-        Driver saved = driverRepository.save(driver);
-        return mapToDriverResponse(saved);
+        try {
+            Driver saved = driverRepository.save(driver);
+            return mapToDriverResponse(saved);
+        } catch (DataIntegrityViolationException e) {
+            // Phòng race condition: nếu unique(UserID) ở DB bắn lỗi
+            throw new ConflictException("Driver already exists for userId " + userId);
+        }
     }
 
+    /**
+     * Lấy driver theo userId (dùng cho màn self-profile qua token)
+     */
     @Override
-    public DriverResponse getByUserId(Long driverId) {
-        Driver driver = driverRepository.findByIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with ID " + driverId));
+    @Transactional(readOnly = true)
+    public DriverResponse getByUserId(Long userId) {
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+        return mapToDriverResponse(driver);
+    }
+
+    /**
+     * Lấy driver theo driverId (dùng khi admin thao tác theo PK driver)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public DriverResponse getByDriverId(Long driverId) {
+        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + driverId));
         return mapToDriverResponse(driver);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DriverResponse> getAllDrivers() {
         return driverRepository.findAll()
                 .stream()
@@ -68,46 +91,51 @@ public class DriverServiceImpl implements DriverService {
                 .toList();
     }
 
+    /**
+     * Driver tự cập nhật hồ sơ — userId lấy từ token
+     */
     @Override
     @Transactional
     public DriverResponse updateDriverProfile(Long userId, DriverUpdateRequest req) {
-        Driver driver = driverRepository.findByIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found"));
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
 
         User user = driver.getUser();
-        if (req.getName() != null) user.setName(req.getName());
-        if (req.getEmail() != null) user.setEmail(req.getEmail());
-        if (req.getAddress() != null) user.setAddress(req.getAddress());
+        if (req.getName() != null)        user.setName(req.getName());
+        if (req.getEmail() != null)       user.setEmail(req.getEmail());
+        if (req.getAddress() != null)     user.setAddress(req.getAddress());
         if (req.getPhoneNumber() != null) user.setPhoneNumber(req.getPhoneNumber());
-
         if (req.getDriverStatus() != null) driver.setStatus(req.getDriverStatus());
 
         Driver updated = driverRepository.save(driver);
         return mapToDriverResponse(updated);
     }
+
+    /**
+     * Admin đổi trạng thái driver theo userId (đúng với flow controller của bạn)
+     */
     @Override
     @Transactional
     public DriverResponse updateStatus(Long userId, DriverStatus status) {
-        Driver driver = driverRepository.findByIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found"));
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
         driver.setStatus(status);
         driverRepository.save(driver);
         return mapToDriverResponse(driver);
     }
 
-
     /**
-     * Get driver profile by ID
+     * Lấy driver profile theo driverId (nếu bạn cần riêng)
      */
     @Transactional(readOnly = true)
     public DriverResponse getDriverProfile(Long driverId) {
-        Driver driver = driverRepository.findByIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with ID: " + driverId));
-
+        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with driverId: " + driverId));
         return mapToDriverResponse(driver);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DriverResponse> getDriversByStatus(DriverStatus status) {
         return driverRepository.findByStatus(status)
                 .stream()
@@ -116,6 +144,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DriverResponse> getDriversByName(String name) {
         return driverRepository.findByUser_NameContainingIgnoreCase(name)
                 .stream()
@@ -124,6 +153,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DriverResponse> getDriversByPhoneNumber(String phoneNumber) {
         return driverRepository.findByUser_PhoneNumberContaining(phoneNumber)
                 .stream()
@@ -144,5 +174,4 @@ public class DriverServiceImpl implements DriverService {
                 .updatedAt(driver.getUser().getUpdatedAt())
                 .build();
     }
-
 }
