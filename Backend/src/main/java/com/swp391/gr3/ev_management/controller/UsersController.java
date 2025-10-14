@@ -45,13 +45,6 @@ public class UsersController {
                 .body(Map.of("message", "Đăng ký thành công", "data", created));
     }
 
-    @PostMapping(value = "/createUser",
-            consumes = "application/json",
-            produces = "application/json")
-    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        return userService.createUser(registerRequest); // service đã trả ResponseEntity
-    }
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {

@@ -1,7 +1,13 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -10,16 +16,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "USERS")
+@Table(name = "Users")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class User {
     @Id
@@ -28,24 +31,35 @@ public class User {
     private Long userId;
 
     @Column(name = "Email", unique = true, nullable = false, columnDefinition = "NVARCHAR(255)")
+    @NotBlank(message = "Email không được để trống")
+    @Pattern(regexp = "^[A-Za-z0-9+_.-]+@(.+)$", message = "Email không đúng định dạng")
     private String email;
 
-    @Column(name = "Phone_number", unique = true, columnDefinition = "NVARCHAR(15)")
+    @Column(name="phone_number", length=15, nullable=false, unique=true)
+    @NotBlank(message = "Số điện thoại không được để trống")
+    @Pattern(regexp = "^(\\+\\d{1,3}[- ]?)?\\d{10}$", message = "Số điện thoại không đúng định dạng")
     private String phoneNumber;
 
     @Column(name = "Password_hash", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String passwordHash;
 
     @Column(name = "Name", columnDefinition = "NVARCHAR(50)", nullable = false)
+    @NotBlank(message = "Họ tên không được để trống")
     private String name;
 
     @Column(name = "Date_of_birth")
-    private LocalDateTime dateOfBirth;
+    @NotNull(message = "dateOfBirth is required")
+    @Past(message = "dateOfBirth must be in the past")
+    @JsonFormat(pattern = "yyyy-MM-dd")   // nhận "2025-10-11"
+    private LocalDate dateOfBirth;
 
     @Column(name = "Gender", columnDefinition = "NVARCHAR(1)")
+    @NotBlank(message = "Giới tính không được để trống")
+    @Pattern(regexp = "^[MF]$", message = "Giới tính không đúng định dạng")
     private String gender;
 
     @Column(name = "Address", columnDefinition = "NVARCHAR(50)")
+    @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
     @CreationTimestamp
@@ -70,6 +84,7 @@ public class User {
     private List<StationStaff> stationStaffs;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore  // 👈 rất quan trọng
     private List<Notification> notifications;
 
 
