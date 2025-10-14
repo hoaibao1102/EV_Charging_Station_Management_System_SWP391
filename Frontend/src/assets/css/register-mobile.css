@@ -1,0 +1,1225 @@
+/* ========================================
+   UNIVERSAL MOBILE APP STYLE
+   ✅ iPhone SE → iPhone 15 Pro Max
+   ✅ Android (Samsung, Xiaomi, Oppo...)
+   ✅ Tablets & Foldables
+   ✅ Dark Mode Auto Switch
+   ✅ Safe Area Support (Notch/Dynamic Island)
+   ✅ Keyboard Safe & iOS Zoom Fix
+   ✅ Responsive Font & Fluid Layout
+======================================== */
+
+/* ===== 1. CSS VARIABLES (Light & Dark Mode) ===== */
+:root {
+  /* Light Mode Colors */
+  --color-primary: #00bcd4;
+  --color-primary-dark: #0097a7;
+  --color-primary-light: #e0f7fa;
+  --color-background: #ffffff;
+  --color-surface: #fafafa;
+  --color-text: #424242;
+  --color-text-secondary: #757575;
+  --color-text-tertiary: #9e9e9e;
+  --color-border: #e0e0e0;
+  --color-shadow: rgba(0, 188, 212, 0.15);
+  --color-error: #f44336;
+  --color-success: #4caf50;
+
+  /* Spacing (Fluid) */
+  --spacing-xs: clamp(4px, 1vw, 6px);
+  --spacing-sm: clamp(8px, 2vw, 12px);
+  --spacing-md: clamp(12px, 3vw, 16px);
+  --spacing-lg: clamp(16px, 4vw, 24px);
+  --spacing-xl: clamp(24px, 6vw, 32px);
+
+  /* Font Sizes (Fluid) */
+  --font-xs: clamp(11px, 2.5vw, 13px);
+  --font-sm: clamp(12px, 3vw, 14px);
+  --font-base: clamp(14px, 3.5vw, 16px);
+  --font-md: clamp(15px, 4vw, 17px);
+  --font-lg: clamp(20px, 5vw, 28px);
+  --font-xl: clamp(26px, 6vw, 32px);
+
+  /* Radius & Shadow */
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px var(--color-shadow);
+}
+
+/* Dark Mode Variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #26c6da;
+    --color-primary-dark: #00acc1;
+    --color-primary-light: #1a2332;
+    --color-background: #121212;
+    --color-surface: #1e1e1e;
+    --color-text: #e0e0e0;
+    --color-text-secondary: #b0b0b0;
+    --color-text-tertiary: #808080;
+    --color-border: #333333;
+    --color-shadow: rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ===== 2. GLOBAL RESET & BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  /* Prevent iOS text size adjust */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Enable smooth scroll */
+  scroll-behavior: smooth;
+  /* Full viewport height (including safe areas) */
+  height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Helvetica Neue", Arial, sans-serif;
+  background: var(--color-background);
+  color: var(--color-text);
+  /* Prevent pull-to-refresh on some browsers */
+  overscroll-behavior-y: contain;
+}
+
+/* ===== 3. MAIN WRAPPER (Full Screen) ===== */
+.register-mobile-wrapper {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  width: 100%;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary-light) 0%,
+    var(--color-background) 100%
+  );
+  padding: 0;
+  position: relative;
+  /* Support safe areas */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* ===== 4. CONTAINER (Content Area) ===== */
+.register-mobile-container {
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(
+    100vh - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)
+  );
+  background: var(--color-background);
+  border-radius: 0;
+  padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg);
+  box-shadow: none;
+  animation: slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  /* Extra padding for safe area */
+  padding-left: max(var(--spacing-lg), env(safe-area-inset-left, 0));
+  padding-right: max(var(--spacing-lg), env(safe-area-inset-right, 0));
+  padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom, 0));
+}
+
+/* ===== 5. ANIMATIONS ===== */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(clamp(15px, 4vw, 25px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.6;
+  }
+}
+
+/* ===== 6. BACK BUTTON (Fixed Position) ===== */
+.register-back-btn {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 0) + 8px);
+  left: max(16px, env(safe-area-inset-left, 0) + 8px);
+  background: var(--color-surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  font-size: clamp(20px, 5vw, 24px);
+  color: var(--color-primary);
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.register-back-btn:active {
+  transform: scale(0.92);
+  background: var(--color-primary-light);
+}
+
+/* For dark mode */
+@media (prefers-color-scheme: dark) {
+  .register-back-btn {
+    background: rgba(30, 30, 30, 0.95);
+  }
+}
+
+/* ===== 7. LOGO SECTION (Adaptive Size) ===== */
+.register-logo {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+  animation: fadeIn 0.6s ease-out;
+}
+
+.register-logo-icon {
+  width: clamp(70px, 18vw, 90px);
+  height: clamp(70px, 18vw, 90px);
+  margin: 0 auto var(--spacing-md);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(36px, 9vw, 45px);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.register-logo-icon::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid var(--color-primary);
+  opacity: 0.2;
+  animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.register-logo h1 {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0 0 var(--spacing-xs) 0;
+  letter-spacing: -0.5px;
+}
+
+.register-logo p {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ===== 8. STEP DOTS INDICATOR (Fluid Dimensions) ===== */
+.register-step-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 1.5vw, 10px);
+  margin: var(--spacing-md) 0 var(--spacing-lg);
+  padding: 0 var(--spacing-md);
+}
+
+.register-step-dots .dot {
+  width: clamp(7px, 1.8vw, 9px);
+  height: clamp(7px, 1.8vw, 9px);
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.register-step-dots .dot.active {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+  width: clamp(20px, 5.5vw, 28px);
+  height: clamp(7px, 1.8vw, 9px);
+  border-radius: clamp(3.5px, 1vw, 4.5px);
+  box-shadow: 0 2px 8px rgba(0, 188, 212, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  .register-step-dots .dot {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* ===== 9. STEP TITLE ===== */
+.register-step-title {
+  text-align: center;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+  letter-spacing: -0.3px;
+}
+
+/* ===== 10. FORM GROUP (Keyboard-Safe Inputs) ===== */
+.register-form-group {
+  margin-bottom: var(--spacing-md);
+  position: relative;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.register-form-group input,
+.register-form-group select {
+  width: 100%;
+  padding: clamp(12px, 3.5vw, 15px) clamp(14px, 4vw, 18px)
+    clamp(12px, 3.5vw, 15px) clamp(44px, 12vw, 52px);
+  border: 2px solid var(--color-border);
+  border-radius: clamp(12px, 3.5vw, 16px);
+  /* iOS zoom fix: font-size must be >= 16px */
+  font-size: max(16px, clamp(15px, 4vw, 16px));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--color-background);
+  color: var(--color-text);
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  /* Prevent iOS safari from rounding corners */
+  -webkit-border-radius: clamp(12px, 3.5vw, 16px);
+}
+
+.register-form-group input:focus,
+.register-form-group select:focus {
+  border-color: var(--color-primary);
+  background: var(--color-background);
+  box-shadow: 0 0 0 clamp(3px, 0.8vw, 4px)
+    rgba(0, 188, 212, var(--color-primary-alpha));
+  transform: translateY(-1px);
+}
+
+.register-form-group input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+/* Input Icons */
+.register-form-group::before {
+  content: attr(data-icon);
+  position: absolute;
+  left: clamp(14px, 4vw, 18px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: clamp(18px, 5vw, 22px);
+  color: var(--color-primary);
+  z-index: 1;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.register-form-group:has(input:focus)::before {
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .register-form-group input,
+  .register-form-group select {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .register-form-group input:focus,
+  .register-form-group select:focus {
+    border-color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ===== 11. GENDER OPTIONS (Touch-Friendly Radio Buttons) ===== */
+.register-gender-options {
+  display: flex;
+  gap: clamp(8px, 2.5vw, 12px);
+  margin: var(--spacing-md) 0 var(--spacing-lg);
+}
+
+.register-gender-options label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* Minimum 44x44px touch target */
+  min-height: clamp(44px, 11vw, 48px);
+  padding: clamp(10px, 2.5vw, 12px) clamp(14px, 3.5vw, 18px);
+  border: 2px solid var(--color-border);
+  border-radius: clamp(12px, 3vw, 14px);
+  background: var(--color-background);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.register-gender-options label::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.register-gender-options input[type="radio"] {
+  display: none;
+}
+
+.register-gender-options input[type="radio"]:checked + label {
+  border-color: var(--color-primary);
+  background: rgba(0, 188, 212, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 188, 212, 0.2);
+  transform: translateY(-1px);
+}
+
+.register-gender-options input[type="radio"]:checked + label span {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.register-gender-options label span {
+  width: 100%;
+  text-align: center;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--color-text);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.register-gender-options label:active {
+  transform: scale(0.97);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .register-gender-options label {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .register-gender-options input[type="radio"]:checked + label {
+    background: rgba(0, 188, 212, 0.15);
+  }
+}
+
+/* ===== 12. NEXT BUTTON (Circular, Touch-Friendly) ===== */
+.register-next-btn {
+  width: clamp(54px, 14vw, 60px);
+  height: clamp(54px, 14vw, 60px);
+  /* Ensure minimum 44x44px touch target */
+  min-width: 44px;
+  min-height: 44px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: clamp(20px, 5.5vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-lg) auto;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 188, 212, 0.45);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.register-next-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.4s ease;
+}
+
+.register-next-btn:active {
+  transform: scale(0.93);
+  box-shadow: 0 4px 16px rgba(0, 188, 212, 0.35);
+}
+
+.register-next-btn:active::before {
+  transform: scale(1);
+}
+
+.register-next-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: 0 2px 8px rgba(0, 188, 212, 0.2);
+}
+
+.register-next-btn:disabled:active {
+  transform: none;
+}
+
+/* ===== 13. OTP INPUTS (Fluid & Touch-Optimized) ===== */
+.register-otp-inputs {
+  display: flex;
+  justify-content: center;
+  gap: clamp(8px, 2.5vw, 12px);
+  margin: var(--spacing-xl) 0;
+  padding: 0 var(--spacing-md);
+}
+
+.register-otp-inputs input {
+  width: clamp(42px, 11vw, 50px);
+  height: clamp(48px, 12.5vw, 56px);
+  /* iOS zoom fix: font-size >= 16px */
+  font-size: max(16px, clamp(18px, 5vw, 22px));
+  border: 2px solid var(--color-primary);
+  border-radius: clamp(10px, 3vw, 14px);
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-background);
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.register-otp-inputs input:focus {
+  border-width: 3px;
+  box-shadow: 0 0 0 clamp(3px, 1vw, 5px)
+    rgba(0, 188, 212, var(--color-primary-alpha));
+  transform: scale(1.05);
+}
+
+.register-otp-resend {
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-md);
+  line-height: 1.5;
+}
+
+.register-otp-resend button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  padding: 0;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .register-otp-inputs input {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* ===== 14. CHECKBOX (Touch-Friendly) ===== */
+.register-checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(10px, 2.5vw, 14px);
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-sm);
+  /* Ensure entire row is touch-friendly */
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.register-checkbox-group input[type="checkbox"] {
+  width: clamp(20px, 5.5vw, 24px);
+  height: clamp(20px, 5.5vw, 24px);
+  min-width: clamp(20px, 5.5vw, 24px);
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+  -webkit-appearance: checkbox;
+  -moz-appearance: checkbox;
+  appearance: checkbox;
+}
+
+.register-checkbox-group label {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+  flex: 1;
+}
+
+.register-checkbox-group label a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.register-checkbox-group label a:active {
+  border-bottom-color: var(--color-primary);
+}
+
+/* ===== 15. SUBMIT BUTTON (Full-Width, Touch-Friendly) ===== */
+.register-submit-btn {
+  width: 100%;
+  /* Minimum 44px height for touch */
+  min-height: clamp(48px, 12vw, 54px);
+  padding: clamp(14px, 3.5vw, 16px) var(--spacing-lg);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+  color: white;
+  border: none;
+  border-radius: clamp(12px, 3.5vw, 16px);
+  /* iOS zoom fix */
+  font-size: max(16px, var(--font-sm));
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 28px rgba(0, 188, 212, 0.4);
+  margin-top: var(--spacing-sm);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.register-submit-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 50%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.register-submit-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.register-submit-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: 0 6px 20px rgba(0, 188, 212, 0.3);
+}
+
+.register-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);
+}
+
+.register-submit-btn:disabled:active {
+  transform: none;
+}
+
+/* ===== 16. SOCIAL BUTTONS (Touch-Optimized) ===== */
+.register-social-btns {
+  display: flex;
+  gap: clamp(10px, 3vw, 14px);
+  margin: var(--spacing-lg) 0 var(--spacing-md);
+}
+
+.register-social-btn {
+  flex: 1;
+  /* Minimum 44px touch target */
+  min-height: clamp(46px, 12vw, 52px);
+  padding: clamp(12px, 3.5vw, 14px);
+  border: 2px solid var(--color-border);
+  border-radius: clamp(12px, 3.5vw, 16px);
+  background: var(--color-background);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(20px, 5.5vw, 24px);
+  font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow-sm);
+}
+
+.register-social-btn.facebook {
+  color: #1877f2;
+}
+
+.register-social-btn.google {
+  color: #db4437;
+}
+
+.register-social-btn:active {
+  transform: scale(0.95);
+  box-shadow: none;
+  background: var(--color-primary-light);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .register-social-btn {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .register-social-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ===== 17. LOGIN LINK (Touch-Friendly) ===== */
+.register-login-link {
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-md);
+  padding-bottom: var(--spacing-lg);
+  /* Add safe area at bottom */
+  padding-bottom: max(
+    var(--spacing-lg),
+    calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px))
+  );
+  line-height: 1.6;
+}
+
+.register-login-link span {
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  /* Ensure touch-friendly */
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin: 0 calc(var(--spacing-xs) * -1);
+  border-radius: var(--spacing-xs);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.register-login-link span:active {
+  color: var(--color-primary-dark);
+  background: rgba(0, 188, 212, 0.1);
+}
+
+/* ===== 18. RESPONSIVE BREAKPOINTS ===== */
+
+/* ========== SAFE AREA SUPPORT (Notch, Dynamic Island) ========== */
+@supports (padding: max(0px)) {
+  .register-mobile-wrapper {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .register-mobile-container {
+    padding-left: max(var(--spacing-lg), env(safe-area-inset-left, 0));
+    padding-right: max(var(--spacing-lg), env(safe-area-inset-right, 0));
+    padding-top: max(var(--spacing-xl), env(safe-area-inset-top, 0));
+    padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom, 0));
+  }
+
+  .register-back-btn {
+    top: max(
+      var(--spacing-md),
+      calc(env(safe-area-inset-top, 0) + var(--spacing-sm))
+    );
+    left: max(
+      var(--spacing-md),
+      calc(env(safe-area-inset-left, 0) + var(--spacing-sm))
+    );
+  }
+}
+
+/* ========== SMALL PHONES (iPhone SE, 320px-374px) ========== */
+@media (max-width: 374px) {
+  :root {
+    --spacing-xs: 4px;
+    --spacing-sm: 6px;
+    --spacing-md: 10px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+  }
+
+  .register-mobile-container {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .register-logo-icon {
+    width: clamp(60px, 16vw, 70px);
+    height: clamp(60px, 16vw, 70px);
+    font-size: clamp(30px, 8vw, 36px);
+  }
+
+  .register-logo h1 {
+    font-size: clamp(22px, 6vw, 26px);
+  }
+
+  .register-step-dots .dot.active {
+    width: clamp(18px, 5vw, 22px);
+  }
+
+  .register-otp-inputs input {
+    width: clamp(38px, 10vw, 44px);
+    height: clamp(44px, 11vw, 50px);
+  }
+}
+
+/* ========== STANDARD PHONES (375px-479px, most iPhones/Android) ========== */
+@media (min-width: 375px) and (max-width: 479px) {
+  .register-mobile-container {
+    max-width: 100%;
+  }
+}
+
+/* ========== LARGE PHONES (480px-599px, iPhone Plus/Pro Max, large Android) ========== */
+@media (min-width: 480px) and (max-width: 599px) {
+  .register-mobile-container {
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: clamp(0px, 2vw, 20px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .register-logo-icon {
+    width: clamp(80px, 18vw, 95px);
+    height: clamp(80px, 18vw, 95px);
+  }
+
+  .register-form-group input,
+  .register-form-group select {
+    padding: clamp(13px, 3.5vw, 16px) clamp(16px, 4vw, 20px)
+      clamp(13px, 3.5vw, 16px) clamp(48px, 12vw, 56px);
+  }
+}
+
+/* ========== FOLDABLES UNFOLDED & SMALL TABLETS (600px-767px) ========== */
+@media (min-width: 600px) and (max-width: 767px) {
+  .register-mobile-wrapper {
+    background: linear-gradient(
+      180deg,
+      var(--color-primary-light) 0%,
+      var(--color-background) 30%,
+      var(--color-background) 100%
+    );
+  }
+
+  .register-mobile-container {
+    max-width: 520px;
+    margin: var(--spacing-xl) auto;
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-xl) clamp(28px, 6vw, 36px);
+  }
+
+  .register-logo {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .register-logo-icon {
+    width: 100px;
+    height: 100px;
+    font-size: 50px;
+  }
+
+  .register-logo h1 {
+    font-size: 32px;
+  }
+
+  .register-form-group {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .register-gender-options {
+    gap: var(--spacing-md);
+  }
+
+  .register-social-btns {
+    gap: var(--spacing-md);
+  }
+}
+
+/* ========== TABLETS (768px-1023px) ========== */
+@media (min-width: 768px) {
+  .register-mobile-wrapper {
+    background: linear-gradient(
+      180deg,
+      var(--color-primary-light) 0%,
+      var(--color-background) 25%,
+      var(--color-background) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+  }
+
+  .register-mobile-container {
+    max-width: 560px;
+    min-height: auto;
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    padding: clamp(32px, 5vw, 48px) clamp(32px, 6vw, 48px);
+  }
+
+  .register-back-btn {
+    top: clamp(20px, 3vw, 28px);
+    left: clamp(20px, 3vw, 28px);
+    width: clamp(44px, 6vw, 50px);
+    height: clamp(44px, 6vw, 50px);
+    font-size: clamp(22px, 3vw, 26px);
+  }
+
+  .register-logo {
+    margin-top: 0;
+    margin-bottom: clamp(28px, 4vw, 36px);
+  }
+
+  .register-logo-icon {
+    width: 110px;
+    height: 110px;
+    font-size: 55px;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .register-logo h1 {
+    font-size: 36px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .register-logo p {
+    font-size: 15px;
+  }
+
+  .register-step-dots {
+    gap: 14px;
+    margin: var(--spacing-lg) 0 clamp(28px, 4vw, 32px);
+  }
+
+  .register-step-dots .dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .register-step-dots .dot.active {
+    width: 34px;
+    height: 10px;
+    border-radius: 5px;
+  }
+
+  .register-step-title {
+    font-size: 17px;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .register-form-group {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .register-form-group input,
+  .register-form-group select {
+    padding: 16px 20px 16px 56px;
+    border-radius: 16px;
+    font-size: 16px;
+  }
+
+  .register-form-group::before {
+    left: 20px;
+    font-size: 24px;
+  }
+
+  .register-gender-options {
+    gap: 16px;
+    margin: var(--spacing-lg) 0 var(--spacing-xl);
+  }
+
+  .register-gender-options label {
+    min-height: 52px;
+    padding: 14px 20px;
+    border-radius: 16px;
+  }
+
+  .register-gender-options label span {
+    font-size: 16px;
+  }
+
+  .register-next-btn {
+    width: 64px;
+    height: 64px;
+    font-size: 26px;
+    margin: var(--spacing-xl) auto;
+  }
+
+  .register-otp-inputs {
+    gap: 14px;
+    margin: clamp(28px, 4vw, 36px) 0;
+  }
+
+  .register-otp-inputs input {
+    width: 52px;
+    height: 60px;
+    font-size: 24px;
+    border-radius: 16px;
+  }
+
+  .register-checkbox-group {
+    margin: var(--spacing-lg) 0;
+  }
+
+  .register-checkbox-group input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+  }
+
+  .register-checkbox-group label {
+    font-size: 14px;
+  }
+
+  .register-submit-btn {
+    min-height: 56px;
+    padding: 16px var(--spacing-xl);
+    border-radius: 16px;
+    font-size: 17px;
+    margin-top: var(--spacing-md);
+  }
+
+  .register-social-btns {
+    gap: 16px;
+    margin: var(--spacing-xl) 0 var(--spacing-lg);
+  }
+
+  .register-social-btn {
+    min-height: 54px;
+    padding: 15px;
+    border-radius: 16px;
+    font-size: 26px;
+  }
+
+  .register-login-link {
+    font-size: 14px;
+    margin-top: var(--spacing-lg);
+    padding-bottom: var(--spacing-xl);
+  }
+}
+
+/* ========== KEYBOARD OPEN (Landscape or Low Height) ========== */
+@media (max-height: 600px) and (orientation: landscape) {
+  .register-mobile-container {
+    padding: var(--spacing-md) var(--spacing-lg);
+    overflow-y: auto;
+  }
+
+  .register-logo {
+    margin-top: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .register-logo-icon {
+    width: clamp(50px, 12vw, 60px);
+    height: clamp(50px, 12vw, 60px);
+    font-size: clamp(26px, 6vw, 32px);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .register-logo h1 {
+    font-size: clamp(20px, 5vw, 24px);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .register-logo p {
+    font-size: clamp(11px, 2.5vw, 13px);
+  }
+
+  .register-step-dots {
+    margin: var(--spacing-sm) 0 var(--spacing-md);
+  }
+
+  .register-form-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .register-next-btn,
+  .register-submit-btn {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .register-gender-options {
+    margin: var(--spacing-sm) 0 var(--spacing-md);
+  }
+
+  .register-social-btns {
+    margin: var(--spacing-md) 0 var(--spacing-sm);
+  }
+
+  .register-login-link {
+    margin-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
+  }
+}
+
+/* ========== FOLDABLE DEVICES - LANDSCAPE ========== */
+@media (min-width: 600px) and (orientation: landscape) and (max-height: 500px) {
+  .register-mobile-wrapper {
+    padding: var(--spacing-sm);
+  }
+
+  .register-mobile-container {
+    max-width: 90vw;
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+    align-items: start;
+  }
+
+  .register-back-btn {
+    top: var(--spacing-sm);
+    left: var(--spacing-sm);
+  }
+
+  .register-logo {
+    grid-column: 1 / -1;
+    margin: 0 0 var(--spacing-sm);
+  }
+
+  .register-logo-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .register-logo h1 {
+    font-size: 22px;
+  }
+
+  .register-step-dots {
+    grid-column: 1 / -1;
+    margin: var(--spacing-xs) 0 var(--spacing-sm);
+  }
+}
+
+/* ========== PREVENT INPUT ZOOM (iOS) ========== */
+@media screen and (max-width: 767px) {
+  .register-form-group input,
+  .register-form-group select,
+  .register-otp-inputs input {
+    /* Critical: font-size >= 16px prevents iOS auto-zoom */
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* ========== HIGH DPI SCREENS (Retina) ========== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .register-logo-icon,
+  .register-back-btn,
+  .register-next-btn,
+  .register-submit-btn {
+    /* Enhance rendering on retina displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ========== ACCESSIBILITY: PREFERS REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========== ACCESSIBILITY: HIGH CONTRAST MODE ========== */
+@media (prefers-contrast: high) {
+  .register-form-group input,
+  .register-form-group select {
+    border-width: 3px;
+  }
+
+  .register-next-btn,
+  .register-submit-btn {
+    border: 3px solid white;
+  }
+
+  .register-step-dots .dot.active {
+    border: 2px solid var(--color-primary-dark);
+  }
+}
