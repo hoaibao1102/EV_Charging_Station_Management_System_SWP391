@@ -62,4 +62,5 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
     private List<Notification> notifications;
+
 }

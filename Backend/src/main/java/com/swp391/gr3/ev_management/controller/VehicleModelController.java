@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.dto.request.VehicleModelCreateRequest;
-import com.swp391.gr3.ev_management.dto.request.VehicleModelUpdateRequest;
-import com.swp391.gr3.ev_management.dto.response.VehicleModelResponse;
+import com.swp391.gr3.ev_management.DTO.request.VehicleModelCreateRequest;
+import com.swp391.gr3.ev_management.DTO.request.VehicleModelUpdateRequest;
+import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
 import com.swp391.gr3.ev_management.service.VehicleModelService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
