@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class ConfirmPaymentRequest {
     private Long staffId;
+    private Long invoiceId;
+    private String paymentMethod;
     private String status;
-    private Long transactionId;
+    private double amount;
 }

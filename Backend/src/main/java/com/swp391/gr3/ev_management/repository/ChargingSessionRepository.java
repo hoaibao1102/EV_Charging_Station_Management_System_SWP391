@@ -46,12 +46,16 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     Long countActiveSessionsByStation(@Param("stationId") Long stationId);
 
     // Tìm session completed hôm nay của trạm
-    @Query("SELECT cs FROM ChargingSession cs " +
-            "WHERE cs.booking.station.stationId = :stationId " +
-            "AND cs.status = 'completed' " +
-            "AND DATE(cs.endTime) = CURRENT_DATE " +
-            "ORDER BY cs.endTime DESC")
-    List<ChargingSession> findCompletedSessionsTodayByStation(@Param("stationId") Long stationId);
+//    @Query("SELECT cs FROM ChargingSession cs " +
+//            "WHERE cs.booking.station.stationId = :stationId " +
+//            "AND LOWER(cs.status) = 'completed' " +
+//            "AND cs.endTime >= :startOfDay " +
+//            "AND cs.endTime < :endOfDay " +
+//            "ORDER BY cs.endTime DESC")
+//    List<ChargingSession> findCompletedSessionsTodayByStation(
+//            @Param("stationId") Long stationId,
+//            @Param("startOfDay") LocalDateTime startOfDay,
+//            @Param("endOfDay") LocalDateTime endOfDay);
 
     // Tìm session theo driver ID
     @Query("SELECT cs FROM ChargingSession cs " +

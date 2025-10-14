@@ -33,11 +33,15 @@ public interface BookingRepository extends JpaRepository<Booking,Long> {
     );
 
     // Tìm booking trong ngày hôm nay
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.station.stationId = :stationId " +
-            "AND DATE(b.scheduledStartTime) = CURRENT_DATE " +
-            "ORDER BY b.scheduledStartTime ASC")
-    List<Booking> findTodayBookingsByStation(@Param("stationId") Long stationId);
+//    @Query("SELECT b FROM Booking b " +
+//            "WHERE b.station.stationId = :stationId " +
+//            "AND b.scheduledStartTime >= :startOfDay " +
+//            "AND b.scheduledStartTime < :endOfDay " +
+//            "ORDER BY b.scheduledStartTime ASC")
+//    List<Booking> findTodayBookingsByStation(
+//            @Param("stationId") Long stationId,
+//            @Param("startOfDay") LocalDateTime startOfDay,
+//            @Param("endOfDay") LocalDateTime endOfDay);
 
     // Tìm booking theo khoảng thời gian
     @Query("SELECT b FROM Booking b " +
