@@ -12,6 +12,7 @@ public interface VehicleModelService {
     List<VehicleModelResponse> getAll();
     List<VehicleModelResponse> search(String brand, String model, Integer year, Integer connectorTypeId);
     VehicleModelResponse update(Long id, VehicleModelUpdateRequest request);
-    void delete(Long id);
+    void delete(Long id); //hard delete
+//    VehicleModelResponse softDelete(Long id);//soft delete
 }
 

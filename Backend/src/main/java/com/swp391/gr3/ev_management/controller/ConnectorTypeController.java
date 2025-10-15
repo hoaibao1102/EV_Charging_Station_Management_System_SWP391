@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.DTO.response.ConnectorTypeResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/connector-types")
+@Tag(name = "Connector Type Controller", description = "APIs for managing connector types")
 public class ConnectorTypeController {
 
     @Autowired
