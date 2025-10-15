@@ -33,6 +33,4 @@ public class SlotAvailability {
     @Column(name = "Date")
     private LocalDateTime date;
 
-    @OneToOne(mappedBy = "slot", fetch = FetchType.LAZY)
-    private Booking booking;
 }

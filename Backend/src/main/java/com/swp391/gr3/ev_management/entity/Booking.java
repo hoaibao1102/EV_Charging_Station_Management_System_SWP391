@@ -30,9 +30,6 @@ public class Booking {
     @JoinColumn(name = "VehicleID", nullable = false)
     private UserVehicle vehicle;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SlotID", unique = true, nullable = false)
-    private SlotAvailability slot;
 
     @Column(name = "BookingTime", nullable = false)
     private LocalDateTime bookingTime;
@@ -62,4 +59,7 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
     private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+    private List<BookingSlot> bookingSlots;
 }

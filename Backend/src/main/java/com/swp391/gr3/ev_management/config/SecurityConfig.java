@@ -126,10 +126,11 @@ public class SecurityConfig {
                                 "/api/users/login",   // login API
                                 "/api/users/logout",
                                 "/api/users/register" // register API
+                                ,"/api/bookings"
 //                                "/api/staff/payments/confirm", // payment confirm API
 //                                "/api/staff/payments/unpaid", //  unpaid  API
 //                                "/api/staff/sessions/stop",
-//                                "/api/staff/sessions/start" // stop/start session API
+//                                "/api/staff/sessions/start", // stop/start session API
                         ).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
