@@ -34,9 +34,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        initConnectorTypes();
-        initRoles();
-        initAdmins();
+//        initConnectorTypes();
+//        initRoles();
+//        initAdmins();
     }
 
     private void initConnectorTypes() {
