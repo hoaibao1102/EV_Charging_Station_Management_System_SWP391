@@ -6,6 +6,8 @@ import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import com.swp391.gr3.ev_management.service.DriverService;
 import com.swp391.gr3.ev_management.service.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ public class DriverController {
     // ✅ Driver xem hồ sơ chính mình (qua token)
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/profile")
+    @Operation(summary = "Get own driver profile", description = "Driver retrieves their own profile information")
     public ResponseEntity<DriverResponse> getOwnProfile(HttpServletRequest request) {
         Long driverId = tokenService.extractUserIdFromRequest(request);
         DriverResponse driver = driverService.getByDriverId(driverId);
@@ -37,6 +40,7 @@ public class DriverController {
     // ✅ Driver cập nhật hồ sơ
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/profile")
+    @Operation(summary = "Update own driver profile", description = "Driver updates their own profile information")
     public ResponseEntity<DriverResponse> updateOwnProfile(
             HttpServletRequest request,
             @Valid @RequestBody DriverUpdateRequest updateRequest) {
@@ -46,8 +50,10 @@ public class DriverController {
     }
 
     // ✅ Admin xem chi tiết driver
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{driverId}")
+    @Operation(summary = "Get driver by ID", description = "Admin retrieves driver information by driver ID")
     public ResponseEntity<DriverResponse> getDriverById(@PathVariable Long driverId) {
         return ResponseEntity.ok(driverService.getByUserId(driverId));
     }
@@ -55,6 +61,7 @@ public class DriverController {
     // ✅ Admin xem tất cả driver
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
+    @Operation(summary = "Get all drivers", description = "Admin retrieves a list of all drivers")
     public ResponseEntity<List<DriverResponse>> getAllDrivers() {
         return ResponseEntity.ok(driverService.getAllDrivers());
     }
@@ -62,26 +69,18 @@ public class DriverController {
     // ✅ Admin cập nhật trạng thái driver (ACTIVE, SUSPENDED,...)
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{userId}/status")
+   @Operation(summary = "Update driver status", description = "Admin updates the status of a driver")
     public ResponseEntity<DriverResponse> updateDriverStatus(
             @PathVariable Long userId,
             @RequestParam("status") DriverStatus status) {
         return ResponseEntity.ok(driverService.updateStatus(userId, status));
     }
 
-    // ✅ Admin: Tạo driver cho 1 user (nâng cấp quyền)
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/{userId}")
-    public ResponseEntity<DriverResponse> createDriverForUser(
-            @PathVariable Long userId,
-            @RequestBody(required = false) DriverRequest request) {
-        DriverRequest effective = request != null ? request : new DriverRequest();
-        DriverResponse created = driverService.createDriverProfile(userId, effective);
-        return ResponseEntity.ok(created);
-    }
 
     // ✅ Admin: Lọc driver theo trạng thái
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-status")
+    @Operation(summary = "Get drivers by status", description = "Admin retrieves drivers filtered by their status")
     public ResponseEntity<List<DriverResponse>> getDriversByStatus(@RequestParam DriverStatus status) {
         return ResponseEntity.ok(driverService.getDriversByStatus(status));
     }
@@ -89,6 +88,7 @@ public class DriverController {
     // ✅ Admin: Tìm kiếm theo tên (contains, ignore case)
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-name")
+    @Operation(summary = "Get drivers by name", description = "Admin retrieves drivers filtered by name (contains, ignore case)")
     public ResponseEntity<List<DriverResponse>> getDriversByName(@RequestParam String name) {
         return ResponseEntity.ok(driverService.getDriversByName(name));
     }
@@ -96,6 +96,7 @@ public class DriverController {
     // ✅ Admin: Tìm kiếm theo số điện thoại (contains)
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-phone")
+    @Operation(summary = "Get drivers by phone number", description = "Admin retrieves drivers filtered by phone number (contains)")
     public ResponseEntity<List<DriverResponse>> getDriversByPhone(@RequestParam("phoneNumber") String phoneNumber) {
         return ResponseEntity.ok(driverService.getDriversByPhoneNumber(phoneNumber));
     }
