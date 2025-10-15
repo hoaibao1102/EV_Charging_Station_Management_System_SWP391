@@ -12,6 +12,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -32,9 +34,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-//        initConnectorTypes();
-//        initRoles();
-//        initAdmins();
+        initConnectorTypes();
+        initRoles();
+        initAdmins();
     }
 
     private void initConnectorTypes() {
@@ -113,6 +115,9 @@ public class DataInitializer implements CommandLineRunner {
         admin.setEmail(email);
         admin.setName(name != null ? name : "Admin");
         admin.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Admin@123"));
+        admin.setGender("M");
+        admin.setDateOfBirth(LocalDate.of(1969, 04, 22));
+        admin.setAddress("HCM, Vietnam");
         admin.setRole(adminRole);
 
         userRepository.save(admin);

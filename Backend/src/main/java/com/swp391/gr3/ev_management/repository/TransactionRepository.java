@@ -22,7 +22,7 @@ public interface TransactionRepository extends JpaRepository<Transaction,Long> {
     Optional<Transaction> findByInvoice_InvoiceIdAndStatus(Long invoiceId, String status);
 
     // Tìm transaction theo payment method
-    List<Transaction> findByPaymentMethod_PaymentMethodId(Long paymentMethodId);
+    List<Transaction> findByPaymentMethod_MethodId(Long methodId);
 
     // Tìm transaction theo status
     List<Transaction> findByStatus(String status);
