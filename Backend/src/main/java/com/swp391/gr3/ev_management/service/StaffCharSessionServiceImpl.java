@@ -12,7 +12,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -24,7 +23,7 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
 
     private final ChargingSessionRepository sessionRepository;
     private final ChargingPointRepository pointRepository;
-    private final BookingRepository bookingRepository;
+    private final BookingsRepository bookingsRepository;
     private final InvoiceRepository invoiceRepository;
     private final StationStaffRepository staffRepository;
     private final ChargingSessionMapper mapper;
@@ -36,7 +35,7 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
         StationStaff staff = staffRepository.findActiveByUserId(request.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active")); // xác thực nhân viên
 
-        Booking booking = bookingRepository.findByBookingIdAndStatus(request.getBookingId(), "confirmed")
+        Booking booking = bookingsRepository.findByBookingIdAndStatus(request.getBookingId(), "confirmed")
                 .orElseThrow(() -> new RuntimeException("Booking not found or not confirmed"));// check booking
 
         if (!staff.getStation().getStationId().equals(booking.getStation().getStationId())) {
@@ -63,7 +62,7 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
         pointRepository.save(point);
 
         booking.setStatus("in_progress");
-        bookingRepository.save(booking);
+        bookingsRepository.save(booking);
 
         return StartCharSessionResponse.builder()
                 .sessionId(session.getSessionId())
@@ -108,7 +107,7 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
 
         Booking booking = session.getBooking();
         booking.setStatus("completed");
-        bookingRepository.save(booking);
+        bookingsRepository.save(booking);
 
 
         ChargingPoint point = pointRepository.findById(request.getPointId())

@@ -11,7 +11,7 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 
 import com.swp391.gr3.ev_management.DTO.request.BookingRequest;
 import com.swp391.gr3.ev_management.entity.Booking;
-import com.swp391.gr3.ev_management.repository.BookingRepository;
+import com.swp391.gr3.ev_management.repository.BookingsRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -20,13 +20,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Service
-public class BookingServiceImpl implements BookingService {
+public class BookingsServiceImpl implements BookingsService {
 
-    private final BookingRepository bookingRepository;
+    private final BookingsRepository bookingsRepository;
     private final ObjectMapper mapper;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, ObjectMapper objectMapper) {
-        this.bookingRepository = bookingRepository;
+    public BookingsServiceImpl(BookingsRepository bookingsRepository, ObjectMapper objectMapper) {
+        this.bookingsRepository = bookingsRepository;
         // Dùng ObjectMapper do Spring quản lý, nhưng bảo đảm hỗ trợ JavaTime
         this.mapper = objectMapper.copy();
         this.mapper.registerModule(new JavaTimeModule());
@@ -36,7 +36,7 @@ public class BookingServiceImpl implements BookingService {
     /** 1) Lấy dữ liệu và serialize -> Base64 (chuỗi để nhúng vào QR) */
     @Override
     public String buildQrPayload(Long bookingId) {
-        Booking b = bookingRepository.findById(bookingId)
+        Booking b = bookingsRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Not found: " + bookingId));
 
         BookingRequest dto = new BookingRequest();
