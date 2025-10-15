@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.entity;
 
 import com.swp391.gr3.ev_management.emuns.DriverStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -37,4 +39,13 @@ public class Driver {
 
     @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
     private List<DriverViolation> violations;
+
+    @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
+    private List<Transaction> transactions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
+    private List<Invoice> invoices = new ArrayList<>();
+
+    @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL)
+    private List<PaymentMethod> paymentMethods = new ArrayList<>();
 }

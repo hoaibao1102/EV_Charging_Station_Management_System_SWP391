@@ -1,10 +1,7 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,8 +10,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "Transactions")
-@Data @NoArgsConstructor
-@AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Transaction {
 
     @Id
@@ -22,22 +21,18 @@ public class Transaction {
     @Column(name = "TransactionID")
     private Long transactionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "InvoiceID", nullable = false)
-    private Invoice invoice;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PaymentMethodID", nullable = false)
-    private PaymentMethod paymentMethod;
-
-    @Column(name = "Amount", nullable = false)
-    private double amount;
+    @Column(name = "Amount", nullable = false) //, precision = 19, scale = 2 (cái này làm cái gì )
+    private double amount;//TODO: nên double hay BigDecimal ?
 
     @Column(name = "Currency", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String currency;
 
+    //TODO: cần type ko?? ví dụ:  TopUp, Payment, Refund, SubscriptionFee
+//    @Column(name = "type", columnDefinition = "NVARCHAR(50)", nullable = false)
+//    private String type; // TopUp, Payment, Refund, SubscriptionFee
+
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    private String status; // Pending, Completed, Failed, Cancelled TODO: create Enum clas for status's Transaction
 
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
@@ -46,6 +41,21 @@ public class Transaction {
     @UpdateTimestamp
     @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
+
+    //
+
+    //TODO: transaction có quan hệ với Driver hông ??
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DriverID", nullable = false)
+    private Driver driver;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "InvoiceID", nullable = false)
+    private Invoice invoice; // nullable - not all transactions are invoice payments why? vậy sao thống kê cuối tháng để cho phân tích nhỉ
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MethodID", nullable = false)
+    private PaymentMethod paymentMethod;
 
     @OneToMany(mappedBy = "transaction", fetch = FetchType.LAZY)
     private List<Notification> notifications;

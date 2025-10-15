@@ -3,6 +3,8 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
+import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
+import com.swp391.gr3.ev_management.emuns.DriverStatus;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.User;
@@ -12,6 +14,7 @@ import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional; // <-- dùng Spring
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +28,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final DriverService driverService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
@@ -44,13 +49,14 @@ public class UserServiceImpl implements UserService{
             PasswordEncoder passwordEncoder,
             TokenService tokenService,
             StationStaffRepository stationStaffRepository,
-            ChargingStationRepository chargingStationRepository, ApplicationEventPublisher publisher){
+            ChargingStationRepository chargingStationRepository, ApplicationEventPublisher publisher, DriverService driverService){
 
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.driverService = driverService;
         this.staffRepo = stationStaffRepository;
         this.stationRepo = chargingStationRepository;
         this.publisher = publisher;
@@ -95,6 +101,16 @@ public class UserServiceImpl implements UserService{
 
         // 1) SAVE trước để có ID
         u = userRepository.save(u);
+
+        //If là role driver create profile driver-active
+        if(u.getRole().getRoleId() == 3L) {
+            log.info("Auto-driver profile for user{} ", u.getUserId());
+
+            DriverRequest driverReq = new DriverRequest();
+            driverReq.setDriverStatus(DriverStatus.ACTIVE);
+
+            driverService.createDriverProfile(u.getUserId(), driverReq);
+        }
 
         // 2) PUBLISH event (listener sẽ tự tạo Notification)
         publisher.publishEvent(new UserRegisteredEvent(u.getUserId(), u.getEmail(), u.getName()));

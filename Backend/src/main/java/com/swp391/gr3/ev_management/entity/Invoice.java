@@ -1,30 +1,27 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "Invoices")
 @Data
-@NoArgsConstructor @AllArgsConstructor @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Invoice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "InvoiceID")
     private Long invoiceId;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SessionID", unique = true, nullable = false)
-    private ChargingSession session;
 
     @Column(name = "Amount", nullable = false)
     private double amount;
@@ -33,7 +30,7 @@ public class Invoice {
     private String currency;
 
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    private String status; // nên thay kiểu class Enum
 
     @Column(name = "IssuedAt", nullable = false)
     private LocalDateTime issuedAt;
@@ -48,6 +45,15 @@ public class Invoice {
     @UpdateTimestamp
     @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
+
+    //
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DriverID", nullable = false)
+    private Driver driver;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SessionID", unique = true, nullable = false)
+    private ChargingSession session;
 
     @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY)
     private List<Transaction> transactions;
