@@ -29,7 +29,7 @@ public class PaymentMethod {
     @Column(name = "ProviderName", columnDefinition = "NVARCHAR(100)", nullable = false)
     private String provider;
 
-    @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false, unique = true)
+    @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false)
     private String accountNo;
 
     @Column(name = "ExpiryDate")
