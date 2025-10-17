@@ -32,11 +32,21 @@ public class TokenService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(User users) {
+    public String generateToken(User user) {
+        String roleName = "DRIVER";
+        try {
+            if (user.getRole() != null && user.getRole().getRoleName() != null) {
+                roleName = user.getRole().getRoleName();
+            }
+        } catch (Exception e) {
+            // Nếu role bị lazy mà session đã đóng → fallback
+            roleName = "DRIVER";
+        }
+
         return Jwts.builder()
-                .setSubject(String.valueOf(users.getUserId()))
-                .claim("fullName", users.getName())
-                .claim("role", users.getRole().getRoleName())
+                .setSubject(String.valueOf(user.getUserId()))
+                .claim("fullName", user.getName())
+                .claim("role", roleName)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(900))) // 15 phút
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
