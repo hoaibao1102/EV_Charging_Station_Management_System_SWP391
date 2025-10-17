@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,9 +31,6 @@ public class Booking {
     @JoinColumn(name = "VehicleID", nullable = false)
     private UserVehicle vehicle;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SlotID", unique = true, nullable = false)
-    private SlotAvailability slot;
 
     @Column(name = "BookingTime", nullable = false)
     private LocalDateTime bookingTime;
@@ -44,7 +42,8 @@ public class Booking {
     private LocalDateTime scheduledEndTime;
 
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 
     @Column(name = "Notes", columnDefinition = "NVARCHAR(255)")
     private String notes;
@@ -63,4 +62,6 @@ public class Booking {
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
     private List<Notification> notifications;
 
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+    private List<BookingSlot> bookingSlots;
 }

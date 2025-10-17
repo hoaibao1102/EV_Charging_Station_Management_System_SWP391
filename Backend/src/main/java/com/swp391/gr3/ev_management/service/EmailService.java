@@ -7,5 +7,15 @@ import org.springframework.stereotype.Service;
 @Service
 public interface EmailService {
     void sendNotificationEmail(String to, String subject, String htmlBody);
-    void sendNotificationEmail(Notification n); // tiện dụng hơn
+    void sendNotificationEmail(Notification n);
+
+    // CID inline
+    void sendHtmlWithInline(String to, String subject, String html, String cid, byte[] pngBytes);
+
+    // ✅ Mới: Gửi notification dùng Thymeleaf template "email-notification.html"
+    void sendNotificationEmailTpl(String to,
+                                  String subject,
+                                  String displayName,
+                                  Object title, Object body,
+                                  Object type, Object status, Object createdAt);
 }

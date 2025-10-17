@@ -1,93 +1,139 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.Notification;
-import com.swp391.gr3.ev_management.entity.User;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import javax.naming.Context;
-
-import static jakarta.persistence.PersistenceContextType.TRANSACTION;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    @Autowired
     private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine; // Thymeleaf
 
     @Value("${app.notifications.email.from:no-reply@evms.local}")
     private String from;
 
+    // ========= 1) Gửi email HTML đã render sẵn (legacy-compatible) =========
     @Async
     @Override
     public void sendNotificationEmail(String to, String subject, String htmlBody) {
         try {
-            var msg = mailSender.createMimeMessage();
-            var helper = new MimeMessageHelper(msg, "UTF-8");
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
             helper.setFrom(from);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); // true = HTML
+            helper.setText(htmlBody, true);
             mailSender.send(msg);
         } catch (Exception e) {
-            // log lỗi
+            // TODO: logger.error("sendNotificationEmail failed", e);
         }
     }
 
+    // ========= 2) Gửi notification bằng Thymeleaf template =========
     @Async
+    @Override
+    public void sendNotificationEmailTpl(String to,
+                                         String subject,
+                                         String displayName,
+                                         Object title, Object body,
+                                         Object type, Object status, Object createdAt) {
+        try {
+            Context ctx = new Context();
+            ctx.setVariable("displayName", displayName);
+            ctx.setVariable("title", title);
+            ctx.setVariable("body", body);
+            ctx.setVariable("type", type);
+            ctx.setVariable("status", status);
+            ctx.setVariable("createdAt", createdAt);
+
+            String html = templateEngine.process("email-notification", ctx);
+
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+            mailSender.send(msg);
+        } catch (Exception e) {
+            // TODO: logger.error("sendNotificationEmailTpl failed", e);
+        }
+    }
+
     @Override
     public void sendNotificationEmail(Notification n) {
         var user = n.getUser();
-        if (user == null || user.getEmail() == null) return;
+        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) return;
 
-        String subject = "[EVMS] " + n.getTitle();
-        String html = """
-<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background-color:#f6f9fc;font-family:Arial,sans-serif;">
-    <table width="100%%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-      <tr>
-        <td style="padding:24px 32px;">
-          <h2 style="color:#2b2d42;margin-top:0;">Xin chào %s,</h2>
-          <p style="font-size:15px;color:#333;">Bạn có một thông báo mới từ <b>EVMS</b> 🎉</p>
+        String to = user.getEmail();
+        String subject = "[EVMS] " + safe(n.getTitle());
+        String displayName = (user.getName() == null || user.getName().isBlank()) ? "bạn" : user.getName();
 
-          <div style="margin:20px 0;padding:16px;background-color:#f0f4ff;border-left:4px solid #4c6ef5;border-radius:4px;">
-            <h3 style="margin:0 0 8px 0;color:#1e40af;">%s</h3>
-            <p style="margin:0;color:#333;">%s</p>
-          </div>
-
-          <p style="font-size:13px;color:#666;margin-top:24px;">
-            📌 <b>Loại:</b> %s<br>
-            🔖 <b>Trạng thái:</b> %s<br>
-            ⏰ <b>Thời gian:</b> %s
-          </p>
-
-          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
-          <p style="font-size:12px;color:#999;text-align:center;">
-            Đây là email tự động, vui lòng không trả lời. © EVMS
-          </p>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-""".formatted(
-                user.getName() == null ? "bạn" : user.getName(),
+        sendNotificationEmailTpl(
+                to,
+                subject,
+                displayName,
                 n.getTitle(),
                 n.getContentNoti(),
                 n.getType(),
                 n.getStatus(),
                 n.getCreatedAt()
         );
-
-        // 👉 GỌI hàm gửi thật sự
-        sendNotificationEmail(user.getEmail(), subject, html);
     }
+
+    // ========= 3) Booking confirmed với QR (CID) bằng Thymeleaf =========
+    @Override
+    public void sendHtmlWithInline(String to, String subject, String htmlIgnored, String cid, byte[] pngBytes) {
+        try {
+            // 1) Render template booking-confirmed.html
+            Context ctx = new Context();
+            // Các biến (có thể tuỳ caller set thêm nếu bạn mở rộng sign)
+            ctx.setVariable("displayName", "bạn"); // tuỳ ý thay bằng tên thật ở nơi gọi nếu cần
+            ctx.setVariable("title", "Đặt chỗ đã xác nhận");
+            ctx.setVariable("body", "Vui lòng mang QR tới trạm để check-in");
+            ctx.setVariable("cid", (cid != null && !cid.isBlank()) ? cid : "qr");
+
+            String html = templateEngine.process("booking-confirmed", ctx);
+
+            // 2) Tạo email multipart + attach inline
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8"); // multipart = true
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            String useCid = (cid != null && !cid.isBlank()) ? cid : "qr";
+            if (pngBytes != null && pngBytes.length > 0) {
+                helper.addInline(useCid, new ByteArrayResource(pngBytes), "image/png");
+            }
+
+            mailSender.send(msg);
+        } catch (Exception e) {
+            // Fallback: gửi text nếu render/gắn ảnh lỗi
+            try {
+                MimeMessage msg = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(msg, false, "UTF-8");
+                helper.setFrom(from);
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText("Không thể render HTML/QR lúc gửi email.", false);
+                mailSender.send(msg);
+            } catch (Exception ignored) {}
+            // TODO: logger.error("sendHtmlWithInline failed", e);
+        }
+    }
+
+    // ========= Helper =========
+    private static String safe(Object o) { return o == null ? "" : String.valueOf(o); }
 }

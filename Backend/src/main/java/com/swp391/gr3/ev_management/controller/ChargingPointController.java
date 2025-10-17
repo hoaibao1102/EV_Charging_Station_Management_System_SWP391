@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,8 +21,10 @@ import java.util.List;
 @Tag(name = "Staff Charging Point", description = "APIs for staff to manage charging points")
 public class ChargingPointController {
 
+    @Autowired
     private final StaffPointService pointService;
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @PostMapping("/stop")
     @Operation(summary = "Stop charging point", description = "Staff stops a charging point for maintenance or other reasons")
     public ResponseEntity<StopPointResponse> stopChargingPoint(
@@ -31,6 +35,7 @@ public class ChargingPointController {
     }
 
     @GetMapping("/{pointId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get charging point status", description = "Get detailed status of a charging point")
     public ResponseEntity<StopPointResponse> getPointStatus(
             @Parameter(description = "Charging Point ID") @PathVariable Long pointId,
@@ -41,6 +46,7 @@ public class ChargingPointController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get all charging points", description = "Get list of all charging points at a station")
     public ResponseEntity<List<StopPointResponse>> getPointsByStation(
             @Parameter(description = "Station ID") @RequestParam Long stationId,

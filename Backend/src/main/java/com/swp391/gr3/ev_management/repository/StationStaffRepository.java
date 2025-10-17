@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.repository;
 
+import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,9 +14,13 @@ import java.util.Optional;
 public interface StationStaffRepository extends JpaRepository<StationStaff,Long> {
 
     // Tìm staff assignment active theo user ID
-    @Query("SELECT ss FROM StationStaff ss " +
-            "WHERE ss.user.userId = :userId " +
-            "AND LOWER(ss.status) = 'active'")
+    @Query("""
+              select ss from StationStaff ss
+              join fetch ss.user u
+              join fetch ss.station st
+              where u.userId = :userId
+                and ss.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
+            """)
     Optional<StationStaff> findActiveByUserId(@Param("userId") Long userId);
 
     // Tìm tất cả staff của trạm
@@ -46,4 +51,30 @@ public interface StationStaffRepository extends JpaRepository<StationStaff,Long>
 
     // Đếm số staff active của trạm
     Long countByStation_StationIdAndStatus(Long stationId, String status);
+
+    @Query("""
+              select ss from StationStaff ss
+              join fetch ss.user u
+              join fetch ss.station st
+              where ss.stationStaffId = :stationStaffId
+                and ss.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
+            """)
+    Optional<StationStaff> findActiveByStationStaffId(@Param("stationStaffId") Long stationStaffId);
+
+    @Query("""
+        SELECT new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
+            ss.stationStaffId,
+            s.stationId,
+            u.name,
+            u.email,
+            u.phoneNumber,
+            ss.status,
+            ss.assignedAt
+        )
+        FROM StationStaff ss
+        JOIN ss.user u
+        JOIN ss.station s
+        WHERE u.userId = :userId
+    """)
+    Optional<StationStaffResponse> findByUserId(@Param("userId") Long userId);
 }

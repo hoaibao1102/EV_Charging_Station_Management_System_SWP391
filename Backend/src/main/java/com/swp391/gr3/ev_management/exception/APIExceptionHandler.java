@@ -15,7 +15,7 @@ public class APIExceptionHandler {
     // chạy mỗi khi mà dính lỗi
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus()
-    public ResponseEntity handleBadRequest(MethodArgumentNotValidException exception) {
+    public ResponseEntity<?> handleBadRequest(MethodArgumentNotValidException exception) {
         String msg = "";
         for (FieldError error : exception.getBindingResult().getFieldErrors()) {
             msg += error.getDefaultMessage() + "\n";
@@ -25,12 +25,12 @@ public class APIExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus()
-    public ResponseEntity handleBadCredentialsException(BadCredentialsException exception) {
+    public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException exception) {
         return ResponseEntity.status(401).body("Invalid username or password");
     }
 
     @ExceptionHandler(InternalAuthenticationServiceException.class)
-    public ResponseEntity handleInternalAuthenticationServiceException(InternalAuthenticationServiceException exception) {
+    public ResponseEntity<?> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException exception) {
         return ResponseEntity.status(401).body("Invalid username or password");
     }
 
