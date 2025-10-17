@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.StaffStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,8 +32,9 @@ public class StationStaff {
     private User user;
 
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    private StaffStatus status;
 
 
     @Column(name = "assigned_at", nullable = false)

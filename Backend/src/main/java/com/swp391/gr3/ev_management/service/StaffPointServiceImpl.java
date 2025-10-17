@@ -24,7 +24,7 @@ public class StaffPointServiceImpl implements StaffPointService{
     @Override
     @Transactional
     public StopPointResponse stopChargingPoint(StopPointRequest request) {
-        StationStaff staff = staffRepository.findActiveByUserId(request.getStaffId())
+        StationStaff staff = staffRepository.findActiveByStationStaffId(request.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
         ChargingPoint point = pointRepository.findById(request.getPointId())
@@ -55,7 +55,7 @@ public class StaffPointServiceImpl implements StaffPointService{
     public StopPointResponse getPointStatus(Long pointId, Long staffId) {
         ChargingPoint point = pointRepository.findById(pointId)
                 .orElseThrow(() -> new RuntimeException("Point not found"));
-        StationStaff staff = staffRepository.findActiveByUserId(staffId)
+        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
         if (!staff.getStation().getStationId().equals(point.getStation().getStationId())) {
             throw new RuntimeException("Staff has no permission for this point");
@@ -70,7 +70,7 @@ public class StaffPointServiceImpl implements StaffPointService{
 
     @Override
     public List<StopPointResponse> getPointsByStation(Long stationId, Long staffId) {
-        StationStaff staff = staffRepository.findActiveByUserId(staffId)
+        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
         if (!staff.getStation().getStationId().equals(stationId)) {
             throw new RuntimeException("Staff has no permission for this station");

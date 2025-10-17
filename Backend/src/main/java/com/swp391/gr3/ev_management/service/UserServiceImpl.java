@@ -3,16 +3,20 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
+import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
+import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.User;
-import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
+import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional; // <-- dùng Spring
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
@@ -26,36 +30,20 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final DriverService driverService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final StationStaffRepository staffRepo;
     private final ChargingStationRepository stationRepo;
     private final ApplicationEventPublisher publisher;
-
-    public UserServiceImpl(
-            UserRepository userRepository,
-            RoleRepository roleRepository,
-            AuthenticationManager authenticationManager,
-            PasswordEncoder passwordEncoder,
-            TokenService tokenService,
-            StationStaffRepository stationStaffRepository,
-            ChargingStationRepository chargingStationRepository, ApplicationEventPublisher publisher){
-
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
-        this.staffRepo = stationStaffRepository;
-        this.stationRepo = chargingStationRepository;
-        this.publisher = publisher;
-    }
 
     @Override
     public User findUsersByPhone(String phoneNumber) {
@@ -96,6 +84,16 @@ public class UserServiceImpl implements UserService{
 
         // 1) SAVE trước để có ID
         u = userRepository.save(u);
+
+        //If là role driver create profile driver-active
+        if(u.getRole().getRoleId() == 3L) {
+            log.info("Auto-driver profile for user{} ", u.getUserId());
+
+            DriverRequest driverReq = new DriverRequest();
+            driverReq.setDriverStatus(DriverStatus.ACTIVE);
+
+            driverService.createDriverProfile(u.getUserId(), driverReq);
+        }
 
         // 2) PUBLISH event (listener sẽ tự tạo Notification)
         publisher.publishEvent(new UserRegisteredEvent(u.getUserId(), u.getEmail(), u.getName()));
@@ -175,8 +173,8 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public User addUser(User user) {
-        return userRepository.save(user);
+    public void addUser(User user) {
+        userRepository.save(user);
     }
 
     @Override
@@ -184,10 +182,15 @@ public class UserServiceImpl implements UserService{
         return userRepository.findAll();
     }
 
+    @Override
+    public User findById(Long id) {
+        return userRepository.findUserByUserId(id);
+    }
+
     // ===== ADMIN: đăng ký user và biến thành StationStaff của một trạm =====
     @Override
     @Transactional
-    public User registerAsStaff(RegisterRequest req, Long stationId, LocalDateTime assignedAt) {
+    public User registerAsStaff(RegisterRequest req, Long stationId, LocalDateTime assignedAt, StaffStatus status) {
         if (userRepository.existsByEmail(req.getEmail())) throw new IllegalArgumentException("Email đã tồn tại");
         if (userRepository.existsByPhoneNumber(req.getPhoneNumber())) throw new IllegalArgumentException("Số điện thoại đã tồn tại");
 
@@ -214,6 +217,7 @@ public class UserServiceImpl implements UserService{
                 .station(station)
                 .assignedAt(assignedAt != null ? assignedAt : LocalDateTime.now())
                 .unassignedAt(null)
+                .status(StaffStatus.ACTIVE)
                 .build();
         staffRepo.save(staff);
 

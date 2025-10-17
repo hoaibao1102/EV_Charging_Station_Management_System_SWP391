@@ -1,0 +1,104 @@
+/* Navigation Component Styles */
+.navigationBar {
+  border: 3px solid #20b2aa;
+  border-radius: 40px;
+  height: 10%;
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+  padding: 10px 0;
+  box-shadow: 0 -8px 3px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+}
+
+.navContainer {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  padding: 8px;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  min-width: 50px;
+  min-height: 50px;
+  justify-content: center;
+}
+
+.navItem:hover {
+  transform: translateY(-2px);
+}
+
+.navItemActive .navIcon{
+  background-color: #20b2aa;
+  color: white;
+}
+
+
+.navIcon {
+  margin-bottom: 4px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #20b2aa;
+  transition: all 0.3s ease;
+}
+
+.navIcon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Makes the icon white */
+}
+
+.navItemActive .navIcon {
+  background-color: white;
+  transform: scale(1.1);
+}
+
+.navItemActive .navIcon img {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%); /* Makes the icon teal */
+}
+
+.navLabel {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+  color: #333;
+}
+
+.navItemActive .navLabel {
+  color: #20b2aa;
+  font-weight: 600;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .navContainer {
+    padding: 0 10px;
+  }
+  
+  .navIcon {
+    font-size: 20px;
+    width: 35px;
+    height: 35px;
+  }
+  
+  .navLabel {
+    font-size: 11px;
+  }
+}

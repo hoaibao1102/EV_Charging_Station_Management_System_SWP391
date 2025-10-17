@@ -5,6 +5,8 @@ import com.swp391.gr3.ev_management.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,7 @@ import java.util.Date;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class TokenService {
 
     private final UserRepository userRepository;
@@ -21,10 +24,6 @@ public class TokenService {
     // Lấy secret từ properties (đề nghị lưu base64)
     @Value("${app.jwtSecret}")
     private String jwtSecret;
-
-    public TokenService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     private SecretKey getSignInKey() {
         // jwtSecret nên là Base64-encoded (recommended).
@@ -86,6 +85,15 @@ public class TokenService {
             return token.substring(7).trim();
         }
         return token;
+    }
+
+    //Lấy userId từ HttpServletRequest
+    public Long extractUserIdFromRequest(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) throw new JwtException("Invalid Authorization Header");
+        String token = stripBearer(header);
+        Claims claims = extractAllClaims(token);
+        return Long.parseLong(claims.getSubject());
     }
 
 }

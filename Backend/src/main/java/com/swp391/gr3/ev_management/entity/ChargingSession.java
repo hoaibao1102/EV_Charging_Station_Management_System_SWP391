@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,8 +42,9 @@ public class ChargingSession {
     @Column(name = "Cost")
     private double cost;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    private ChargingSessionStatus status;
 
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)

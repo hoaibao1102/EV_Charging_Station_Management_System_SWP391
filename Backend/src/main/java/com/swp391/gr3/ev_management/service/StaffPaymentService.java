@@ -9,5 +9,5 @@ import java.util.List;
 
 public interface StaffPaymentService {
     ConfirmPaymentResponse confirmPayment(ConfirmPaymentRequest request);
-    List<UnpaidInvoiceResponse> getUnpaidInvoicesByStation(Long stationId, Long staffId);
+    List<UnpaidInvoiceResponse> getUnpaidInvoicesByStation(Long stationId, Long userId);
 }

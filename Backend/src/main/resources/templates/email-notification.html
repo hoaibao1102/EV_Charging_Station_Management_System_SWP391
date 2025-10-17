@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body style="margin:0;padding:0;background:#eef2f7;font-family:'Segoe UI',Roboto,Arial,sans-serif;line-height:1.6;">
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="max-width:640px;margin:32px auto;background:#ffffff;
+                  border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);
+                  overflow:hidden;">
+    <tr>
+        <td style="padding:32px 40px;">
+            <!-- Header -->
+            <div style="text-align:center;margin-bottom:28px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/1048/1048313.png"
+                     alt="EV Logo" width="60" height="60" style="margin-bottom:8px;">
+                <h1 style="margin:0;font-size:22px;color:#1e40af;font-weight:600;">EV Management</h1>
+            </div>
+
+            <!-- Greeting -->
+            <h2 style="color:#2b2d42;margin-top:0;font-size:20px;">
+                Xin chào <span th:text="${displayName}" style="color:#1d4ed8;">bạn</span>,
+            </h2>
+
+            <p style="font-size:15px;color:#333;">
+                Bạn có một <b style="color:#3b82f6;">thông báo mới</b> từ <b>EVMS</b> 🎉
+            </p>
+
+            <!-- Box Content -->
+            <div style="margin:20px 0;padding:18px 20px;background:#f0f4ff;
+                      border-left:5px solid #3b82f6;border-radius:6px;">
+                <h3 style="margin:0 0 8px 0;color:#1e3a8a;font-size:17px;font-weight:600;"
+                    th:text="${title}">Tiêu đề thông báo</h3>
+                <p style="margin:0;color:#374151;font-size:14px;"
+                   th:text="${body}">Nội dung chi tiết sẽ hiển thị ở đây.</p>
+            </div>
+
+            <!-- Meta info -->
+            <p style="font-size:13px;color:#555;margin-top:24px;background:#f9fafb;
+                    padding:10px 14px;border-radius:6px;border:1px solid #e5e7eb;">
+                📌 <b>Loại:</b> <span th:text="${type}" style="color:#2563eb;">GENERAL</span><br>
+                🔖 <b>Trạng thái:</b> <span th:text="${status}" style="color:#10b981;">NEW</span><br>
+                ⏰ <b>Thời gian:</b> <span th:text="${createdAt}" style="color:#6b7280;">2025-10-17 09:00</span>
+            </p>
+
+            <!-- Divider -->
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+
+            <!-- Footer -->
+            <p style="font-size:13px;color:#6b7280;text-align:center;margin:0;">
+                Cảm ơn bạn đã đồng hành cùng <b>EV Management</b>.<br>
+                Đây là email tự động, vui lòng không trả lời.<br>
+                © 2025 EVMS. All rights reserved.
+            </p>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
