@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogin } from "../../hooks/useAuth";
-import classed from "../Main.module.css";
+import classed from "../../assets/css/Main.module.css";
 
 const Login = () => {
   const [form, setForm] = useState({
@@ -74,40 +74,43 @@ const Login = () => {
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
-                <div className="input-container">
-                  <div className="input-icon">�</div>
-                  <input
-                    className={classed.input}
-                    type="tel"
-                    name="phone"
-                    placeholder="0** *** ****"
-                    value={form.phone}
-                    onChange={handleChange}
-                    required
-                    autoComplete="username"
-                    style={{
-                      color: '#333',
-                      fontSize: '16px'
-                    }}
-                  />
+                <div className={classed.inputContainer}>
+                  <div className={classed.inputWrapper}>
+                    <div className={classed.inputIcon}>📧</div>
+                    <input
+                      className={classed.input}
+                      type="tel"
+                      name="phone"
+                      placeholder="0** *** ****"
+                      value={form.phone}
+                      onChange={handleChange}
+                      required
+                      autoComplete="username"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="form-group">
-                <div className="input-container">
-                  <div className="input-icon">🔒</div>
-                  <input
-                    className={classed.input}
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Mật khẩu"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                    autoComplete="new-password"
-                  />
-                  <div className="eye-icon" onClick={togglePasswordVisibility}>
-                    {showPassword ? "🙈" : "👁"}
+                <div className={classed.inputContainer}>
+                  <div className={classed.inputWrapper}>
+                    <div className={classed.inputIcon}>🔒</div>
+                    <input
+                      className={classed.input}
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Mật khẩu"
+                      value={form.password}
+                      onChange={handleChange}
+                      required
+                      autoComplete="new-password"
+                    />
+                    <div 
+                      className={classed.eyeIcon} 
+                      onClick={togglePasswordVisibility}
+                    >
+                      {showPassword ? "🙈" : "👁"}
+                    </div>
                   </div>
                 </div>
               </div>

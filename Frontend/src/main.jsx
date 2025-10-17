@@ -1,13 +1,12 @@
-import { StrictMode } from 'react';
+
 import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router-dom';
 import './index.css';
-import App from './App.jsx';
-import { BrowserRouter } from 'react-router-dom';  // Thêm import này
+import { PathProvider } from "./path/paths.jsx";
+import router from "./path/router.jsx";
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </StrictMode>,
+    <PathProvider>
+        <RouterProvider router={router} /> 
+    </PathProvider>
 );
