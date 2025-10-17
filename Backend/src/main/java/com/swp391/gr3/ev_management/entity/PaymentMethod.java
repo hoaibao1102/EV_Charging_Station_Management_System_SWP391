@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,16 +19,17 @@ public class PaymentMethod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "PaymentMethodID")
-    private Long paymentMethodId;
+    @Column(name = "MethodID")
+    private Long methodId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "MethodType", columnDefinition = "NVARCHAR(50)", nullable = false)
-    private String methodType;
+    private PaymentType methodType ;
 
-    @Column(name = "Provider", columnDefinition = "NVARCHAR(100)", nullable = false)
+    @Column(name = "ProviderName", columnDefinition = "NVARCHAR(100)", nullable = false)
     private String provider;
 
-    @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false, unique = true)
+    @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false)
     private String accountNo;
 
     @Column(name = "ExpiryDate")
@@ -41,7 +43,12 @@ public class PaymentMethod {
     @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "paymentMethod", fetch = FetchType.LAZY)
+    //
+
+    @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactions;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DriverId", nullable = false)
+    private Driver driver;
 }

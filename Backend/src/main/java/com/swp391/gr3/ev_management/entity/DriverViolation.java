@@ -1,10 +1,8 @@
 package com.swp391.gr3.ev_management.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +21,7 @@ public class DriverViolation {
     @JoinColumn(name = "DriverID",nullable = false)
     private Driver driver;
 
+    @CreationTimestamp
     @Column(name = "OccurredAt",nullable = false)
     private LocalDateTime occurredAt;
 
@@ -31,4 +30,8 @@ public class DriverViolation {
 
     @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     private String description;
+
+//    @Column(name = "penalty_amount", precision = 19, scale = 2)
+//    private BigDecimal penaltyAmount;
+
 }

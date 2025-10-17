@@ -17,7 +17,7 @@ public class UnpaidInvoiceMapper {
                 .sessionId(session.getSessionId())
                 .amount(invoice.getAmount())
                 .currency(invoice.getCurrency())
-                .status(invoice.getStatus())
+                .status(String.valueOf(invoice.getStatus()))
                 .issuedAt(invoice.getIssuedAt())
                 .stationName(booking.getStation().getStationName())
                 .driverName(booking.getVehicle().getDriver().getUser().getName())

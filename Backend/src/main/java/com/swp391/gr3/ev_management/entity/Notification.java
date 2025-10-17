@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.swp391.gr3.ev_management.emuns.NotificationTypes;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;

@@ -35,9 +35,9 @@ public class User {
     @Pattern(regexp = "^[A-Za-z0-9+_.-]+@(.+)$", message = "Email không đúng định dạng")
     private String email;
 
-    @Column(name="phone_number", length=15, nullable=false, unique=true)
+    @Column(name="phone_number", length=15, unique=true)
     @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern(regexp = "^(\\+\\d{1,3}[- ]?)?\\d{10}$", message = "Số điện thoại không đúng định dạng")
+    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message="Invalid VN phone")
     private String phoneNumber;
 
     @Column(name = "Password_hash", nullable = false, columnDefinition = "NVARCHAR(255)")
@@ -55,7 +55,7 @@ public class User {
 
     @Column(name = "Gender", columnDefinition = "NVARCHAR(1)")
     @NotBlank(message = "Giới tính không được để trống")
-    @Pattern(regexp = "^[MF]$", message = "Giới tính không đúng định dạng")
+    @Pattern(regexp = "^[MFO]$", message = "Giới tính không đúng định dạng")
     private String gender;
 
     @Column(name = "Address", columnDefinition = "NVARCHAR(50)")
