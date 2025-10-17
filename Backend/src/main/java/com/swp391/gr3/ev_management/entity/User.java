@@ -36,7 +36,7 @@ public class User {
     private String email;
 
     @Column(name="phone_number", length=15, unique=true)
-    @NotBlank(message = "Số điện thoại không được để trống")
+//    @NotBlank(message = "Số điện thoại không được để trống")
     @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message="Invalid VN phone")
     private String phoneNumber;
 
@@ -48,18 +48,18 @@ public class User {
     private String name;
 
     @Column(name = "Date_of_birth")
-    @NotNull(message = "dateOfBirth is required")
+//    @NotNull(message = "dateOfBirth is required")
     @Past(message = "dateOfBirth must be in the past")
     @JsonFormat(pattern = "yyyy-MM-dd")   // nhận "2025-10-11"
     private LocalDate dateOfBirth;
 
     @Column(name = "Gender", columnDefinition = "NVARCHAR(1)")
-    @NotBlank(message = "Giới tính không được để trống")
+//    @NotBlank(message = "Giới tính không được để trống")
     @Pattern(regexp = "^[MFO]$", message = "Giới tính không đúng định dạng")
     private String gender;
 
     @Column(name = "Address", columnDefinition = "NVARCHAR(50)")
-    @NotBlank(message = "Địa chỉ không được để trống")
+//    @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
     @CreationTimestamp
@@ -88,5 +88,12 @@ public class User {
     private List<Notification> notifications;
 
 
+    @PrePersist
+    public void prePersist() {
+        if (this.dateOfBirth == null) {
+            // Ví dụ đặt ngày mặc định là 2000-01-01
+            this.dateOfBirth = LocalDate.of(2000, 1, 1);
+        }
+    }
 
 }
