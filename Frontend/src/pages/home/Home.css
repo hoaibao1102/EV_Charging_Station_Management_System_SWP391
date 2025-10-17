@@ -1,175 +1,207 @@
-.home-container {
-  max-width: 1200px;
-  margin: 0 auto;
+.home-page {
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+/* Responsive Image Display */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+
+  .desktop-only {
+    display: block;
+  }
+}
+
+.img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  filter: brightness(0.7) contrast(1.2);
 }
 
 /* Hero Section */
 .hero-section {
-  text-align: center;
-  padding: 80px 20px;
-  color: white;
+  position: relative;
+
+  width: 100%;
+  height: 40vh;
+  overflow: hidden;
+  border-radius: 0 0 30px 30px;
 }
+
+.hero-img {
+  width: 100%;
+  height: 35vh;
+  object-fit: cover;
+  filter: brightness(0.7) contrast(1.2);
+}
+
+.hero-text {
+  position: absolute;
+  top: 0px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 2px;
+}
+
 
 .hero-title {
-  font-size: 48px;
-  font-weight: 800;
-  margin-bottom: 20px;
-  line-height: 1.2;
-}
-
-.gradient-text {
-  background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-left: 30px;
+  color: white;
+  font-size: 4rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
 .hero-subtitle {
-  font-size: 20px;
-  margin-bottom: 40px;
-  opacity: 0.9;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* CTA Buttons */
-.cta-buttons {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.cta-btn {
-  padding: 15px 40px;
-  border-radius: 30px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  display: inline-block;
-}
-
-.cta-btn.primary {
-  background: white;
-  color: #667eea;
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
-}
-
-.cta-btn.primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
-}
-
-.cta-btn.secondary {
-  background: transparent;
+  margin-left: 30px;
+  font-size: 1.5rem;
+  letter-spacing: 3px;
   color: white;
-  border: 2px solid white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-.cta-btn.secondary:hover {
+/* Welcome Card */
+.welcome-card {
+  margin-top: -30px;
   background: white;
-  color: #667eea;
-  transform: translateY(-3px);
-}
-
-/* Features Section */
-.features-section {
-  padding: 60px 20px;
-  background: rgba(255, 255, 255, 0.95);
+  margin-left: 0px;
+  margin-right: 0px;
+  padding: 0px;
   border-radius: 30px;
-  margin-top: 40px;
-}
-
-.section-title {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   text-align: center;
-  font-size: 36px;
-  font-weight: 700;
-  margin-bottom: 50px;
+  position: relative;
+  z-index: 10;
+  height: 60rem;
+}
+
+.welcome-title {
+  font-size: 2rem;
   color: #333;
+  margin: 0 0 10px 0;
 }
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
+.welcome-name {
+  color: #20b2aa;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 500;
 }
 
-.feature-card {
-  background: white;
-  padding: 30px;
+/* Car Gallery */
+.car-gallery {
+  display: flex;
+  gap: 15px;
+  padding: 0 20px;
+  margin: 20px 0;
+  justify-content: center;
+}
+
+.car-item {
+  flex: 1;
+  max-width: 300px;
+}
+
+.car-item img {
+  width: 100%;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  filter: brightness(0.8) contrast(1.1) saturate(1.1);
+  transition: filter 0.3s ease;
+}
+
+/* Desktop: car images taller */
+@media (min-width: 768px) {
+  .car-item img {
+    height: 10rem;
+  }
+}
+
+.car-item img:hover {
+  filter: brightness(0.9) contrast(1.2) saturate(1.2);
+}
+
+/* About Section with Map Background */
+.about-section {
+  position: relative;
+  height: 23vh;
+  margin: 20px;
+  padding: 10px 10px;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  margin-bottom: 100px; /* Space for navigation */
+  overflow: hidden;
 }
 
-.feature-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+.about-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('../../assets/img/bando.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
 }
 
-.feature-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
+.about-section > * {
+  position: relative;
+  z-index: 2;
 }
 
-.feature-card h3 {
-  font-size: 22px;
-  margin-bottom: 15px;
-  color: #333;
+.about-title {
+  font-size: 1.3rem;
+  color: rgb(21, 19, 19);
+  margin: 0 0 20px 0;
+  letter-spacing: 2px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
 }
 
-.feature-card p {
-  color: #666;
-  line-height: 1.6;
+.about-text {
+  color: rgb(21, 16, 16);
+  line-height: 2;
+  font-size: 0.85rem;
+  margin-top: 0px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
-/* Home Section */
-.home {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 60px 20px;
-}
-
-.home-title {
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: white;
-  line-height: 1.2;
-}
-
-.home-subtitle {
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 32px;
+/* --- Thêm đoạn code này vào cuối --- */
+@media (min-width: 768px) {
+  .about-text {
+    padding: 0px 20%;
+    font-size: 1.2rem; /* Kích thước chữ lớn hơn cho Tablet và Laptop */
   }
 
-  .hero-subtitle {
-    font-size: 16px;
+  .about-title {
+    font-size: 2rem;
   }
 
-  .section-title {
-    font-size: 28px;
-  }
-
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .home-title {
-    font-size: 32px;
-  }
   
-  .home-subtitle {
-    font-size: 16px;
+
+  .welcome-title {
+    font-weight: 900;
+    font-size: 2.5rem;
   }
 }
