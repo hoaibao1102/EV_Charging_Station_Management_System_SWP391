@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.SlotStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,11 +29,10 @@ public class SlotAvailability {
     private ConnectorType connectorType;
 
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private SlotStatus status;
 
     @Column(name = "Date")
     private LocalDateTime date;
 
-    @OneToOne(mappedBy = "slot", fetch = FetchType.LAZY)
-    private Booking booking;
 }

@@ -27,7 +27,7 @@ public class StaffIncidentServiceImpl implements StaffIncidentService{
     public IncidentResponse createIncident(CreateIncidentRequest request) {
         StationStaff staff = staffRepository.findById(request.getStationStaffId())
                 .orElseThrow(() -> new RuntimeException("Station staff not found"));
-        if (!"active".equalsIgnoreCase(staff.getStatus())) {
+        if (!"active".equalsIgnoreCase(String.valueOf(staff.getStatus()))) {
             throw new RuntimeException("Staff is not active");
         }
 
@@ -46,7 +46,7 @@ public class StaffIncidentServiceImpl implements StaffIncidentService{
 
     @Override
     public List<IncidentResponse> getIncidentsByStation(Long stationId, Long staffId) {
-        StationStaff staff = staffRepository.findActiveByUserId(staffId)
+        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
         if (!staff.getStation().getStationId().equals(stationId)) {
             throw new RuntimeException("No permission for this station");
@@ -61,7 +61,7 @@ public class StaffIncidentServiceImpl implements StaffIncidentService{
     @Override
     public List<IncidentResponse> getUnresolvedIncidentsByStation(Long stationId, Long staffId) {
         //  Kiểm tra quyền nhân viên
-        StationStaff staff = staffRepository.findActiveByUserId(staffId)
+        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
         if (!staff.getStation().getStationId().equals(stationId)) {
@@ -89,7 +89,7 @@ public class StaffIncidentServiceImpl implements StaffIncidentService{
 
         //  Kiểm tra quyền của staff
         Long stationId = incident.getStationStaff().getStation().getStationId();
-        StationStaff staff = staffRepository.findActiveByUserId(staffId)
+        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
         if (!staff.getStation().getStationId().equals(stationId)) {

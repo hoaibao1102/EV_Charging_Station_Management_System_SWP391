@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/connector-types")
 @Tag(name = "Connector Type Controller", description = "APIs for managing connector types")
+@RequiredArgsConstructor
 public class ConnectorTypeController {
 
     @Autowired
@@ -28,13 +30,6 @@ public class ConnectorTypeController {
                 .map(this::toDto)
                 .toList();
         return ResponseEntity.ok(list);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ConnectorTypeResponse> getById(@PathVariable Integer id) {
-        ConnectorType ct = connectorTypeRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("ConnectorType not found with id " + id));
-        return ResponseEntity.ok(toDto(ct));
     }
 
     private ConnectorTypeResponse toDto(ConnectorType ct) {

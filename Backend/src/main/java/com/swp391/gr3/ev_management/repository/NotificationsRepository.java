@@ -1,8 +1,9 @@
 package com.swp391.gr3.ev_management.repository;
 
-import com.swp391.gr3.ev_management.DTO.response.CreateNotificationResponse;
-import com.swp391.gr3.ev_management.emuns.NotificationTypes;
+import com.swp391.gr3.ev_management.entity.Booking;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.entity.Notification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NotificationsRepository extends JpaRepository<Notification, Long> {
@@ -57,4 +59,9 @@ public interface NotificationsRepository extends JpaRepository<Notification, Lon
     void markAllAsReadByUserId(@Param("userId") Long userId, @Param("readAt") LocalDateTime readAt);
 
     List<Notification> findByUserUserIdOrderByCreatedAtDesc(Long userId);
+
+    @EntityGraph(attributePaths = {"user", "booking"})
+    Optional<Notification> findById(Long id);
+
+    Optional<Notification> findTopByBookingAndTypeOrderByCreatedAtDesc(Booking booking, NotificationTypes type);
 }

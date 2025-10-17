@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.InvoiceStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -30,7 +31,8 @@ public class Invoice {
     private String currency;
 
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status; // nên thay kiểu class Enum
+    @Enumerated(EnumType.STRING)
+    private InvoiceStatus status; // nên thay kiểu class Enum
 
     @Column(name = "IssuedAt", nullable = false)
     private LocalDateTime issuedAt;

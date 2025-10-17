@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
-import com.swp391.gr3.ev_management.emuns.PaymentType;
+import com.swp391.gr3.ev_management.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
