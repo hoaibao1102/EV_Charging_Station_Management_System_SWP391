@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,6 +18,6 @@ public class StopCharSessionResponse {
     private double energyKWh;
     private double cost;
     private int durationMinutes;
-    private String status;
+    private ChargingSessionStatus status;
 
 }

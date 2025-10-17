@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,5 +20,5 @@ public class ViewCharSessionResponse {
     private int durationMinutes;
     private double cost;
     private String currency;
-    private String status;
+    private ChargingSessionStatus status;
 }

@@ -5,6 +5,4 @@ import lombok.Data;
 @Data
 public class StartCharSessionRequest {
     private Long bookingId;
-    private Long staffId;
-    private Long pointId;
 }

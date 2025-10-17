@@ -13,7 +13,6 @@ public class BookingRequest {
     private Long bookingId;
     private Long stationId;
     private Long vehicleId;
-    private Long slotId;
     private LocalDateTime bookingTime;
     private LocalDateTime scheduledStartTime;
     private LocalDateTime scheduledEndTime;
