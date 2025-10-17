@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
-import com.swp391.gr3.ev_management.emuns.DriverStatus;
+import com.swp391.gr3.ev_management.enums.DriverStatus;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;

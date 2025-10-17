@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.events;
 
-import com.swp391.gr3.ev_management.emuns.NotificationTypes;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.NotificationsRepository;

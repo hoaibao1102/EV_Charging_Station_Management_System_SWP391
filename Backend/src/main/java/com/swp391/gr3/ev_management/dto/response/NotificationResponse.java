@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
-import com.swp391.gr3.ev_management.emuns.NotificationTypes;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.entity.Notification;
 
 import java.time.LocalDateTime;

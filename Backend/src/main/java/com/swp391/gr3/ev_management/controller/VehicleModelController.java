@@ -15,34 +15,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vehicle-models")
+@RequestMapping("/api/admin/vehicle-models")
 @Tag(name = "Vehicle Model Controller", description = "APIs for managing vehicle models")
 public class VehicleModelController {
 
     @Autowired
     private VehicleModelService vehicleModelService;
 
-    // Create
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    @Operation(summary = "Create Vehicle Model", description = "Create a new vehicle model")
-    public ResponseEntity<VehicleModelResponse> create(@Valid @RequestBody VehicleModelCreateRequest request) {
-        return ResponseEntity.ok(vehicleModelService.create(request));
-    }
-
     // Alias create to match /create path expected by clients
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
-    @Operation(summary = "Create Vehicle Model (Alias)", description = "Create a new vehicle model (alias endpoint)")
-    public ResponseEntity<VehicleModelResponse> createAlias(@Valid @RequestBody VehicleModelCreateRequest request) {
+    @Operation(summary = "Create Vehicle Model", description = "Create a new vehicle model")
+    public ResponseEntity<VehicleModelResponse> create(@Valid @RequestBody VehicleModelCreateRequest request) {
         return ResponseEntity.ok(vehicleModelService.create(request));
-    }
-
-    // Get by id
-    @GetMapping("/{id}")
-    @Operation(summary = "Get Vehicle Model by ID", description = "Retrieve a vehicle model by its ID")
-    public ResponseEntity<VehicleModelResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(vehicleModelService.getById(id));
     }
 
     // List all (or search via query params)

@@ -16,10 +16,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -55,6 +57,12 @@ public class SecurityConfig {
                     .build();
         };
     }
+
+    @Bean
+    public OidcUserService oidcUserService() {
+        return new OidcUserService(); // dùng default là đủ
+    }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
@@ -101,50 +109,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    AuthenticationProvider provider,
-                                                   JwtAuthFilter jwtAuthFilter) throws Exception {
+                                                   JwtAuthFilter jwtAuthFilter,
+                                                   OAuth2SuccessHandler oAuth2SuccessHandler,
+                                                   OidcUserService oidcUserService) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authenticationProvider(provider)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+
+                // ⚠️ OAuth2 code flow cần session tạm thời cho handshake.
+                // ĐỪNG đặt STATELESS ở đây; để mặc định IF_REQUIRED.
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/index.html", "/static/**", "/public/**", "/error",
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/v3/api-docs/**", "/v3/api-docs.yaml",
-                                "/api/users/login", "/api/users/logout", "/api/users/register",
-                                "/",                  // root
-                                "/index.html",        // file index
-                                "/static/**",         // static resources (css/js/images)
-                                "/public/**",         // public folder
-                                "/error",             // error page
-                                "/swagger-ui.html",   // swagger
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs.yaml",
-                                "/api/users/login",   // login API
-                                "/api/users/logout",
-                                "/api/users/register", // register API
-                                "/api/bookings/{id}/qr",
-                                "/api/bookings/{id}/qr-string"
-//                                "/api/staff/payments/confirm", // payment confirm API
-//                                "/api/staff/payments/unpaid", //  unpaid  API
-//                                "/api/staff/sessions/stop",
-//                                "/api/staff/sessions/start" // stop/start session API
+                                "/api/users/login", "/api/users/logout", "/api/users/register/**",
+
+                                // 👇 Cho phép các endpoint OAuth2
+                                "/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**"
                         ).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/staff/**").hasRole("STAFF")
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
                     res.setStatus(401);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"message\":\"Unauthorized\"}");
                 }))
                 .logout(AbstractHttpConfigurer::disable)
+
+                // 👇 Bật oauth2Login, gắn successHandler để phát JWT & redirect về FE
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(u -> u.oidcUserService(oidcUserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
+
+                // JWT filter vẫn chạy cho mọi request API sau khi đã có token
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

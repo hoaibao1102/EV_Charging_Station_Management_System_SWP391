@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -21,19 +22,8 @@ import java.util.Map;
 @Tag(name = "Notifications", description = "APIs for managing notifications")
 public class NotificationController {
 
+    @Autowired
     private final NotificationsService notificationsService;
-
-    @GetMapping
-    @Operation(summary = "Get all notifications", description = "Get all notifications for the logged-in user")
-    public ResponseEntity<?> getAllNotifications(org.springframework.security.core.Authentication auth) {
-        Long userId = Long.valueOf(auth.getName()); // vì principal = userId string
-        var notifications = notificationsService.getNotificationsByUser(userId);
-
-        if (notifications == null || notifications.isEmpty()) {
-            return ResponseEntity.ok(Map.of("message", "Không có thông báo"));
-        }
-        return ResponseEntity.ok(notifications);
-    }
 
     @GetMapping("/unread")
     public ResponseEntity<?> getUnreadNotifications(Authentication auth) {
