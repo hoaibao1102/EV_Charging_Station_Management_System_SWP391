@@ -1,7 +1,10 @@
 package com.swp391.gr3.ev_management.config;
 
+import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.User;
+import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import com.swp391.gr3.ev_management.service.TokenService;
@@ -14,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -26,23 +30,26 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final DriverRepository driverRepository;
 
     // FE sẽ nhận token tại URL này. Có thể override trong application.properties
     // app.oauth2.frontend-callback=http://localhost:5173/oauth2/callback
-    @Value("${app.oauth2.frontend-callback:http://localhost:5173/oauth2/callback}")
+    @Value("${app.oauth2.frontend-callback:http://localhost:5173/}")
     private String frontendCallback;
 
     public OAuth2SuccessHandler(UserRepository userRepository,
                                 RoleRepository roleRepository,
                                 PasswordEncoder passwordEncoder,
-                                TokenService tokenService) {
+                                TokenService tokenService, DriverRepository driverRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.driverRepository = driverRepository;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication)
@@ -70,7 +77,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         }
 
         // Tìm user theo email
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmailWithRole(email);
         if (user == null) {
             // Tạo mới user mặc định ROLE_USER (id=3L) — giống register()
             Role role = roleRepository.findByRoleId(3L);
@@ -94,7 +101,18 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
             // PhoneNumber có thể để null; nếu schema của bạn bắt buộc, hãy map sau.
             user = userRepository.save(user);
+
+            // 👉 TẠO BẢN GHI DRIVER nếu role là Driver
+            if ("Driver".equalsIgnoreCase(role.getRoleName())) {
+                Driver driver = new Driver();
+                driver.setUser(user);
+                driver.setStatus(DriverStatus.ACTIVE);
+
+                driverRepository.save(driver);
+            }
         }
+
+
 
         // Phát JWT theo logic TokenService hiện có
         String jwt = tokenService.generateToken(user);
