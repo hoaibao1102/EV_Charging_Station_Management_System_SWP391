@@ -2,14 +2,60 @@ import React from "react";
 
 export default function Rules() {
   const styles = {
-    container: { padding: 16, maxWidth: 1000, margin: "0 auto" },
-    heading: { fontSize: "1.5rem", fontWeight: 700, marginBottom: 8 },
-    updated: { color: "#6b7280", marginBottom: 16 },
-    tableWrap: { overflowX: "auto" },
-    table: { width: "100%", borderCollapse: "collapse" },
-    cell: { border: "1px solid #e5e7eb", padding: 8, verticalAlign: "top" },
-    th: { background: "#f9fafb", fontWeight: 600 },
-    note: { color: "#6b7280", marginTop: 12, fontSize: 14 },
+    container: { 
+      padding: 32,
+      maxWidth: 1000,
+      margin: "0 auto",
+      backgroundColor: "#ffffff",
+      minHeight: "100vh"
+    },
+    header: {
+      borderBottom: "3px solid #20b2aa",
+      paddingBottom: 16,
+      marginBottom: 24
+    },
+    heading: { 
+      fontSize: "2rem",
+      fontWeight: 700,
+      marginBottom: 8,
+      color: "#1a1a1a"
+    },
+    tableWrap: { 
+      overflowX: "auto",
+      backgroundColor: "#ffffff",
+      borderRadius: 8,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+    },
+    table: { 
+      width: "100%",
+      borderCollapse: "collapse"
+    },
+    cell: { 
+      border: "1px solid #20b2aa",
+      padding: 16,
+      verticalAlign: "top",
+      backgroundColor: "#ffffff"
+    },
+    th: { 
+      background: "#20b2aa",
+      fontWeight: 600,
+      color: "#ffffff",
+      textAlign: "left"
+    },
+    codeCell: {
+      fontWeight: 700,
+      color: "#20b2aa",
+      fontSize: "0.95rem"
+    },
+    note: { 
+      color: "#666666",
+      marginTop: 24,
+      fontSize: 14,
+      padding: 16,
+      backgroundColor: "#f0fffe",
+      borderLeft: "4px solid #20b2aa",
+      borderRadius: 4
+    },
   };
 
   const rules = [
@@ -46,7 +92,7 @@ export default function Rules() {
     {
       id: "BR-07",
       text:
-        "Sau khi phiên sạc kết thúc, phí đỗ xe chiếm chỗ bắt đầu tính từ phút thứ 31 và được tính theo phút dựa trên mức phí của từng đầu nối.",
+        "Sau khi phiên sạc kết thúc, phí đỗ xe chiếm chỗ bắt đầu tính từ phút thứ 31 và được tính theo phút dựa trên mức phí của từng cổng sạc.",
     },
     {
       id: "BR-08",
@@ -59,12 +105,7 @@ export default function Rules() {
     },
     {
       id: "BR-10",
-      text: "Người dùng phải đăng nhập mỗi khi thực hiện thao tác đặt chỗ.",
-    },
-    {
-      id: "BR-11",
-      text:
-        "Khi quản trị viên thêm nhân viên, hệ thống tạo tài khoản nhân viên và cấp thông tin đăng nhập để sử dụng.",
+      text: "Người dùng phải đăng nhập mỗi khi thực hiện thao tác đặt chỗ, xem thông tin người dùng.",
     },
     {
       id: "BR-12",
@@ -74,7 +115,7 @@ export default function Rules() {
     {
       id: "BR-13",
       text:
-        "Một đặt chỗ có thể gồm nhiều khung giờ liên tiếp liền kề trên cùng một đầu nối, tối đa 3 khung; độ dài mặc định của mỗi khung là 60 phút và có thể cấu hình.",
+        "Một slot đặt chỗ có thể gồm nhiều khung giờ liên tiếp liền kề trên cùng một đầu nối, tối đa 3 khung.",
     },
     {
       id: "BR-14",
@@ -85,22 +126,23 @@ export default function Rules() {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>Quy định sử dụng hệ thống sạc EV</h1>
-      <p style={styles.updated}>Cập nhật: 18/10/2025</p>
+      <div style={styles.header}>
+        <h1 style={styles.heading}>Quy định sử dụng hệ thống sạc EV</h1>
+      </div>
 
       <div style={styles.tableWrap}>
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={{ ...styles.cell, ...styles.th, width: 96 }}>ID</th>
+              <th style={{ ...styles.cell, ...styles.th, width: 120 }}>Mã quy định</th>
               <th style={{ ...styles.cell, ...styles.th }}>Quy định</th>
             </tr>
           </thead>
           <tbody>
             {rules.map((r) => (
               <tr key={r.id}>
-                <td style={styles.cell}>
-                  <strong>{r.id}</strong>
+                <td style={{ ...styles.cell, ...styles.codeCell }}>
+                  {r.id}
                 </td>
                 <td style={styles.cell}>{r.text}</td>
               </tr>
@@ -109,9 +151,9 @@ export default function Rules() {
         </table>
       </div>
 
-      <p style={styles.note}>
-        Lưu ý: Mức phí phạt có thể khác nhau theo loại đầu nối và cấu hình của từng trạm.
-      </p>
+      <div style={styles.note}>
+        <strong>Lưu ý:</strong> Mức phí phạt và thời lượng mỗi slot có thể khác nhau theo loại đầu nối và cấu hình của từng trạm.
+      </div>
     </div>
   );
 }
