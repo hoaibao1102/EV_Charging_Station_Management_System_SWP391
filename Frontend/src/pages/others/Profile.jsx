@@ -4,12 +4,18 @@ import { isAuthenticated } from '../../utils/authUtils';
 import { useLogout } from '../../hooks/useAuth';
 import usePaths from '../../hooks/usePath.js';
 import girl from '../../assets/icon/girl.png';
-// import man from '../../assets/icon/man.png';
+import man from '../../assets/icon/man.png';
 import './Profile.css';
 
 export default function Profile() {
   const navigate = useNavigate();
   const paths = usePaths();
+  const userName = localStorage.getItem("userName");
+  const userMail = localStorage.getItem("userMail");
+  const userPhone = localStorage.getItem("userPhone");
+  const userSex = localStorage.getItem("userSex");
+  // const [userProfile, setUserProfile] = useState(null);
+  
   const { logout, loading } = useLogout();
 
   useEffect(() => {
@@ -55,7 +61,7 @@ export default function Profile() {
       <div className="profile-card">
         <div className="avatar-container">
           <img 
-            src={girl} 
+            src={userSex === 'M' ? man : girl} 
             alt="Profile Avatar" 
             className="avatar"
           />
@@ -63,8 +69,8 @@ export default function Profile() {
 
         {/* User Info */}
         <div className="user-info">
-          <h2 className="user-name">{ 'Nguyen Van A'}</h2>
-          <p className="user-email">{'nguyenvana@gmail.com'}</p>
+          <h2 className="user-name">{userName}</h2>
+          <p className="user-email">{userMail} || {userPhone}</p>
         </div>
 
         {/* Menu Items */}

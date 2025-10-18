@@ -4,11 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogin } from "../../hooks/useAuth";
-<<<<<<< HEAD
-=======
-import classed from "../../assets/css/Main.module.css";
->>>>>>> bc3ed5eec34a391b0e6abb0dee90fe315485843e
-
 const Login = () => {
   const [form, setForm] = useState({
     phone: "",
@@ -153,99 +148,23 @@ const Login = () => {
               <input
                 type="tel"
                 name="phone"
-                placeholder="Email hoặc số điện thoại"
-                value={form.phone}
+                placeholder="Số điện thoại"
                 onChange={handleChange}
                 className="auth-input"
                 required
                 autoComplete="username"
-              />
+              />  
             </div>
-
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
-                <div className={classed.inputContainer}>
-                  <div className={classed.inputWrapper}>
-                    <div className={classed.inputIcon}>📧</div>
-                    <input
-                      className={classed.input}
-                      type="tel"
-                      name="phone"
-                      placeholder="0** *** ****"
-                      value={form.phone}
-                      onChange={handleChange}
-                      required
-                      autoComplete="username"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <div className={classed.inputContainer}>
-                  <div className={classed.inputWrapper}>
-                    <div className={classed.inputIcon}>🔒</div>
-                    <input
-                      className={classed.input}
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      placeholder="Mật khẩu"
-                      value={form.password}
-                      onChange={handleChange}
-                      required
-                      autoComplete="new-password"
-                    />
-                    <div 
-                      className={classed.eyeIcon} 
-                      onClick={togglePasswordVisibility}
-                    >
-                      {showPassword ? "🙈" : "👁"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-options">
-                <label style={{color:"black"}} className="remember-me">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={form.rememberMe}
-                    onChange={handleChange}
-                  />
-                  <span className="checkmark"></span>
-                  Remember me   
-                </label>
-                <a href="#" className="forgot-password">Quên mật khẩu?</a>
-              </div>
-
-              <button type="submit" className={classed.button} disabled={loading}>
-                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-              </button>
-
-              <div className="register-link">
-                <span>Chưa có tài khoản? </span>
-                <span 
-                  className="register-text"
-                  onClick={() => navigate("/register")}
-                >
-                  Đăng ký tài khoản
-                </span>
-              </div>
-            </form>
-
           </div>
 
           {/* Password Input */}
           <div className="auth-input-group">
             <div className="auth-input-wrapper">
-              <span className="auth-input-icon">�</span>
+              <span className="auth-input-icon">🔒</span>
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Mật khẩu"
-                value={form.password}
                 onChange={handleChange}
                 className="auth-input"
                 required
@@ -289,13 +208,6 @@ const Login = () => {
               <span>hoặc</span>
             </div>
             <div className="auth-social-buttons">
-              <button
-                type="button"
-                className="auth-social-btn facebook"
-                onClick={() => toast.info("Facebook login chưa khả dụng")}
-              >
-                f
-              </button>
               <button
                 type="button"
                 className="auth-social-btn google"
