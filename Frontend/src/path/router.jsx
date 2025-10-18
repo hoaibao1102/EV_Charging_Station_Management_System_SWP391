@@ -5,14 +5,14 @@ import Stations from "../pages/others/Stations.jsx";
 import Booking from "../pages/others/Booking.jsx";
 import Profile from "../pages/others/Profile.jsx";
 import Error404 from "../pages/others/Error404.jsx";
-import MainLayout from "../layouts/MainLayout.jsx";
+import ResponsiveLayout from "../layouts/ResponsiveLayout.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
 
 const routes = [
     {
         path: '/',
-        element: <MainLayout />,
+        element: <ResponsiveLayout />,
         children: [ 
             {
                 index: true, 
