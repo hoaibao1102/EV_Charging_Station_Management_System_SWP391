@@ -5,11 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -69,6 +66,15 @@ public class User {
     @UpdateTimestamp
     @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
+
+    // BR-01: Account locking after 3 failed attempts
+    //Todo: kích hoạt tính năng này sau khi hoàn thành chức năng đăng nhập
+//    @Column(name = "FailedAttempt")
+//    @Builder.Default
+//    private int failedAttempt = 0;
+//
+//    @Column(name = "LockTime")
+//    private LocalDateTime lockTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RoleID")
