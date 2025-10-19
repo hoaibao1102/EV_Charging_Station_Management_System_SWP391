@@ -8,6 +8,14 @@ export const loginApi = (phone, password) => {
     );
 };
 
+export const verifyOtp = (otp, profile) => {
+    return handleApiCall(
+        () => apiClient.post('/api/users/register/verify?otp=' + otp, profile),
+        'Xác thực OTP thất bại'
+    );
+};
+
+
 // Gọi API đăng ký
 export const registerApi = (formData) => {
     // Truyền hàm gọi API (callback) và thông báo lỗi mặc định
