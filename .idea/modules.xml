@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/EV_Charging_Station_Management_System_SWP391.iml" filepath="$PROJECT_DIR$/.idea/EV_Charging_Station_Management_System_SWP391.iml" />
-      <module fileurl="file://$PROJECT_DIR$/Backend/EV_Management.iml" filepath="$PROJECT_DIR$/Backend/EV_Management.iml" />
     </modules>
   </component>
 </project>
