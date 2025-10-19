@@ -5,6 +5,8 @@ import com.swp391.gr3.ev_management.DTO.request.VehicleModelUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface VehicleModelService {
     VehicleModelResponse create(VehicleModelCreateRequest request);

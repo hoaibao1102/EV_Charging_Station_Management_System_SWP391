@@ -11,13 +11,4 @@ public class EvManagementApplication {
     public static void main(String[] args) {
         SpringApplication.run(EvManagementApplication.class, args);
     }
-
-    @Value("${GOOGLE_CLIENT_ID:NOT_SET}") String gid;
-    @Value("${GOOGLE_CLIENT_SECRET:NOT_SET}") String gsec;
-
-    @PostConstruct
-    public void checkGoogleEnv() {
-        System.out.println("GOOGLE_CLIENT_ID=" + gid);
-        System.out.println("GOOGLE_CLIENT_SECRET=" + ( "NOT_SET".equals(gsec) ? "NOT_SET" : "***"));
-    }
 }

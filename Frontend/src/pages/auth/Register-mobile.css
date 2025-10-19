@@ -1,5 +1,4 @@
-/* ========================================
-   REGISTER PAGE - MOBILE FIRST
+/* ===== REGISTER PAGE - MOBILE FIRST
    Multi-step registration with numbered indicators
    ✅ Reuses Login.css base styles
    ✅ Step circles with numbers (1-4)
@@ -7,6 +6,29 @@
    ✅ Gender radio buttons
    ✅ Terms checkbox
 ======================================== */
+
+/* ===== REACT DATEPICKER Z-INDEX FIX ===== */
+.date-picker-popper,
+.react-datepicker-popper {
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
+.react-datepicker {
+  z-index: 99999 !important;
+}
+
+.auth-input-group {
+  overflow: visible !important;
+}
+
+.auth-container {
+  overflow: visible !important;
+}
+
+.auth-form {
+  overflow: visible !important;
+}
 
 /* ===== STEP INDICATOR WITH NUMBERS ===== */
 .auth-step-indicator {
@@ -484,7 +506,7 @@ button[type="submit"].auth-button:disabled {
   }
 
   button[type="submit"].auth-button {
-    max-width: 320px !important;
+    max-width: 100% !important;
     min-height: 54px;
     font-size: 17px;
     margin: 28px auto 0 !important;

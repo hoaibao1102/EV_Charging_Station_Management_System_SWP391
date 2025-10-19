@@ -15,9 +15,11 @@ export default async function handleApiCall(apiCall, defaultMessage) {
         };
     } catch (error) {
         console.error('API error:', error);
+        // Backend trả data trực tiếp là string, không phải object {message: ...}
+        const errorMessage = error.response?.data?.message || error.response?.data || defaultMessage;
         return {
             success: false,
-            message: error.response?.data?.message || defaultMessage
+            message: errorMessage
         };
     }
 };
