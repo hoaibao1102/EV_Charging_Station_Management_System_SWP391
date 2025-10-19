@@ -76,9 +76,9 @@ public class DriverServiceImpl implements DriverService {
      */
     @Override
     @Transactional(readOnly = true)
-    public DriverResponse getByDriverId(Long driverId) {
-        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + driverId));
+    public DriverResponse getByDriverId(Long userId) {
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + userId));
         return mapToDriverResponse(driver);
     }
 
@@ -105,7 +105,7 @@ public class DriverServiceImpl implements DriverService {
         if (req.getEmail() != null)       user.setEmail(req.getEmail());
         if (req.getAddress() != null)     user.setAddress(req.getAddress());
         if (req.getPhoneNumber() != null) user.setPhoneNumber(req.getPhoneNumber());
-        if (req.getDriverStatus() != null) driver.setStatus(req.getDriverStatus());
+        driver.setStatus(DriverStatus.ACTIVE);
 
         Driver updated = driverRepository.save(driver);
         return mapToDriverResponse(updated);

@@ -16,5 +16,4 @@ public class DriverUpdateRequest {
     private String email;
     private String phoneNumber;
     private String address;
-    private DriverStatus driverStatus; // optional - chỉ admin mới update
 }
