@@ -14,6 +14,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState({}); // State để lưu lỗi
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
     email: "",
     phoneNumber: "",
@@ -514,13 +516,21 @@ const Register = () => {
                 >
                   <span className="auth-input-icon">🔒</span>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     placeholder="Mật khẩu"
                     value={form.password}
                     onChange={handleChange}
                     className="auth-input"
                   />
+                  <button
+                    type="button"
+                    className="auth-password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label="Toggle password visibility"
+                  >
+                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                  </button>
                 </div>
                 {errors.password && (
                   <span className="auth-error-message">{errors.password}</span>
@@ -535,13 +545,21 @@ const Register = () => {
                 >
                   <span className="auth-input-icon">🔒</span>
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     placeholder="Xác nhận mật khẩu"
                     value={form.confirmPassword}
                     onChange={handleChange}
                     className="auth-input"
                   />
+                  <button
+                    type="button"
+                    className="auth-password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label="Toggle confirm password visibility"
+                  >
+                    {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                  </button>
                 </div>
                 {errors.confirmPassword && (
                   <span className="auth-error-message">
