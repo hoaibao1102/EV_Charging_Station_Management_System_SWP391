@@ -88,10 +88,11 @@ public class DriverServiceImpl implements DriverService {
      */
     @Override
     @Transactional(readOnly = true)
-    public DriverResponse getByDriverId(Long driverId) {
-        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + driverId));
-    return driverMapper.toDriverResponse(driver);
+
+    public DriverResponse getByDriverId(Long userId) {
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + userId));
+         return driverMapper.toDriverResponse(driver);
     }
 
     @Override
