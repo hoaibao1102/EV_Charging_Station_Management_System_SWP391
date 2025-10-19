@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { registerApi } from "../../api/authApi";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./Login.css"; // Reuse Login.css for shared styles
 import "./register-mobile.css"; // Additional styles for Register page
 
@@ -16,7 +18,7 @@ const Register = () => {
     email: "",
     phoneNumber: "",
     name: "",
-    dateOfBirth: "",
+    dateOfBirth: null,
     gender: "",
     address: "",
     password: "",
@@ -66,6 +68,20 @@ const Register = () => {
       }
       if (!form.dateOfBirth) {
         newErrors.dateOfBirth = "Vui lòng chọn ngày sinh";
+      } else {
+        // Kiểm tra tuổi >= 18
+        const birthDate = form.dateOfBirth;
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        if (age < 18) {
+          newErrors.dateOfBirth = "Bạn phải từ 18 tuổi trở lên";
+        }
       }
       if (!form.gender) {
         newErrors.gender = "Vui lòng chọn giới tính";
@@ -113,12 +129,22 @@ const Register = () => {
       Nữ: "F",
     };
 
+    // Format date to yyyy-MM-dd
+    const formatDate = (date) => {
+      if (!date) return "";
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const registerData = {
       email: form.email,
       phoneNumber: form.phoneNumber,
       passwordHash: form.password,
       name: form.name,
-      dateOfBirth: form.dateOfBirth,
+      dateOfBirth: formatDate(form.dateOfBirth),
       gender: genderMap[form.gender] || form.gender, // Convert to M/F
       address: form.address,
     };
@@ -134,19 +160,39 @@ const Register = () => {
         toast.success("Đăng ký thành công!");
         setTimeout(() => navigate("/login"), 2000);
       } else {
-        toast.error(response.message || "Đăng ký thất bại!");
+        const errorMessage = response.message || "Đăng ký thất bại!";
+        
+        // Kiểm tra lỗi email hoặc phone đã tồn tại
+        if (errorMessage.toLowerCase().includes("phone") ) {
+          toast.error("Số điện thoại đã được sử dụng. Vui lòng nhập số khác!");
+          setStep(1); // Tự động nhảy về step 1, dữ liệu vẫn giữ nguyên
+        } else if (errorMessage.toLowerCase().includes("email")) {
+          toast.error("Email đã được sử dụng. Vui lòng nhập email khác!");
+          setStep(1); // Tự động nhảy về step 1, dữ liệu vẫn giữ nguyên
+        } else {
+          toast.error(errorMessage);
+        }
       }
     } catch (error) {
       console.error("❌ Register error:", error);
-      toast.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi đăng ký!"
-      );
+      const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi đăng ký!";
+      
+      // Kiểm tra lỗi trong catch block
+      if (errorMessage.toLowerCase().includes("phone")) {
+        toast.error("Số điện thoại đã được sử dụng. Vui lòng nhập số khác!");
+        setStep(1);
+      } else if (errorMessage.toLowerCase().includes("email")) {
+        toast.error("Email đã được sử dụng. Vui lòng nhập email khác!");
+        setStep(1);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Step indicator with numbers
+  // Step indicator with numbers - clickable
   const StepDots = () => (
     <div className="auth-step-indicator">
       {[1, 2, 3, 4].map((n) => (
@@ -155,6 +201,16 @@ const Register = () => {
           className={`auth-step-circle ${
             step === n ? "active" : step > n ? "completed" : ""
           }`}
+          onClick={() => {
+            // Chỉ cho phép quay lại các step đã hoàn thành hoặc step hiện tại
+            if (n <= step) {
+              setStep(n);
+            }
+          }}
+          style={{
+            cursor: n <= step ? "pointer" : "not-allowed",
+            opacity: n > step ? 0.5 : 1
+          }}
         >
           {n}
         </div>
@@ -321,17 +377,48 @@ const Register = () => {
 
               <div className="auth-input-group">
                 <div
-                  className={`auth-input-wrapper ${
+                  className={`auth-input-wrapper date-picker-wrapper ${
                     errors.dateOfBirth ? "error" : ""
                   }`}
+                  style={{ overflow: 'visible', zIndex: 1 }}
                 >
                   <span className="auth-input-icon">📅</span>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={form.dateOfBirth}
-                    onChange={handleChange}
+                  <DatePicker
+                    selected={form.dateOfBirth}
+                    onChange={(date) => {
+                      setForm({ ...form, dateOfBirth: date });
+                      if (errors.dateOfBirth) {
+                        setErrors({ ...errors, dateOfBirth: "" });
+                      }
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="Chọn ngày sinh"
                     className="auth-input"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    maxDate={new Date(new Date().getFullYear() - 18, new Date().getMonth(), new Date().getDate())}
+                    yearDropdownItemNumber={100}
+                    scrollableYearDropdown
+                    portalId="root"
+                    popperClassName="date-picker-popper"
+                    popperPlacement="bottom-start"
+                    popperModifiers={[
+                      {
+                        name: "offset",
+                        options: {
+                          offset: [0, 8],
+                        },
+                      },
+                      {
+                        name: "preventOverflow",
+                        options: {
+                          rootBoundary: "viewport",
+                          tether: false,
+                          altAxis: true,
+                        },
+                      },
+                    ]}
                   />
                 </div>
                 {errors.dateOfBirth && (
@@ -514,19 +601,8 @@ const Register = () => {
           <div className="auth-social-group">
             <button
               type="button"
-              className="auth-social-btn facebook"
-              onClick={() =>
-                toast.info("Đăng nhập Facebook đang được phát triển")
-              }
-            >
-              <span className="auth-social-icon">f</span>
-            </button>
-            <button
-              type="button"
               className="auth-social-btn google"
-              onClick={() =>
-                toast.info("Đăng nhập Google đang được phát triển")
-              }
+              onClick={() => (window.location.href = "http://localhost:8080/oauth2/authorization/google")}
             >
               <span className="auth-social-icon">G</span>
             </button>
