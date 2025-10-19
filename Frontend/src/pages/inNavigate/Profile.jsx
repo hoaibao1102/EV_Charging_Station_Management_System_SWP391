@@ -1,28 +1,34 @@
 import React, { useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { isAuthenticated } from '../../utils/authUtils';
-import { useLogout } from '../../hooks/useAuth';
+import { isAuthenticated } from '../../utils/authUtils.js';
+import { toast } from 'react-toastify';
+import { useLogout } from '../../hooks/useAuth.js';
 import usePaths from '../../hooks/usePath.js';
 import girl from '../../assets/icon/girl.png';
-// import man from '../../assets/icon/man.png';
+import man from '../../assets/icon/man.png';
 import './Profile.css';
 
 export default function Profile() {
   const navigate = useNavigate();
   const paths = usePaths();
+  const userName = localStorage.getItem("userName");
+  const userMail = localStorage.getItem("userMail");
+  const userPhone = localStorage.getItem("userPhone");
+  const userSex = localStorage.getItem("userSex");
+  // const [userProfile, setUserProfile] = useState(null);
+  
   const { logout, loading } = useLogout();
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      alert("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục!");
-      navigate('/login');
-      return;
-    }
-    
-    // Lấy thông tin user từ localStorage
-    // const profile = getUserProfile();
-    // setUserProfile(profile);
-  }, [navigate]);
+        if (!isAuthenticated()) {
+          toast.warning("Bạn chưa đăng nhập. Vui lòng đăng nhập để có thể đặt chỗ!", {
+            position: "top-center",
+            autoClose: 3000,
+          });
+          navigate(paths.login);
+          return;
+        }
+      }, [navigate, paths.login]);
 
   const handleLogout = async () => {
     const result = await logout();
@@ -30,15 +36,13 @@ export default function Profile() {
       navigate(paths.login);
     }
   };
-  //thêm các path và router tương ứng , xử lý sau
   const menuItems = [
-    { label: 'Thông tin chi tiết', icon: '📝', path: paths.profile }, 
+    { label: 'Thông tin chi tiết', icon: '📝', path: paths.myInformation }, 
     { label: 'Phương tiện của tôi', icon: '🚗', path: paths.myVehicle }, 
     { label: 'Giao dịch của tôi', icon: '💸', path: paths.myBookings }, 
-    { label: 'Thay đổi mật khẩu', icon: '🔑', path: paths.changePassword }, 
+    { label: 'Thay đổi thông tin', icon: '🛠️', path: paths.editProfile }, 
     { label: 'Thông báo', icon: '🔔', path: paths.notifications }, 
     { label: 'Lịch sử sạc', icon: '🔋', path: paths.chargeHistory }, 
-    { label: 'Cài đặt', icon: '🛠️', path: paths.settings }, 
 ];
 
   if (!isAuthenticated()) {
@@ -55,7 +59,7 @@ export default function Profile() {
       <div className="profile-card">
         <div className="avatar-container">
           <img 
-            src={girl} 
+            src={userSex === 'M' ? man : girl} 
             alt="Profile Avatar" 
             className="avatar"
           />
@@ -63,17 +67,20 @@ export default function Profile() {
 
         {/* User Info */}
         <div className="user-info">
-          <h2 className="user-name">{ 'Nguyen Van A'}</h2>
-          <p className="user-email">{'nguyenvana@gmail.com'}</p>
+          <h2 className="user-name">{userName}</h2>
+          <p className="user-email">{userMail} || {userPhone}</p>
         </div>
 
         {/* Menu Items */}
         <div className="menu-section">
           {menuItems.map((item, index) => (
-            <div key={index} className="menu-item">
+            <div 
+              key={index} 
+              className="menu-item"
+              onClick={() => navigate(item.path)}
+            >
               <span className="menu-label">{item.label}</span>
               <span className="menu-arrow">{item.icon}</span>
-              <navigate to={item.path} />
             </div>
           ))}
         </div>

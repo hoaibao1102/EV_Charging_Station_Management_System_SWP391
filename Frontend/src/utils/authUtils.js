@@ -5,6 +5,9 @@ export const clearAuthData = () => {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("userName");
   localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("userMail");
+  localStorage.removeItem("userPhone");
+  localStorage.removeItem("userSex");
 };
 
 // Kiểm tra trạng thái đăng nhập
@@ -13,10 +16,4 @@ export const isAuthenticated = () => {
          localStorage.getItem("accessToken");
 };
 
-// Lấy thông tin hồ sơ người dùng từ localStorage
-// export const getUserProfile = () => {
-//   const userName = localStorage.getItem("userName");
-//   const email = localStorage.getItem("email");
-//   const phone = localStorage.getItem("phone");
-//   return { name: userName, email, phone };
-// };
+
