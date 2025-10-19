@@ -506,7 +506,7 @@ button[type="submit"].auth-button:disabled {
   }
 
   button[type="submit"].auth-button {
-    max-width: 320px !important;
+    max-width: 100% !important;
     min-height: 54px;
     font-size: 17px;
     margin: 28px auto 0 !important;

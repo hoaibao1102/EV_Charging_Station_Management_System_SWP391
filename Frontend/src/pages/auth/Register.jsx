@@ -6,7 +6,7 @@ import { registerApi } from "../../api/authApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./Login.css"; // Reuse Login.css for shared styles
-import "./register-mobile.css"; // Additional styles for Register page
+import "./Register-mobile.css"; // Additional styles for Register page
 
 const Register = () => {
   const navigate = useNavigate();
@@ -147,7 +147,7 @@ const Register = () => {
       passwordHash: form.password,
       name: form.name,
       dateOfBirth: formatDate(form.dateOfBirth),
-      gender: genderMap[form.gender] || form.gender, // Convert to M/F
+      gender: genderMap[form.gender] || form.gender, 
       address: form.address,
     };
 
@@ -158,9 +158,32 @@ const Register = () => {
       const response = await registerApi(registerData);
       console.log("📥 Register response:", response); // Debug log
 
-      if (response && response.message?.toLowerCase().includes("thành công")) {
-        toast.success("Đăng ký thành công!");
-        setTimeout(() => navigate("/login"), 2000);
+      // Kiểm tra success flag
+      if (response.success) {
+        const message = response.data?.message || response.message || "";
+        
+        // Trường hợp 1: Backend gửi OTP về email (cần xác thực)
+        if (message.toLowerCase().includes("otp")) {
+          toast.success("OTP đã được gửi về email của bạn!");
+          toast.info("Vui lòng kiểm tra email để lấy mã OTP", { autoClose: 5000 });
+          setTimeout(() => {
+            navigate("/verify-otp", {
+              state: {
+                registerData: registerData
+              }
+            });
+          }, 2000);
+        }
+        // Trường hợp 2: Đăng ký thành công trực tiếp (không cần OTP)
+        else if (message.toLowerCase().includes("thành công")) {
+          toast.success("Đăng ký thành công!");
+          setTimeout(() => navigate("/login"), 2000);
+        }
+        // Trường hợp 3: Có message khác
+        else {
+          toast.success(message || "Đăng ký thành công!");
+          setTimeout(() => navigate("/login"), 2000);
+        }
       } else {
         const errorMessage = response.message || "Đăng ký thất bại!";
         

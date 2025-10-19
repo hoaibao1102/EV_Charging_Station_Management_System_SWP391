@@ -8,6 +8,7 @@ import Error404 from "../pages/inNavigate/Error404.jsx";
 import ResponsiveLayout from "../layouts/ResponsiveLayout.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
+import Verify from "../pages/auth/Verify.jsx";
 // import MyVehicle from "../pages/profile/MyVehicle.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
 // import EditProfile from "../pages/profile/EditProfile.jsx";
@@ -49,6 +50,10 @@ const routes = [
             {
                 path: 'register', 
                 element: <Register />,
+            },
+            {
+                path: 'verify-otp', 
+                element: <Verify />,
             },
             //trong profile - tạm thời comment để không bị lỗi
             //Uncomment và tạo các component tương ứng khi cần

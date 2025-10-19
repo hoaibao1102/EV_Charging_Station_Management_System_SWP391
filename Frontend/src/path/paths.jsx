@@ -8,6 +8,7 @@ export const PathProvider = ({ children }) => {
     stations: "/stations",
     bookings: "/bookings",
     profile: "/profile",
+    verify : "/verify-otp",
     //khác
     login: "/login",
     register: "/register",
