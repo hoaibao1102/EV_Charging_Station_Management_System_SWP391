@@ -1,0 +1,129 @@
+/* MainLayout.css - Responsive layout cho mobile và desktop */
+
+/* Container chính */
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden; /* Ngăn scroll ngang */
+}
+
+/* ========== MOBILE FIRST (Default) ========== */
+
+/* Sidebar ẩn trên mobile */
+.main-layout-sidebar {
+  display: none;
+}
+
+/* Content chiếm full width trên mobile */
+.main-layout-content {
+  flex: 1;
+  width: 100%;
+  padding: 0;
+  padding-bottom: 70px; /* Khoảng trống cho bottom nav */
+  overflow-x: hidden;
+  overflow-y: auto; /* Cho phép scroll dọc */
+  height: 100vh; /* Fix height để scroll đúng */
+}
+
+/* Bottom navigation - hiển thị trên mobile */
+.main-layout-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid #e0e0e0;
+}
+
+/* ========== TABLET (768px+) ========== */
+@media (min-width: 768px) {
+  .main-layout-content {
+    padding-bottom: 90px; /* Tăng padding cho tablet */
+  }
+}
+
+/* ========== DESKTOP/LAPTOP (992px+) ========== */
+@media (min-width: 992px) {
+  .main-layout {
+    flex-direction: row;
+  }
+
+  /* Hiển thị sidebar trên desktop */
+  .main-layout-sidebar {
+    display: block;
+    width: 280px;
+    min-width: 280px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+  }
+
+  /* Content điều chỉnh với sidebar */
+  .main-layout-content {
+    flex: 1;
+    width: calc(100% - 280px);
+    padding: 0;
+    padding-bottom: 0; /* Bỏ padding bottom trên desktop */
+    overflow-x: hidden;
+    overflow-y: auto; /* Scroll riêng cho content */
+    height: 100vh; /* Full viewport height */
+  }
+
+  /* Ẩn bottom navigation trên desktop */
+  .main-layout-bottom-nav {
+    display: none;
+  }
+}
+
+/* ========== LARGE DESKTOP (1200px+) ========== */
+@media (min-width: 1200px) {
+  .main-layout-sidebar {
+    width: 320px;
+    min-width: 320px;
+  }
+
+  .main-layout-content {
+    width: calc(100% - 320px);
+  }
+}
+
+/* ========== EXTRA LARGE DESKTOP (1400px+) ========== */
+@media (min-width: 1400px) {
+  .main-layout-content {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+/* Smooth transitions */
+.main-layout-sidebar,
+.main-layout-content,
+.main-layout-bottom-nav {
+  transition: all 0.3s ease;
+}
+
+/* Scrollbar styling cho sidebar */
+.main-layout-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-layout-sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.main-layout-sidebar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.main-layout-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
