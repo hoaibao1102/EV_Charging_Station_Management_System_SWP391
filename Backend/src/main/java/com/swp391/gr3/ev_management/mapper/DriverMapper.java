@@ -17,9 +17,11 @@ public class DriverMapper {
                 .email(driver.getUser().getEmail())
                 .phoneNumber(driver.getUser().getPhoneNumber())
                 .name(driver.getUser().getName())
-                .status(driver.getStatus())
                 .address(driver.getUser().getAddress())
-                .createdAt(driver.getUser().getCreatedAt())
+                .gender(driver.getUser().getGender())              // Giới tính
+                .dateOfBirth(driver.getUser().getDateOfBirth())    // Ngày sinh
+                .status(driver.getStatus())                        // Trạng thái: ACTIVE/BANNED/SUSPENDED
+                .createdAt(driver.getUser().getCreatedAt())        // Ngày tạo
                 .updatedAt(driver.getUser().getUpdatedAt())
                 .build();
     }
@@ -36,17 +38,5 @@ public class DriverMapper {
                 .connectorTypeName(model.getConnectorType() != null ?
                         model.getConnectorType().getDisplayName() : null)
                 .build();
-    }
-
-    // Định dạng hiển thị đơn giản: chèn dấu '-' giữa block khu vực (2-3 ký tự đầu) và phần còn lại.
-    // Vì lưu trữ đã normalized (A-Z0-9), formatter cố gắng để người dùng dễ đọc hơn.
-    private String formatPlateForDisplay(String plate) {
-    if (plate == null) return null;
-    String p = plate.trim();
-    if (p.length() <= 3) return p;
-    // Heuristic: 2 hoặc 3 ký tự đầu là mã tỉnh + series, phần sau là số
-    int split = Character.isDigit(p.charAt(2)) ? 2 : 3;
-    if (p.length() <= split) return p;
-    return p.substring(0, split) + "-" + p.substring(split);
     }
 }
