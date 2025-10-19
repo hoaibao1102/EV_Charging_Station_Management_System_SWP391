@@ -1,0 +1,251 @@
+/* ===== VERIFY OTP PAGE STYLES ===== */
+
+.verify-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+}
+
+.verify-container {
+  max-width: 440px;
+  padding: 40px 30px;
+  position: relative;
+  z-index: 10;
+}
+
+.verify-container-inner {
+  position: relative;
+}
+
+/* ===== BACK BUTTON ===== */
+.verify-back-btn {
+  position: absolute;
+  top: -10px;
+  left: -5px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #20b2aa;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.verify-back-btn:hover {
+  opacity: 0.8;
+}
+
+/* ===== LOGO SECTION ===== */
+.verify-logo-wrapper {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.verify-logo-circle {
+  width: 90px;
+  height: 90px;
+  background: #20b2aa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.25);
+}
+
+.verify-logo-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.verify-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #20b2aa;
+  margin: 0;
+}
+
+/* ===== STEP INDICATOR ===== */
+.verify-step-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.verify-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d5db;
+}
+
+.verify-step-dot.active {
+  background: #20b2aa;
+}
+
+/* ===== OTP SECTION ===== */
+.verify-otp-section {
+  margin-bottom: 28px;
+}
+
+.verify-otp-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #20b2aa;
+  text-align: center;
+  margin: 0 0 16px 0;
+}
+
+.verify-otp-description {
+  font-size: 14px;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 28px;
+  line-height: 1.5;
+  padding: 0 10px;
+}
+
+/* ===== OTP INPUT BOXES ===== */
+.verify-otp-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.verify-otp-input {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #a7f3d0;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: #20b2aa;
+  outline: none;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.verify-otp-input:focus {
+  border-color: #20b2aa;
+  box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.1);
+}
+
+/* ===== RESEND SECTION ===== */
+.verify-resend-wrapper {
+  text-align: center;
+}
+
+.verify-resend-btn {
+  background: none;
+  border: none;
+  color: #20b2aa;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.verify-resend-btn:hover {
+  opacity: 0.8;
+}
+
+.verify-timer-text {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.verify-timer-icon {
+  font-size: 16px;
+}
+
+/* ===== SUBMIT BUTTON ===== */
+.verify-submit-btn {
+  width: 100%;
+  height: 54px;
+  background: #20b2aa;
+  border: none;
+  border-radius: 27px;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 14px rgba(32, 178, 170, 0.3);
+  transition: all 0.3s ease;
+}
+
+.verify-submit-btn:hover {
+  background: #1a8f89;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(32, 178, 170, 0.4);
+}
+
+.verify-submit-btn:active {
+  transform: translateY(0);
+}
+
+.verify-submit-arrow {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* ===== FOOTER SECTION ===== */
+.verify-footer {
+  text-align: center;
+}
+
+.verify-footer-text {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.verify-login-btn {
+  background: none;
+  border: none;
+  color: #20b2aa;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0;
+}
+
+.verify-login-btn:hover {
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .verify-container {
+    padding: 30px 20px;
+  }
+
+  .verify-otp-input {
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+  }
+
+  .verify-logo-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .verify-title {
+    font-size: 24px;
+  }
+}

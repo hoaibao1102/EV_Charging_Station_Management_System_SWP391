@@ -769,7 +769,7 @@ body {
     z-index: 0;
   }
 
-  /* Play Button Overlay */
+  /* Play Button Overlay
   .auth-page::after {
     content: "▶";
     position: absolute;
@@ -792,7 +792,7 @@ body {
     padding-left: 6px;
     line-height: 90px;
     text-align: center;
-  }
+  } */
 
   /* Desktop: Show Welcome Section */
   .auth-welcome-section {
