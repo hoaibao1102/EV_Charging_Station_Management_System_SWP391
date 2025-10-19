@@ -5,9 +5,11 @@ import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import jakarta.validation.Valid;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public interface DriverService {
     // CRUD
     DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
