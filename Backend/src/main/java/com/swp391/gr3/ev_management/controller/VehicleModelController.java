@@ -13,14 +13,41 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @RestController
-@RequestMapping("/api/admin/vehicle-models")
+@RequestMapping({"/api/admin/vehicle-models"})
 @Tag(name = "Vehicle Model Controller", description = "APIs for managing vehicle models")
 public class VehicleModelController {
 
     @Autowired
     private VehicleModelService vehicleModelService;
+
+    @Autowired
+    private VehicleModelRepository vehicleModelRepository;
+    // GET /brands - lấy danh sách hãng xe (public, không cần quyền admin)
+    @GetMapping(path = "/brands", params = {})
+    @Operation(summary = "List all vehicle brands (public)", description = "Get all distinct vehicle brands for user/driver")
+    public ResponseEntity<List<String>> getAllBrandsPublic() {
+        List<String> brands = vehicleModelRepository.findAll()
+                .stream()
+                .map(vm -> vm.getBrand())
+                .distinct()
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(brands);
+    }
+
+    // GET /api/vehicle-models?brand=... - lấy model theo hãng (public)
+    @GetMapping(params = {"brand"})
+    @Operation(summary = "List vehicle models by brand (public)", description = "Get all vehicle models for a brand for user/driver")
+    public ResponseEntity<List<VehicleModelResponse>> getModelsByBrandPublic(@RequestParam String brand) {
+        return ResponseEntity.ok(vehicleModelService.search(brand, null, null, null));
+    }
 
     // Alias create to match /create path expected by clients
     @PreAuthorize("hasRole('ADMIN')")

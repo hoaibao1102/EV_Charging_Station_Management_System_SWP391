@@ -7,6 +7,7 @@ import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.mapper.VehicleModelMapper;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import com.swp391.gr3.ev_management.repository.VehicleRepisitory;
@@ -23,6 +24,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
     private final VehicleModelRepository vehicleModelRepository;
     private final ConnectorTypeRepository connectorTypeRepository;
     private final VehicleRepisitory vehicleRepisitory;
+    private final VehicleModelMapper vehicleModelMapper;
 
     @Override
     @Transactional
@@ -43,28 +45,28 @@ public class VehicleModelServiceImpl implements VehicleModelService {
                 .build();
 
         VehicleModel saved = vehicleModelRepository.save(entity);
-        return mapToResponse(saved);
+        return vehicleModelMapper.toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public VehicleModelResponse getById(Long id) {
-        VehicleModel vm = vehicleModelRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("VehicleModel not found with id " + id));
-        return mapToResponse(vm);
+    VehicleModel vm = vehicleModelRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("VehicleModel not found with id " + id));
+    return vehicleModelMapper.toResponse(vm);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<VehicleModelResponse> getAll() {
-        return vehicleModelRepository.findAll().stream().map(this::mapToResponse).toList();
+        return vehicleModelRepository.findAll().stream().map(vehicleModelMapper::toResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<VehicleModelResponse> search(String brand, String model, Integer year, Integer connectorTypeId) {
-        return vehicleModelRepository.search(brand, model, year, connectorTypeId)
-                .stream().map(this::mapToResponse).toList();
+    return vehicleModelRepository.search(brand, model, year, connectorTypeId)
+        .stream().map(vehicleModelMapper::toResponse).toList();
     }
 
     @Override
@@ -93,7 +95,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
         }
 
         VehicleModel saved = vehicleModelRepository.save(vm);
-        return mapToResponse(saved);
+        return vehicleModelMapper.toResponse(saved);
     }
 
     @Override
@@ -109,18 +111,6 @@ public class VehicleModelServiceImpl implements VehicleModelService {
         vehicleModelRepository.delete(vm);
     }
 
-    private VehicleModelResponse mapToResponse(VehicleModel vm) {
-        ConnectorType ct = vm.getConnectorType();
-        return VehicleModelResponse.builder()
-                .modelId(vm.getModelId())
-                .brand(vm.getBrand())
-                .model(vm.getModel())
-                .year(vm.getYear())
-                .connectorTypeId(ct != null ? ct.getConnectorTypeId() : null)
-                .connectorTypeCode(ct != null ? ct.getCode() : null)
-                .connectorTypeDisplayName(ct != null ? ct.getDisplayName() : null)
-                .connectorDefaultMaxPowerKW(ct != null ? ct.getDefaultMaxPowerKW() : 0)
-                .build();
-    }
+    
 }
 
