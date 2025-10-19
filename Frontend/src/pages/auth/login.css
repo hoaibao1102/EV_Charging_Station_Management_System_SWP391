@@ -309,6 +309,9 @@ body {
 .react-datepicker-popper {
   z-index: 99999 !important;
   position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .react-datepicker {
@@ -318,6 +321,7 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   z-index: 99999 !important;
   position: relative;
+  transform: scale(1.05);
 }
 
 .react-datepicker__header {
