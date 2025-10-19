@@ -1,5 +1,5 @@
 import "./Login.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -11,9 +11,47 @@ const Login = () => {
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockEndTime, setLockEndTime] = useState(null);
 
   const { login, loading } = useLogin();
   const navigate = useNavigate();
+
+  // Khôi phục trạng thái khóa từ localStorage khi component mount
+  useEffect(() => {
+    const savedLockEndTime = localStorage.getItem('loginLockEndTime');
+    const savedFailedAttempts = localStorage.getItem('loginFailedAttempts');
+    
+    if (savedLockEndTime) {
+      const lockEnd = parseInt(savedLockEndTime, 10);
+      const now = Date.now();
+      
+      if (lockEnd > now) {
+        // Vẫn còn trong thời gian khóa
+        setIsLocked(true);
+        setLockEndTime(lockEnd);
+        setFailedAttempts(parseInt(savedFailedAttempts || '3', 10));
+        
+        // Tự động mở khóa sau thời gian còn lại
+        const remainingTime = lockEnd - now;
+        const unlockTimer = setTimeout(() => {
+          setFailedAttempts(0);
+          setIsLocked(false);
+          setLockEndTime(null);
+          localStorage.removeItem('loginLockEndTime');
+          localStorage.removeItem('loginFailedAttempts');
+        }, remainingTime);
+        
+        // Cleanup timer khi component unmount
+        return () => clearTimeout(unlockTimer);
+      } else {
+        // Đã hết thời gian khóa
+        localStorage.removeItem('loginLockEndTime');
+        localStorage.removeItem('loginFailedAttempts');
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -29,15 +67,57 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Kiểm tra nếu đang bị khóa
+    if (isLocked) {
+      const remainingTime = Math.ceil((lockEndTime - Date.now()) / 1000);
+      const minutes = Math.floor(remainingTime / 60);
+      const seconds = remainingTime % 60;
+      toast.error(`Tài khoản bị khóa! Vui lòng thử lại sau ${minutes}:${seconds.toString().padStart(2, '0')}`);
+      return;
+    }
+
     const { success, message } = await login(form.phone, form.password);
 
     if (success) {
+      // Reset failed attempts khi đăng nhập thành công
+      setFailedAttempts(0);
+      setIsLocked(false);
+      setLockEndTime(null);
+      localStorage.removeItem('loginLockEndTime');
+      localStorage.removeItem('loginFailedAttempts');
+      
       toast.success("Đăng nhập thành công!");
       setTimeout(() => {
         navigate("/");
       }, 2000);
     } else {
-      toast.error(message || "Đăng nhập thất bại!");
+      // Tăng số lần thất bại
+      const newFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(newFailedAttempts);
+      localStorage.setItem('loginFailedAttempts', newFailedAttempts.toString());
+      
+      if (newFailedAttempts >= 3) {
+        // Khóa tài khoản trong 3 phút
+        setIsLocked(true);
+        const lockEnd = Date.now() + 1 * 60 * 1000; // 3 phút
+        setLockEndTime(lockEnd);
+        localStorage.setItem('loginLockEndTime', lockEnd.toString());
+        
+        toast.error("Đăng nhập sai 3 lần! Tài khoản bị khóa trong 1 phút.");
+        
+        // Tự động mở khóa sau 3 phút
+        setTimeout(() => {
+          setFailedAttempts(0);
+          setIsLocked(false);
+          setLockEndTime(null);
+          localStorage.removeItem('loginLockEndTime');
+          localStorage.removeItem('loginFailedAttempts');
+          toast.info("Tài khoản đã được mở khóa. Bạn có thể đăng nhập lại.");
+        }, 1 * 60 * 1000);
+      } else {
+        toast.error(`${message || "Đăng nhập thất bại!"} (${newFailedAttempts}/3)`);
+      }
     }
   };
 
@@ -152,7 +232,8 @@ const Login = () => {
                 onChange={handleChange}
                 className="auth-input"
                 required
-                autoComplete="username"
+                autoComplete="off"
+                value={form.phone}
               />  
             </div>
           </div>
@@ -168,7 +249,8 @@ const Login = () => {
                 onChange={handleChange}
                 className="auth-input"
                 required
-                autoComplete="current-password"
+                autoComplete="off"
+                value={form.password}
               />
               <span
                 className="auth-toggle-password"
@@ -198,9 +280,26 @@ const Login = () => {
           </div>
 
           {/* Submit Button */}
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          <button 
+            type="submit" 
+            className="auth-button" 
+            disabled={loading || isLocked}
+            style={isLocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
+            {loading ? "Đang đăng nhập..." : isLocked ? "Tài khoản bị khóa" : "Đăng nhập"}
           </button>
+
+          {isLocked && (
+            <p style={{ 
+              color: 'red', 
+              fontSize: '14px', 
+              textAlign: 'center', 
+              marginTop: '10px',
+              fontWeight: '600'
+            }}>
+              ⚠️ Tài khoản bị khóa trong 3 phút tới do đăng nhập sai 3 lần
+            </p>
+          )}
 
           {/* Social Login */}
           <div className="auth-social-section">
@@ -211,7 +310,7 @@ const Login = () => {
               <button
                 type="button"
                 className="auth-social-btn google"
-                onClick={() => toast.info("Google login chưa khả dụng")}
+                onClick={() => (window.location.href = "http://localhost:8080/oauth2/authorization/google")}
               >
                 G
               </button>
