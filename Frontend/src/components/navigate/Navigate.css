@@ -2,16 +2,32 @@
 .navigationBar {
   border: 3px solid #20b2aa;
   border-radius: 40px;
-  height: 10%;
-  position: fixed;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
   background-color: white;
-  border-top: 1px solid #e0e0e0;
   padding: 10px 0;
   box-shadow: 0 -8px 3px rgba(0, 0, 0, 0.05);
   z-index: 1000;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Mobile: Navigation ở dưới */
+@media (max-width: 768px) {
+  .navigationBar {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    height: 10%;
+  }
+}
+
+/* Desktop: Navigation ở trên */
+@media (min-width: 769px) {
+  .navigationBar {
+    position: static;
+    margin: 12px;
+    height: auto;
+    border-radius: 20px;
+  }
 }
 
 .navContainer {
