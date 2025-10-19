@@ -4,6 +4,7 @@ export default function Rules() {
   const styles = {
     container: { 
       padding: 32,
+      paddingBottom: 120, 
       maxWidth: 1000,
       margin: "0 auto",
       backgroundColor: "#ffffff",
@@ -22,9 +23,14 @@ export default function Rules() {
     },
     tableWrap: { 
       overflowX: "auto",
+      overflowY: "auto",
+      maxHeight: "58vh",
       backgroundColor: "#ffffff",
       borderRadius: 8,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      // Custom scrollbar
+      scrollbarWidth: "thin",
+      scrollbarColor: "#20b2aa #f0f0f0"
     },
     table: { 
       width: "100%",
@@ -126,11 +132,33 @@ export default function Rules() {
 
   return (
     <div style={styles.container}>
+      <style>{`
+        /* Custom scrollbar cho bảng quy định */
+        .rules-table-wrap::-webkit-scrollbar {
+          width: 10px;
+          height: 10px;
+        }
+        
+        .rules-table-wrap::-webkit-scrollbar-track {
+          background: #f0f0f0;
+          border-radius: 5px;
+        }
+        
+        .rules-table-wrap::-webkit-scrollbar-thumb {
+          background: #20b2aa;
+          border-radius: 5px;
+        }
+        
+        .rules-table-wrap::-webkit-scrollbar-thumb:hover {
+          background: #1a9e98;
+        }
+      `}</style>
+
       <div style={styles.header}>
         <h1 style={styles.heading}>Quy định sử dụng hệ thống sạc EV</h1>
       </div>
 
-      <div style={styles.tableWrap}>
+      <div style={styles.tableWrap} className="rules-table-wrap">
         <table style={styles.table}>
           <thead>
             <tr>

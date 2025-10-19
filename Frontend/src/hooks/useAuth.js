@@ -34,7 +34,7 @@ export const useLogin = () => {
         // Lưu thông tin đăng nhập vào localStorage
         localStorage.setItem("isLoggedIn", "true");
         if (response.data) {
-          // API chỉ trả về token và name
+          // API chỉ trả về token và tt user
           if (response.data.token) localStorage.setItem("accessToken", response.data.token);
           if (response.data.name) localStorage.setItem("userName", response.data.name);
           if (response.data.email) localStorage.setItem("userMail", response.data.email);
@@ -98,7 +98,6 @@ export const useLogout = () => {
     setLoading(true);
     try {
       const response = await logoutApi();
-      // callApi.js sẽ tự động xóa localStorage thông qua clearAuthData
       clearAuthData();
       
       if (response.success) {
@@ -108,7 +107,6 @@ export const useLogout = () => {
       }
     } catch (error) {
       console.error("Error during logout:", error);
-      // Nếu API lỗi, vẫn xóa localStorage bằng hàm chung
       clearAuthData();
       return { success: true, message: "Đã đăng xuất khỏi thiết bị!" };
     } finally {
