@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.ViolationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -25,8 +26,9 @@ public class DriverViolation {
     @Column(name = "OccurredAt",nullable = false)
     private LocalDateTime occurredAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)",nullable = false)
-    private String status;
+    private ViolationStatus status;
 
     @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     private String description;
