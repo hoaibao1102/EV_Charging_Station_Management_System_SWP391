@@ -86,8 +86,8 @@ public class User {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Admin admin;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<StationStaff> stationStaffs;
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private StationStaff stationStaffs;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore  // 👈 rất quan trọng

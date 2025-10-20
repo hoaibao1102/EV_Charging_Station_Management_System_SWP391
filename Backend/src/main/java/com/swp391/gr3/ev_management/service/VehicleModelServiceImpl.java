@@ -41,6 +41,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
                 .brand(request.getBrand())
                 .model(request.getModel())
                 .year(request.getYear())
+                .imageUrl(request.getImageUrl())
                 .connectorType(connectorType)
                 .build();
 
@@ -87,6 +88,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
         if (request.getBrand() != null) vm.setBrand(request.getBrand());
         if (request.getModel() != null) vm.setModel(request.getModel());
         if (request.getYear() != null) vm.setYear(request.getYear());
+        if (request.getImageUrl() != null) vm.setImageUrl(request.getImageUrl());
 
         if (request.getConnectorTypeId() != null) {
             ConnectorType ct = connectorTypeRepository.findById(request.getConnectorTypeId())
