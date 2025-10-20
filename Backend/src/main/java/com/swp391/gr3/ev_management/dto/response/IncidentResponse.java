@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.enums.IncidentStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,9 +17,7 @@ public class IncidentResponse {
     private String title;
     private String description;
     private String severity;
-    private String status;
+    private IncidentStatus status;
     private LocalDateTime reportedAt;
     private LocalDateTime resolvedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

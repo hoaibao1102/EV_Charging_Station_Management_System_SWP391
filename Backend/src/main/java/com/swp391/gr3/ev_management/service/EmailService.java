@@ -18,4 +18,23 @@ public interface EmailService {
                                   String displayName,
                                   Object title, Object body,
                                   Object type, Object status, Object createdAt);
+
+    void sendBookingCancelledTpl(
+            String to,
+            String subject,
+            String displayName,
+            Long bookingId,
+            String stationName,
+            String timeRange
+    );
+
+    void sendBookingConfirmedTpl(String to,
+                                 String subject,
+                                 String displayName,
+                                 Long bookingId,
+                                 String station,
+                                 String timeRange,
+                                 String slotName,
+                                 String connectorType,
+                                 byte[] qrBytes);
 }

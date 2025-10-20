@@ -27,7 +27,7 @@ public class StationStaff {
     private ChargingStation station;
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", nullable = false)
     private User user;
 
