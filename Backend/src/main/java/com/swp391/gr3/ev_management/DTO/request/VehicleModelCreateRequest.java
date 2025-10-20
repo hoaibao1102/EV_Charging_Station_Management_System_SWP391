@@ -20,6 +20,9 @@ public class VehicleModelCreateRequest {
     @Min(value = 1886, message = "Year must be realistic")
     private int year;
 
+    @NotBlank
+    private String imageUrl;
+
     @NotNull(message = "connectorTypeId is required")
     private Integer connectorTypeId;
 

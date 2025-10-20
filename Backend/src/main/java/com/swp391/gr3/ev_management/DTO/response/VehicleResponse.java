@@ -16,7 +16,5 @@ public class VehicleResponse {
     private Long modelId;
     private String modelName;
     private String brand;
-    //TODO: xem lại chỗ này, có cần thiết hay không
-    //private Integer batteryCapacity; // hiện chưa thấy chỗ dùng
     private String connectorTypeName;
 }

@@ -14,6 +14,7 @@ public class VehicleModelResponse {
     private String brand;
     private String model;
     private int year;
+    private String imageUrl;
     private Integer connectorTypeId;
     private String connectorTypeCode;
     private String connectorTypeDisplayName;

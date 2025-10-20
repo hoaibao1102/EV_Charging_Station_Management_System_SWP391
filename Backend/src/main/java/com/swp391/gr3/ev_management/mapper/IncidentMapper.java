@@ -9,13 +9,25 @@ import org.springframework.stereotype.Component;
 public class IncidentMapper {
 
     public IncidentResponse mapToIncident(Incident i) {
-        StationStaff s = new StationStaff();
+        var staff = i.getStationStaff();
+
+        // Ưu tiên station trực tiếp trên Incident (đã set khi tạo)
+        var station = (i.getStation() != null)
+                ? i.getStation()
+                : (staff != null ? staff.getStation() : null);
+
+        Long stationId = (station != null) ? station.getStationId() : null;
+        String stationName = (station != null) ? station.getStationName() : null;
+
+        Long staffId = (staff != null) ? staff.getStationStaffId() : null;
+        String staffName = (staff != null && staff.getUser() != null) ? staff.getUser().getName() : null;
+
         return IncidentResponse.builder()
                 .incidentId(i.getIncidentId())
-                .stationId(s.getStation().getStationId())
-                .stationName(s.getStation().getStationName())
-                .staffId(s.getUser().getUserId())
-                .staffName(s.getUser().getName())
+                .stationId(stationId)
+                .stationName(stationName)
+                .staffId(staffId)
+                .staffName(staffName)
                 .title(i.getTitle())
                 .description(i.getDescription())
                 .severity(i.getSeverity())

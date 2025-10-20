@@ -158,19 +158,35 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public User authenticate(String phoneNumber, String rawPassword) {
-        // Tìm user theo số điện thoại
+        // 1️⃣ Kiểm tra user tồn tại
         User user = userRepository.findUsersByPhoneNumber(phoneNumber);
         if (user == null) {
             throw new IllegalArgumentException("Số điện thoại không tồn tại");
         }
 
-        // So sánh mật khẩu nhập vào với mật khẩu đã mã hoá trong DB
+        // 2️⃣ Kiểm tra trạng thái hoạt động (tuỳ role)
+        boolean isDriverActive = user.getDriver() != null
+                && user.getDriver().getStatus() == DriverStatus.ACTIVE;
+
+        boolean isStaffActive = user.getStationStaffs() != null
+                && user.getStationStaffs().getStatus() == StaffStatus.ACTIVE;
+
+        boolean isAdmin = user.getRole() != null
+                && user.getRole().getRoleName().equals("ADMIN");
+
+        if (!isDriverActive && !isStaffActive && !isAdmin) {
+            throw new IllegalArgumentException("Tài khoản của bạn đang bị khóa hoặc không hoạt động");
+        }
+
+        // 3️⃣ Kiểm tra mật khẩu
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new IllegalArgumentException("Mật khẩu không chính xác");
         }
 
-        return user; // trả về user nếu đăng nhập thành công
+        // ✅ Thành công
+        return user;
     }
+
 
     @Override
     public void addUser(User user) {

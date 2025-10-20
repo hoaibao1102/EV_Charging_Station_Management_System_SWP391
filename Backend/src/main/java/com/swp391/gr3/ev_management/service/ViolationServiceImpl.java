@@ -4,15 +4,20 @@ import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
 import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.DriverViolation;
+import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.ViolationStatus;
+import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.DriverViolationRepository;
-import org.springframework.transaction.annotation.Transactional;
+import com.swp391.gr3.ev_management.repository.NotificationsRepository; // ✅
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;            // ✅
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,21 +26,21 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ViolationServiceImpl implements ViolationService{
+public class ViolationServiceImpl implements ViolationService {
+
     private final DriverViolationRepository violationRepository;
     private final DriverRepository driverRepository;
+    private final NotificationsRepository notificationsRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    //CORE METHOD: Tạo violation và TỰ ĐỘNG ban nếu >= 3 vi phạm
     @Override
     @Transactional
     public ViolationResponse createViolation(Long userId, ViolationRequest request) {
         log.info("Creating violation for userId: {}", userId);
 
-        // 1. Tìm driver theo userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
 
-        // 2. Tạo violation mới
         DriverViolation violation = DriverViolation.builder()
                 .driver(driver)
                 .status(ViolationStatus.ACTIVE)
@@ -44,62 +49,52 @@ public class ViolationServiceImpl implements ViolationService{
                 .build();
 
         DriverViolation savedViolation = violationRepository.save(violation);
-        log.info("Violation created: ID={}, Description={}",
-                savedViolation.getViolationId(), savedViolation.getDescription());
+        log.info("Violation created: ID={}, Description={}", savedViolation.getViolationId(), savedViolation.getDescription());
 
-        // 3. ✅ TỰ ĐỘNG check và ban driver
-        boolean wasAutoBanned = autoCheckAndBanDriver(driver);
+        boolean wasAutoBanned = autoCheckAndBanDriver(driver); // tạo noti + mail nằm trong hàm này
 
-        // 4. Build response
         return buildViolationResponse(savedViolation, wasAutoBanned);
     }
 
-
-    //AUTO-BAN LOGIC: Tự động ban driver nếu có >= 3 vi phạm ACTIVE
+    // ✅ TỰ ĐỘNG BAN + gửi NOTIFICATION (email sẽ do listener Thymeleaf lo)
     private boolean autoCheckAndBanDriver(Driver driver) {
-        // Đếm số vi phạm ACTIVE
         int activeViolationCount = violationRepository.countByDriver_DriverIdAndStatus(
-                driver.getDriverId(),
-                ViolationStatus.ACTIVE
-        );
+                driver.getDriverId(), ViolationStatus.ACTIVE);
 
         log.info("Driver {} (userId={}) now has {} ACTIVE violations",
                 driver.getDriverId(), driver.getUser().getUserId(), activeViolationCount);
 
-        // Nếu >= 3 vi phạm và chưa bị ban
         if (activeViolationCount >= 3 && driver.getStatus() != DriverStatus.BANNED) {
-            log.warn(" AUTO-BAN TRIGGERED: Driver {} has {} violations",
-                    driver.getDriverId(), activeViolationCount);
+            log.warn("AUTO-BAN TRIGGERED: Driver {} has {} violations", driver.getDriverId(), activeViolationCount);
 
-            try {
-                // 1. Set tất cả vi phạm ACTIVE → INACTIVE
-                List<DriverViolation> activeViolations = violationRepository
-                        .findByDriver_DriverIdAndStatus(driver.getDriverId(), ViolationStatus.ACTIVE);
+            // 1) đóng tất cả vi phạm ACTIVE -> INACTIVE
+            List<DriverViolation> activeViolations =
+                    violationRepository.findByDriver_DriverIdAndStatus(driver.getDriverId(), ViolationStatus.ACTIVE);
+            activeViolations.forEach(v -> v.setStatus(ViolationStatus.INACTIVE));
+            violationRepository.saveAll(activeViolations);
 
-                activeViolations.forEach(v -> v.setStatus(ViolationStatus.INACTIVE));
-                violationRepository.saveAll(activeViolations);
-                log.info("Set {} violations to INACTIVE", activeViolations.size());
+            // 2) BAN driver
+            driver.setStatus(DriverStatus.BANNED);
+            driver.setLastActiveAt(LocalDateTime.now());
+            driverRepository.save(driver);
 
-                // 2. Ban driver
-                driver.setStatus(DriverStatus.BANNED);
-                driver.setLastActiveAt(LocalDateTime.now());
-                driverRepository.save(driver);
+            // 3) Tạo NOTIFICATION cho user (KHÔNG tham chiếu booking)
+            Notification noti = new Notification();
+            noti.setUser(driver.getUser());
+            noti.setTitle("Tài khoản bị khóa do vi phạm");
+            noti.setContentNoti("Tài khoản của bạn đã bị khóa tự động vì có từ 3 vi phạm trở lên. "
+                    + "Vui lòng liên hệ hỗ trợ để được xem xét mở khóa.");
+            noti.setType(NotificationTypes.USER_BANNED); // ⚠️ enum phải đúng chính tả
+            noti.setStatus("UNREAD");
+            noti.setCreatedAt(LocalDateTime.now());
+            notificationsRepository.save(noti);
 
-                log.warn(" Driver {} (userId={}) has been AUTO-BANNED due to {} violations",
-                        driver.getDriverId(), driver.getUser().getUserId(), activeViolationCount);
+            // 4) Publish event -> NotificationEmailListener sẽ gửi mail Thymeleaf
+            eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
 
-                // TODO: Gửi notification/email cho driver
-                // notificationService.sendBanNotification(driver.getUser());
-
-                return true;  // Đã ban
-
-            } catch (Exception e) {
-                log.error(" Failed to auto-ban driver {}: {}", driver.getDriverId(), e.getMessage(), e);
-                throw new RuntimeException("Auto-ban failed: " + e.getMessage(), e);
-            }
+            return true;
         }
-
-        return false;  // Không ban
+        return false;
     }
 
     @Override
@@ -108,20 +103,16 @@ public class ViolationServiceImpl implements ViolationService{
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
 
-        List<DriverViolation> violations = violationRepository.findByDriver_DriverId(driver.getDriverId());
-
-        return violations.stream()
-                .map(v -> buildViolationResponse(v, false))
+        return violationRepository.findByDriver_DriverId(driver.getDriverId())
+                .stream().map(v -> buildViolationResponse(v, false))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ViolationResponse> getViolationsByUserIdAndStatus(Long userId, ViolationStatus status) {
-        List<DriverViolation> violations = violationRepository.findByUserIdAndStatus(userId, status);
-
-        return violations.stream()
-                .map(v -> buildViolationResponse(v, false))
+        return violationRepository.findByUserIdAndStatus(userId, status)
+                .stream().map(v -> buildViolationResponse(v, false))
                 .collect(Collectors.toList());
     }
 
@@ -131,15 +122,8 @@ public class ViolationServiceImpl implements ViolationService{
         return violationRepository.countByUserIdAndStatus(userId, ViolationStatus.ACTIVE);
     }
 
-    //Helper: Build ViolationResponse
     private ViolationResponse buildViolationResponse(DriverViolation violation, boolean wasAutoBanned) {
         Driver driver = violation.getDriver();
-
-        String message = null;
-        if (wasAutoBanned) {
-            message = "Driver has been AUTO-BANNED due to 3 or more violations";
-        }
-
         return ViolationResponse.builder()
                 .violationId(violation.getViolationId())
                 .driverId(driver.getDriverId())
@@ -149,7 +133,7 @@ public class ViolationServiceImpl implements ViolationService{
                 .description(violation.getDescription())
                 .occurredAt(violation.getOccurredAt())
                 .driverAutoBanned(wasAutoBanned)
-                .message(message)
+                .message(wasAutoBanned ? "Driver has been AUTO-BANNED due to 3 or more violations" : null)
                 .build();
     }
 }

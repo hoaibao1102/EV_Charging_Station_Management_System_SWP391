@@ -71,6 +71,74 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendBookingCancelledTpl(String to, String subject, String displayName,
+                                        Long bookingId, String stationName, String timeRange) {
+        MimeMessage mime = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setFrom("no-reply@evms.local"); // đổi domain của bạn
+
+            Context ctx = new Context();
+            ctx.setVariable("displayName", displayName);
+            ctx.setVariable("bookingId", bookingId);
+            ctx.setVariable("stationName", stationName);
+            ctx.setVariable("timeRange", timeRange);
+
+            String html = templateEngine.process("booking-cancelled", ctx);
+            helper.setText(html, true);
+
+            // (tuỳ chọn) gắn logo:
+            // helper.addInline("logo", new ClassPathResource("static/email/logo.png"), "image/png");
+
+            mailSender.send(mime);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send booking-cancelled email", e);
+        }
+    }
+
+    @Override
+    public void sendBookingConfirmedTpl(String to,
+                                        String subject,
+                                        String displayName,
+                                        Long bookingId,
+                                        String station,
+                                        String timeRange,
+                                        String slotName,
+                                        String connectorType,
+                                        byte[] qrBytes) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+
+            Context ctx = new Context();
+            ctx.setVariable("displayName", displayName);
+            ctx.setVariable("bookingId", bookingId);
+            ctx.setVariable("station", station);
+            ctx.setVariable("timeRange", timeRange);
+            ctx.setVariable("slotName", slotName);
+            ctx.setVariable("connectorType", connectorType);
+            ctx.setVariable("cid", "qr"); // used in template as th:src="'cid:' + ${cid}"
+
+            String html = templateEngine.process("booking-confirmed", ctx);
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            if (qrBytes != null && qrBytes.length > 0) {
+                helper.addInline("qr", new ByteArrayResource(qrBytes), "image/png");
+            }
+
+            mailSender.send(msg);
+        } catch (Exception e) {
+            // log and swallow so notification flow is not disrupted
+            System.err.println("[EmailService] Failed to send booking-confirmed email: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void sendNotificationEmail(Notification n) {
         var user = n.getUser();
         if (user == null || user.getEmail() == null || user.getEmail().isBlank()) return;
