@@ -61,17 +61,17 @@ public class UsersController {
     }
 
     @PostMapping(value="/register/verify", produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> verifyOtpAndRegister(@RequestBody RegisterRequest req, @RequestParam String otp) {
+    public ResponseEntity<?> verifyOtpAndRegister(@RequestBody RegisterRequest req,
+                                                  @RequestParam String otp) {
         if (!otpService.verifyOtp(req.getEmail(), otp)) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .contentType(MediaType.APPLICATION_JSON)
+                    .badRequest()
                     .body(Map.of("message","Invalid or expired OTP"));
         }
+
         User created = userService.register(req);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("message","Đăng ký thành công","data",created));
     }
 

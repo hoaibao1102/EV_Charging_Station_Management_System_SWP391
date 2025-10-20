@@ -25,6 +25,9 @@ public class VehicleModel {
     @Column(name = "Model", columnDefinition = "NVARCHAR(100)",nullable = false)
     private String model;
 
+    @Column(name = "ImageURL", columnDefinition = "NVARCHAR(255)",nullable = false)
+    private String imageUrl;
+
     @Column(name = "Year",nullable = false)
     private int year;
 

@@ -1,0 +1,219 @@
+<!-- html -->
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Booking bị hủy do quá hạn</title>
+
+    <!-- Bootstrap 5 CDN (optional) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg: #f6f9fc;
+            --card: #ffffff;
+            --muted: #6b7280;
+            --accent: #0b63ff;
+            --danger: #bf2b2b;
+            --pill-bg: #fff3f3;
+            --pill-text: #b42318;
+            --shadow: 0 8px 30px rgba(15,23,42,0.06);
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            background: linear-gradient(180deg, var(--bg), #eef4fb);
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 28px 16px;
+        }
+
+        .container-card {
+            max-width: 760px;
+            margin: 24px auto;
+        }
+
+        .card-clean {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid rgba(15,23,42,0.04);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            background: linear-gradient(90deg, rgba(11,99,255,0.95), rgba(6,182,212,0.95));
+            color: #fff;
+        }
+
+        .brand {
+            width:56px;
+            height:56px;
+            border-radius:12px;
+            background: rgba(255,255,255,0.12);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:700;
+            font-size:18px;
+            box-shadow: inset 0 -6px 18px rgba(255,255,255,0.04);
+        }
+
+        .header-title { margin:0; font-weight:700; font-size:18px; }
+        .header-sub { margin:0; font-size:13px; opacity:0.95; }
+
+        .card-body {
+            padding: 22px;
+        }
+
+        .status-pill {
+            display:inline-block;
+            padding:6px 10px;
+            border-radius:999px;
+            background: var(--pill-bg);
+            color: var(--pill-text);
+            font-weight:700;
+            font-size:13px;
+            margin-bottom:12px;
+        }
+
+        .greeting {
+            margin:0 0 12px 0;
+            font-size:15px;
+        }
+
+        .grid {
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+            gap:12px;
+            margin-top:10px;
+        }
+
+        .info {
+            background: linear-gradient(180deg,#fbfdff,#ffffff);
+            border-radius:10px;
+            padding:12px;
+            border:1px solid rgba(11,99,255,0.04);
+        }
+
+        .label { font-size:12px; color:var(--muted); margin-bottom:6px; display:block; }
+        .value { font-weight:700; color:#071033; font-size:14px; }
+
+        .time-badge {
+            display:inline-block;
+            padding:8px 12px;
+            border-radius:999px;
+            background: linear-gradient(90deg,var(--accent),#06b6d4);
+            color:#fff;
+            font-weight:700;
+            font-size:13px;
+        }
+
+        .muted { color:var(--muted); font-size:14px; }
+
+        .actions {
+            margin-top:18px;
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color:#fff;
+            border:0;
+            padding:10px 14px;
+            border-radius:10px;
+            text-decoration:none;
+            font-weight:700;
+        }
+
+        .btn-secondary {
+            background:transparent;
+            color:var(--accent);
+            border:1px solid rgba(11,99,255,0.12);
+            padding:10px 14px;
+            border-radius:10px;
+            text-decoration:none;
+            font-weight:600;
+        }
+
+        .footer {
+            margin-top:18px;
+            font-size:13px;
+            color:var(--muted);
+        }
+
+        @media (max-width:720px){
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container-card">
+    <div class="card-clean">
+        <div class="card-header">
+            <div class="brand" aria-hidden="true">EV</div>
+            <div>
+                <p class="header-title">Booking bị hủy tự động</p>
+                <p class="header-sub">Thông báo về booking của bạn</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="status-pill">Booking quá hạn</div>
+
+            <h2 class="greeting">Xin chào <span th:text="${displayName}">bạn</span>,</h2>
+
+            <p>Booking <strong>#<span th:text="${bookingId}">0000</span></strong> của bạn đã bị hủy <strong>tự động</strong> vì đã vượt quá thời gian cho phép.</p>
+
+            <div class="grid" role="list">
+                <div class="info" role="listitem">
+                    <span class="label">Trạm</span>
+                    <div class="value" th:text="${stationName}">EV Station</div>
+                </div>
+
+                <div class="info" role="listitem">
+                    <span class="label">Khung giờ</span>
+                    <div class="value"><span class="time-badge" th:text="${timeRange}">10:00 01/01/2025 - 11:00 01/01/2025</span></div>
+                </div>
+
+                <div class="info" role="listitem">
+                    <span class="label">Vị trí</span>
+                    <div class="value" th:text="${slotName}">Cổng 2</div>
+                </div>
+
+                <div class="info" role="listitem">
+                    <span class="label">Lý do</span>
+                    <div class="value">Quá thời gian bắt đầu</div>
+                </div>
+            </div>
+
+            <p class="muted" style="margin-top:12px">Nếu bạn vẫn cần sạc, vui lòng đặt lại khung giờ mới trong ứng dụng hoặc liên hệ hỗ trợ.</p>
+
+            <div class="actions">
+                <a th:href="@{|/bookings/${bookingId}|}" class="btn-primary">Xem chi tiết đặt chỗ</a>
+                <a th:href="@{|mailto:support@example.com?subject=Hỗ trợ Booking ${bookingId}|}" class="btn-secondary">Liên hệ hỗ trợ</a>
+            </div>
+
+            <div class="footer">Cảm ơn bạn đã sử dụng EVMS. Lưu ý: hệ thống có thể tự động hủy booking nếu không được xác nhận đúng thời gian.</div>
+
+            <!-- Optional inline logo:
+            <div style="margin-top:14px">
+                <img th:src="@{'cid:logo'}" alt="EVMS" width="96" height="auto"/>
+            </div>
+            -->
+        </div>
+    </div>
+</div>
+</body>
+</html>
