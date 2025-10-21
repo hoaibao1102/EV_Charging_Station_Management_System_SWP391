@@ -16,17 +16,12 @@ public interface VehicleModelRepository extends JpaRepository<VehicleModel, Long
 
     boolean existsByBrandIgnoreCaseAndModelIgnoreCaseAndYearAndModelIdNot(String brand, String model, int year, Long modelId);
 
-    @Query("SELECT vm FROM VehicleModel vm " +
+    // Thêm JOIN FETCH để tránh N+1 query problem
+    @Query("SELECT DISTINCT vm FROM VehicleModel vm " +
+            "JOIN FETCH vm.connectorType " +
             "WHERE (:brand IS NULL OR LOWER(vm.brand) LIKE LOWER(CONCAT('%', :brand, '%'))) " +
             "AND (:model IS NULL OR LOWER(vm.model) LIKE LOWER(CONCAT('%', :model, '%'))) " +
             "AND (:year IS NULL OR vm.year = :year) " +
             "AND (:connectorTypeId IS NULL OR vm.connectorType.connectorTypeId = :connectorTypeId)")
     List<VehicleModel> search(String brand, String model, Integer year, Integer connectorTypeId);
-
-//    @Query("SELECT vm FROM VehicleModel vm " +
-//        "WHERE (:brand IS NULL OR LOWER(vm.brand) LIKE LOWER(CONCAT('%', :brand, '%'))) " +
-//        "AND (:model IS NULL OR LOWER(vm.model) LIKE LOWER(CONCAT('%', :model, '%'))) " +
-//        "AND (:year IS NULL OR vm.year = :year) " +
-//        "AND (:connectorTypeId IS NULL OR vm.connectorType.connectorTypeId = :connectorTypeId)")
-//    Page<VehicleModel> searchPage(String brand, String model, Integer year, Integer connectorTypeId, Pageable pageable);
 }
