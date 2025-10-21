@@ -11,7 +11,7 @@ export default function MainLayoutLarge() {
             overflow: 'hidden'
         }}>
             <div style={{
-                height: '70px',
+                height: '125px',
                 flexShrink: 0
             }}>
                 <AppNavigation /> 
@@ -19,7 +19,7 @@ export default function MainLayoutLarge() {
             <main style={{ 
                 flex: 1, 
                 overflow: 'auto',
-                height: 'calc(100vh - 70px)' // 70px là chiều cao của navigation
+                height: 'calc(100vh - 125px)' 
             }}>
                 <Outlet /> 
             </main>

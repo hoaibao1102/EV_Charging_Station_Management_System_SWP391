@@ -4,11 +4,11 @@ import { getMyVehiclesApi } from "../../api/driverApi.js";
 import VehicleCard from "../../components/VehicleCard.jsx";
 import { toast } from "react-toastify";
 import { deleteVehicleApi } from '../../api/driverApi.js';
-import './MyVehicles.css';
+import './Vehicles.css';
 import AddVehicle from "./AddVehicle.jsx";
 import classCss from '../../assets/css/Main.module.css'
 
-export default function MyVehicles() {
+export default function Vehicles() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
 
