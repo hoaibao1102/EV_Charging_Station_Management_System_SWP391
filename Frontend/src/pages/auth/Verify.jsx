@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './login.css';
 import './Verify.css';
 import { verifyOtp } from '../../api/authApi.js';
-import usePaths from '../../hooks/usePath.js';
+import paths from '../../path/paths.jsx';
 
 export default function OTPVerification() {
   const navigate = useNavigate();
@@ -17,13 +17,12 @@ export default function OTPVerification() {
 
   
   const registerData = location.state?.registerData || null;
-  const paths = usePaths();
 
   // Kiểm tra nếu không có email thì redirect về register
   useEffect(() => {
     if (!registerData) {
       toast.error('Vui lòng đăng ký trước!');
-      navigate(usePaths.register);
+      navigate(paths.register);
     }
   }, [registerData, navigate]);
 
