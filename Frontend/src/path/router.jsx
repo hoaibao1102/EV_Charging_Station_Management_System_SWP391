@@ -17,6 +17,8 @@ import Information from "../pages/profile/Information.jsx";
 // import Notifications from "../pages/profile/Notifications.jsx";
 // import ChargeHistory from "../pages/profile/ChargeHistory.jsx";
 
+
+
 const routes = [
   {
     path: "/",
