@@ -1,17 +1,22 @@
 package com.swp391.gr3.ev_management.controller;
 
+import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeCreateRequest;
+import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.ConnectorTypeResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
+import com.swp391.gr3.ev_management.service.ConnectorTypeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,26 +26,42 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ConnectorTypeController {
 
-    @Autowired
-    private ConnectorTypeRepository connectorTypeRepository;
+    private final ConnectorTypeService connectorTypeService;
 
     @GetMapping
-    public ResponseEntity<List<ConnectorTypeResponse>> getAll() {
-        List<ConnectorTypeResponse> list = connectorTypeRepository.findAll().stream()
-                .map(this::toDto)
-                .toList();
+    @Operation(summary = "Get all connector types", description = "Public endpoint to retrieve all connector types")
+    public ResponseEntity<List<ConnectorTypeResponse>> getAllConnectorTypes() {
+        List<ConnectorTypeResponse> list = connectorTypeService.getAllConnectorTypes();
         return ResponseEntity.ok(list);
     }
 
-    private ConnectorTypeResponse toDto(ConnectorType ct) {
-        return ConnectorTypeResponse.builder()
-                .connectorTypeId(ct.getConnectorTypeId())
-                .code(ct.getCode())
-                .mode(ct.getMode())
-                .displayName(ct.getDisplayName())
-                .defaultMaxPowerKW(ct.getDefaultMaxPowerKW())
-                .isDeprecated(ct.getIsDeprecated())
-                .build();
+    @GetMapping("/{connectorTypeId}")
+    @Operation(summary = "Get connector type by ID", description = "Public endpoint to retrieve a specific connector type")
+    public ResponseEntity<ConnectorTypeResponse> getConnectorTypeById(@PathVariable int connectorTypeId) {
+        ConnectorTypeResponse response = connectorTypeService.getConnectorTypeById(connectorTypeId);
+        return ResponseEntity.ok(response);
     }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Create new connector type", description = "Admin only - Create a new connector type")
+    public ResponseEntity<ConnectorTypeResponse> createConnectorType(
+            @Valid @RequestBody ConnectorTypeCreateRequest request) {
+        ConnectorTypeResponse response = connectorTypeService.createConnectorType(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{connectorTypeId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Update connector type", description = "Admin only - Update an existing connector type")
+    public ResponseEntity<ConnectorTypeResponse> updateConnectorType(
+            @PathVariable int connectorTypeId,
+            @Valid @RequestBody ConnectorTypeUpdateRequest request) {
+        ConnectorTypeResponse response = connectorTypeService.updateConnectorType(connectorTypeId, request);
+        return ResponseEntity.ok(response);
+    }
+
 }
 
