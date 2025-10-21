@@ -23,7 +23,7 @@ export default function Booking() {
 
   return (
     <>
-      <h1>Booking Page nè</h1>
+      <h1>Booking Page</h1>
     </>
   );
 }

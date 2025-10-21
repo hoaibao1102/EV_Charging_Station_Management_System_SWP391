@@ -3,6 +3,7 @@ import Home from "../pages/home/Home.jsx";
 import Rules from "../pages/inNavigate/Rules.jsx";
 import Stations from "../pages/inNavigate/Stations.jsx";
 import StationDetail from "../pages/inNavigate/StationDetail.jsx";
+import BookingInfo from "../pages/inNavigate/BookingInformation.jsx";
 import Booking from "../pages/inNavigate/Booking.jsx";
 import Profile from "../pages/inNavigate/Profile.jsx";
 import Error404 from "../pages/inNavigate/Error404.jsx";
@@ -16,8 +17,6 @@ import EditProfile from "../pages/profile/EditProfile.jsx";
 import Information from "../pages/profile/Information.jsx";
 import Notification from "../pages/profile/Notification.jsx";
 // import ChargeHistory from "../pages/profile/ChargeHistory.jsx";
-
-
 
 const routes = [
   {
@@ -46,6 +45,10 @@ const routes = [
         element: <Booking />,
       },
       {
+        path: "bookingInformation",
+        element: <BookingInfo />,
+      },
+      {
         path: "profile",
         element: <Profile />,
       },
@@ -65,8 +68,8 @@ const routes = [
       //trong profile - tạm thời comment để không bị lỗi
       //Uncomment và tạo các component tương ứng khi cần
       {
-          path: 'profile/my-vehicle',
-          element: <Vehicles />,
+        path: "profile/my-vehicle",
+        element: <Vehicles />,
       },
       // {
       //     path: 'my-bookings',
@@ -81,8 +84,8 @@ const routes = [
         element: <Information />,
       },
       {
-          path: '/profile/notifications',
-          element: <Notification />,
+        path: "/profile/notifications",
+        element: <Notification />,
       },
       // {
       //     path: 'charge-history',
