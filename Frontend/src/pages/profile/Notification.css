@@ -1,0 +1,163 @@
+/* Notification.css */
+
+/* Container chính */
+.notification-container {
+  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Tiêu đề */
+.notification-container h1 {
+  color: #20b2aa;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: center;
+  padding: 15px;
+  background-color: #ffffff;
+  border-bottom: 3px solid #20b2aa;
+}
+
+/* Trạng thái loading và empty */
+.notification-loading,
+.notification-empty {
+  text-align: center;
+  color: #20b2aa;
+  font-size: 18px;
+  padding: 40px 20px;
+  background-color: #f0fdfc;
+  border-radius: 12px;
+  margin: 20px auto;
+  max-width: 500px;
+  border: 2px solid #20b2aa;
+}
+
+/* Danh sách thông báo */
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 20px;
+}
+
+/* Mobile: 1 cột (mặc định) */
+.notification-list {
+    margin-bottom: 36px;
+    grid-template-columns: 1fr;
+}
+
+/* Tablet: 3 cột (768px trở lên) */
+@media (min-width: 768px) {
+  .notification-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .notification-container h1 {
+    font-size: 32px;
+  }
+}
+
+/* Laptop/Desktop: 4 cột (1024px trở lên) */
+@media (min-width: 1024px) {
+  .notification-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .notification-container {
+    padding: 30px 40px;
+  }
+  
+  .notification-container h1 {
+    font-size: 36px;
+  }
+}
+
+/* Card thông báo */
+.notification-card {
+  background-color: #ffffff;
+  border: 2px solid #20b2aa;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(32, 178, 170, 0.1);
+}
+
+.notification-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(32, 178, 170, 0.25);
+  border-color: #1a9d96;
+}
+
+/* Tiêu đề card */
+.notification-card-title {
+  color: #20b2aa;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #20b2aa;
+  padding-bottom: 8px;
+}
+
+/* Nội dung card */
+.notification-card-content {
+  color: #333333;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* Thời gian */
+.notification-card-time {
+  color: #20b2aa;
+  font-size: 13px;
+  font-style: italic;
+  text-align: right;
+  margin-top: 10px;
+}
+
+/* Trạng thái đã đọc/chưa đọc */
+.notification-card.unread {
+  background-color: #f0fdfc;
+  border-width: 3px;
+}
+
+.notification-card.unread::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  background-color: #20b2aa;
+  border-radius: 50%;
+}
+
+.notification-card {
+  position: relative;
+}
+
+/* Responsive cho màn hình rất nhỏ */
+@media (max-width: 480px) {
+  .notification-container {
+    padding: 15px;
+  }
+  
+  .notification-container h1 {
+    font-size: 24px;
+    padding: 10px;
+  }
+  
+  .notification-card {
+    padding: 15px;
+  }
+  
+  .notification-card-title {
+    font-size: 16px;
+  }
+  
+  .notification-card-content {
+    font-size: 14px;
+  }
+}
