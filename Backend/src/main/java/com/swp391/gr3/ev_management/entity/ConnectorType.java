@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.print.attribute.standard.MediaSize;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,7 +20,7 @@ public class ConnectorType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ConnectorTypeID")
-    private Integer connectorTypeId;
+    private int connectorTypeId;
 
     @Column(name = "Code", columnDefinition = "NVARCHAR(20)", unique = true, nullable = false)
     private String code;
