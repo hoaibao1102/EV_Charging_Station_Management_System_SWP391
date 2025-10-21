@@ -13,19 +13,26 @@ const StationDetail = () => {
   const [expandedPoint, setExpandedPoint] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ====== Fetch dữ liệu ======
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        // 1️⃣ Lấy thông tin trạm
         const stationRes = await axios.get(
           `https://68f35999fd14a9fcc4288a78.mockapi.io/stationcharging?StationID=${id}`
         );
-        const pointsRes = await axios.get(
-          "https://68f35999fd14a9fcc4288a78.mockapi.io/Charging_Points"
-        );
-        const connectorsRes = await axios.get(
-          "https://68f6f46af7fb897c66141d83.mockapi.io/Connector_types"
-        );
+
+        // 2️⃣ Lấy danh sách trụ và loại connector
+        const [pointsRes, connectorsRes] = await Promise.all([
+          axios.get(
+            "https://68f35999fd14a9fcc4288a78.mockapi.io/Charging_Points"
+          ),
+          axios.get(
+            "https://68f6f46af7fb897c66141d83.mockapi.io/Connector_types"
+          ),
+        ]);
 
         const st = stationRes.data.length ? stationRes.data[0] : null;
         const pts = pointsRes.data.filter(
@@ -36,7 +43,7 @@ const StationDetail = () => {
         setChargingPoints(pts);
         setConnectorTypes(connectorsRes.data);
       } catch (error) {
-        console.error("❌ Error:", error);
+        console.error("❌ Lỗi khi tải dữ liệu:", error);
       } finally {
         setLoading(false);
       }
@@ -44,17 +51,21 @@ const StationDetail = () => {
     fetchData();
   }, [id]);
 
-  const getConnectorsByPoint = (pointId) =>
-    connectorTypes.filter((c) => String(c.PointID) === String(pointId));
+  // ====== Tìm thông tin connector theo ConnectorTypeID ======
+  const getConnectorDetail = (connectorTypeId) =>
+    connectorTypes.find(
+      (c) => String(c.ConnectorTypeID) === String(connectorTypeId)
+    );
 
   const toggleExpand = (pointId) =>
     setExpandedPoint(expandedPoint === pointId ? null : pointId);
 
   const handleBooking = (pointId, connectorId) => {
     console.log(`Booking Point: ${pointId}, Connector: ${connectorId}`);
-    navigate(`/booking/${id}/${pointId}/${connectorId}`);
+    navigate(`/bookings`);
   };
 
+  // ====== Loading / Error ======
   if (loading)
     return (
       <div className="station-container">
@@ -70,6 +81,7 @@ const StationDetail = () => {
       </div>
     );
 
+  // ====== Giao diện chính ======
   return (
     <div className="station-container">
       <button className="btn-back" onClick={() => navigate(-1)}>
@@ -81,8 +93,8 @@ const StationDetail = () => {
 
       <div className="point-list">
         {chargingPoints.map((point) => {
-          const connectors = getConnectorsByPoint(point.PointID);
           const expanded = expandedPoint === point.PointID;
+          const connector = getConnectorDetail(point.ConnectorTypeID);
 
           return (
             <div
@@ -108,43 +120,41 @@ const StationDetail = () => {
                 <span>🔧 Bảo trì: {point.LastMaintenanceDate || "N/A"}</span>
               </div>
 
-              {/* === Khi mở rộng trụ === */}
-              {expanded && (
+              {/* Chi tiết Connector */}
+              {expanded && connector && (
                 <div className="connector-panel">
-                  <h4>🔌 Các cổng sạc ({connectors.length})</h4>
-
-                  {connectors.length === 0 && (
-                    <p className="no-connector">Chưa có thông tin đầu nối</p>
-                  )}
-
-                  {connectors.map((c, index) => (
-                    <div key={c.ConnectorTypeID} className="connector-item">
-                      <div className="connector-info">
-                        <h5>Cổng {String.fromCharCode(65 + index)}</h5>
-                        <p>
-                          <strong>{c.DisplayName}</strong>
-                        </p>
-                        <p>Mã: {c.Code}</p>
-                        <p>Chế độ: {c.Mode}</p>
-                        <p>⚡ Công suất: {c.DefaultMaxPowerKW} kW</p>
+                  <h4>🔌 Thông tin cổng sạc</h4>
+                  <div className="connector-item">
+                    <div className="connector-info">
+                      <p>
+                        <strong>{connector.DisplayName}</strong>
+                      </p>
+                      <p>Mã: {connector.Code}</p>
+                      <p>Chế độ: {connector.Mode}</p>
+                      <p>⚡ Công suất: {connector.DefaultMaxPowerKW} kW</p>
+                    </div>
+                    <div className="connector-actions">
+                      <div
+                        className={`mode-tag ${connector.Mode?.toLowerCase()}`}
+                      >
+                        {connector.Mode}
                       </div>
-
-                      <div className="connector-actions">
-                        <div className={`mode-tag ${c.Mode?.toLowerCase()}`}>
-                          {c.Mode}
-                        </div>
+                      {point.Status?.toLowerCase() === "available" && (
                         <button
                           className="btn-book-small"
                           onClick={(e) => {
-                            e.stopPropagation(); // tránh click trùng toggle
-                            handleBooking(point.PointID, c.ConnectorTypeID);
+                            e.stopPropagation();
+                            handleBooking(
+                              point.PointID,
+                              connector.ConnectorTypeID
+                            );
                           }}
                         >
                           📅 Đặt chỗ
                         </button>
-                      </div>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
             </div>
