@@ -1,11 +1,13 @@
-// Java
 package com.swp391.gr3.ev_management.config;
 
 import com.swp391.gr3.ev_management.entity.ConnectorType;
+import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.entity.User;
+import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
+import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 @Profile("!test")
@@ -30,6 +33,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final ConnectorTypeRepository connectorTypeRepository;
     private final VehicleModelRepository vehicleModelRepository;
+    private final DriverRepository driverRepository;
 
     @Value("${app.data.init.enabled:true}")
     private boolean enabled;
@@ -42,10 +46,11 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         try {
-//            initConnectorTypes();
-//            initVehicleModels();
-//            initRoles();
-//            initAdmins();
+            initConnectorTypes();
+            initVehicleModels();
+            initRoles();
+            initAdmins();
+            initDrivers();
             log.info("Data initialization completed.");
         } catch (Exception ex) {
             log.error("Data initialization failed: {}", ex.getMessage(), ex);
@@ -53,6 +58,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initConnectorTypes() {
+        // Seed a minimal, useful set of connector types for testing VehicleModel creation
         createConnectorIfNotExists("TYPE2", "AC", "Type 2 (Mennekes)", 22.0, false);
         createConnectorIfNotExists("CCS2", "DC", "CCS Combo 2", 150.0, false);
         createConnectorIfNotExists("CHADEMO", "DC", "CHAdeMO", 50.0, true);
@@ -72,7 +78,7 @@ public class DataInitializer implements CommandLineRunner {
                     .defaultMaxPowerKW(defaultMaxPowerKW)
                     .isDeprecated(isDeprecated)
                     .build();
-            ConnectorType saved = connectorTypeRepository.save(ct);
+            connectorTypeRepository.save(ct);
         } catch (Exception e) {
             log.warn("Failed to create ConnectorType {}: {}", code, e.getMessage());
         }
@@ -80,13 +86,13 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initVehicleModels() {
         // Ensure connector types exist before creating models
-        createModelIfNotExists("Tesla", "Model 3", 2023,"", "CCS2");
-        createModelIfNotExists("Tesla", "Model Y", 2023,"", "CCS2");
-        createModelIfNotExists("Hyundai", "Kona Electric", 2022, "", "CCS2");
-        createModelIfNotExists("Kia", "EV6", 2023,"", "CCS2");
-        createModelIfNotExists("VinFast", "VF e34", 2022, "", "CCS2");
-        createModelIfNotExists("Nissan", "Leaf", 2020, "", "CHADEMO");
-        createModelIfNotExists("Mitsubishi", "Outlander PHEV", 2019, "", "TYPE1");
+        createModelIfNotExists("Tesla", "Model 3", 2023,"/images/vehicles/tesla-model3.png", "CCS2");
+        createModelIfNotExists("Tesla", "Model Y", 2023,"/images/vehicles/tesla-modely.png", "CCS2");
+        createModelIfNotExists("Hyundai", "Kona Electric", 2022, "/images/vehicles/hyundai-kona.png", "CCS2");
+        createModelIfNotExists("Kia", "EV6", 2023,"/images/vehicles/kia-ev6.png", "CCS2");
+        createModelIfNotExists("VinFast", "VF e34", 2022, "/images/vehicles/vinfast-vfe34.png", "CCS2");
+        createModelIfNotExists("Nissan", "Leaf", 2020, "/images/vehicles/nissan-leaf.png", "CHADEMO");
+        createModelIfNotExists("Mitsubishi", "Outlander PHEV", 2019, "/images/vehicles/mitsubishi-outlander.png", "TYPE1");
     }
 
     private void createModelIfNotExists(String brand, String model, int year, String img, String connectorCode) {
@@ -107,6 +113,7 @@ public class DataInitializer implements CommandLineRunner {
                     .brand(brand)
                     .model(model)
                     .year(year)
+                    .imageUrl(img != null && !img.isEmpty() ? img : "default-vehicle.png")
                     .connectorType(connector)
                     .build();
             vehicleModelRepository.save(vm);
@@ -139,6 +146,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    // ===== Admin seeding =====
     private void initAdmins() {
         createAdminIfNotExists(
                 "0999999999",
@@ -169,14 +177,71 @@ public class DataInitializer implements CommandLineRunner {
             admin.setName(name != null ? name : "Admin");
             admin.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Admin@123"));
             admin.setGender("M");
-            admin.setDateOfBirth(LocalDate.of(1969, 4, 22));
+            admin.setDateOfBirth(LocalDate.of(1969, 04, 22));
             admin.setAddress("HCM, Vietnam");
             admin.setRole(adminRole);
 
             userRepository.save(admin);
             log.info("Created default admin: {} ({})", admin.getName(), admin.getPhoneNumber());
         } catch (Exception e) {
-            log.warn("Failed to create admin account: {}", e.getMessage());
+            log.error("Failed to create default admin (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
+        }
+    }
+
+    // ===== Driver seeding =====
+    private void initDrivers() {
+        createDriverIfNotExists(
+                "0911111111",
+                "driver@example.com",
+                "123123",
+                "Test Driver",
+                "M",
+                LocalDate.of(1995, 5, 15),
+                "Hanoi, Vietnam"
+        );
+    }
+
+    private void createDriverIfNotExists(String phoneNumber, String email, String rawPassword, 
+                                         String name, String gender, LocalDate dateOfBirth, String address) {
+        try {
+            // Check if user already exists
+            boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
+            boolean emailExists = email != null && userRepository.existsByEmail(email);
+            if (phoneExists || emailExists) {
+                log.info("Driver account already exists (phone={}, email={})", phoneNumber, email);
+                return;
+            }
+
+            // Get DRIVER role
+            Role driverRole = roleRepository.findByRoleName("DRIVER");
+            if (driverRole == null) {
+                log.warn("DRIVER role not found; skipping driver creation");
+                return;
+            }
+
+            // Create User first
+            User user = new User();
+            user.setPhoneNumber(phoneNumber);
+            user.setEmail(email);
+            user.setName(name);
+            user.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Driver@123"));
+            user.setGender(gender);
+            user.setDateOfBirth(dateOfBirth);
+            user.setAddress(address);
+            user.setRole(driverRole);
+            User savedUser = userRepository.save(user);
+
+            // Create Driver linked to User
+            Driver driver = Driver.builder()
+                    .user(savedUser)
+                    .status(DriverStatus.ACTIVE)
+                    .lastActiveAt(LocalDateTime.now())
+                    .build();
+            driverRepository.save(driver);
+
+            log.info("Created default driver: {} ({}) with status {}", savedUser.getName(), savedUser.getPhoneNumber(), driver.getStatus());
+        } catch (Exception e) {
+            log.error("Failed to create default driver (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
         }
     }
 }
