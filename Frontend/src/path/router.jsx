@@ -20,80 +20,81 @@ import Information from "../pages/profile/Information.jsx";
 
 
 const routes = [
-    {
-        path: '/',
-        element: <ResponsiveLayout />,
-        children: [ 
-            //navigate
-            {
-                index: true, 
-                element: <Home />,
-            },
-            {
-                path: 'rules',
-                element: <Rules />,
-            },
-            {
-                path: 'stations',
-                element: <Stations />,
-            },
-
-            {
-                path: 'stations/:id',
-                element: <StationDetail />,
-            },
-            {
-                path: 'bookings',
-                element: <Booking />,
-            },
-            {
-                path: 'profile',
-                element: <Profile />,
-            },
-            //khác
-            {
-                path: 'login',
-                element: <Login />,
-            },
-            {
-                path: 'register',
-                element: <Register />,
-            },
-            {
-                path: 'verify-otp',
-                element: <Verify />,
-            },
-            {
-                path: 'profile/my-vehicle',
-                element: <MyVehicles />,
-            },
-            // {
-            //     path: 'my-bookings', 
-            //     element: <MyBookings />,
-            // },
-            {
-                path: '/profile/edit', 
-                element: <EditProfile />,
-            },
-            {
-                path: 'profile/information', 
-                element: <Information />,
-            },
-            // {
-            //     path: 'notifications', 
-            //     element: <Notifications />,
-            // },
-            // {
-            //     path: 'charge-history', 
-            //     element: <ChargeHistory />,
-            // },
-            //404
-            {
-                path: '*',
-                element: <Error404 />,
-            },
-        ]
-    }
+  {
+    path: "/",
+    element: <ResponsiveLayout />,
+    children: [
+      //navigate
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: "rules",
+        element: <Rules />,
+      },
+      {
+        path: "stations",
+        element: <Stations />,
+      },
+      {
+        path: "stations/:id",
+        element: <StationDetail />,
+      },
+      {
+        path: "bookings",
+        element: <Booking />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
+      //khác
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Register />,
+      },
+      {
+        path: "verify-otp",
+        element: <Verify />,
+      },
+      //trong profile - tạm thời comment để không bị lỗi
+      //Uncomment và tạo các component tương ứng khi cần
+      // {
+      //     path: 'my-vehicle',
+      //     element: <MyVehicle />,
+      // },
+      // {
+      //     path: 'my-bookings',
+      //     element: <MyBookings />,
+      // },
+      {
+        path: "profile/edit",
+        element: <EditProfile />,
+      },
+      {
+        path: "profile/information",
+        element: <Information />,
+      },
+      // {
+      //     path: 'notifications',
+      //     element: <Notifications />,
+      // },
+      // {
+      //     path: 'charge-history',
+      //     element: <ChargeHistory />,
+      // },
+      //404
+      {
+        path: "*",
+        element: <Error404 />,
+      },
+    ],
+  },
 ];
 
 const router = createBrowserRouter(routes);

@@ -5,17 +5,16 @@ import com.swp391.gr3.ev_management.entity.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     // Kiểm tra tồn tại driver theo userId (đúng property path)
     boolean existsByUser_UserId(Long userId);
-
-    // Lấy driver theo userId (không fetch join)
-    Optional<Driver> findByUser_UserId(Long userId);
 
     // JOIN FETCH theo userId (dùng khi cần chắc chắn có User đã load)
     @Query("""
