@@ -5,7 +5,8 @@ import VehicleCard from "../../components/VehicleCard.jsx";
 import { toast } from "react-toastify";
 import { deleteVehicleApi } from '../../api/driverApi.js';
 import './MyVehicles.css';
-import AddVehicle from "../../components/AddVehicle.jsx";
+import AddVehicle from "./AddVehicle.jsx";
+import classCss from '../../assets/css/Main.module.css'
 
 export default function MyVehicles() {
   const [vehicles, setVehicles] = useState([]);
@@ -30,24 +31,28 @@ export default function MyVehicles() {
     }
   }
 
-  
+  const fetchVehicles = async () => {
+    try {
+      setLoading(true);
+      const vehicles = await getMyVehiclesApi();
+      if (vehicles.success) {
+        setVehicles(vehicles.data);
+        console.log("My vehicles:", vehicles.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch my vehicles:", error);
+      toast.error("Không thể tải danh sách xe!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddSuccess = () => {
+    // Refresh danh sách xe sau khi thêm thành công
+    fetchVehicles();
+  };
 
   useEffect(() => {
-    const fetchVehicles = async () => {
-      try {
-        setLoading(true);
-        const vehicles = await getMyVehiclesApi();
-        if (vehicles.success) {
-          setVehicles(vehicles.data);
-          console.log("My vehicles:", vehicles.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch my vehicles:", error);
-        toast.error("Không thể tải danh sách xe!");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchVehicles();
   }, []);
 
@@ -58,7 +63,12 @@ export default function MyVehicles() {
         <div className="my-vehicles-header">
           {showAddVehicle ? "Thêm Xe" : "DANH SÁCH XE CỦA TÔI"}
         </div>
-        {showAddVehicle ? <AddVehicle onClose={() => setShowAddVehicle(false)} /> :
+        {showAddVehicle ? (
+          <AddVehicle 
+            onClose={() => setShowAddVehicle(false)} 
+            onSuccess={handleAddSuccess}
+          />
+        ) :
         <div className="vehicle-list">
           {loading ? (
             <div className="loading-spinner">
@@ -72,7 +82,7 @@ export default function MyVehicles() {
             </div>
           ) : (
             <>
-            <button className="btn btn-primary" onClick={() => setShowAddVehicle(true)}>Thêm xe mới</button>
+            <button className={classCss.button} onClick={() => setShowAddVehicle(true)}>Thêm xe mới</button>
             <Row className="g-4">
               {vehicles.map(vehicle => (
                 <Col xs={12} sm={6} md={4} lg={3} key={vehicle.vehicleId}>

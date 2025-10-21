@@ -100,12 +100,13 @@
 
 /* Primary Button */
 .button {
+  margin: 10px auto;
   width: auto;
   min-width: 200px;
   padding: 16px 32px;
-  background: var(--primary-color);
+  background: #20b2aa;
   color: var(--white);
-  border: 2px solid var(--primary-color);
+  border: 2px solid #20b2aa;
   border-radius: var(--border-radius);
   font-size: 16px;
   font-weight: 600;

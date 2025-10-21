@@ -1,5 +1,5 @@
-import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
+import classCss from '../assets/css/Main.module.css'
 
 export default function VehicleCard({ vehicle , onDelete}) {   
   return (
@@ -16,7 +16,7 @@ export default function VehicleCard({ vehicle , onDelete}) {
           <br />
            Loại cổng sạc: {vehicle.connectorTypeName}
         </Card.Text>
-        <Button variant="primary" onClick={() => onDelete(vehicle)}>Xóa xe khỏi danh sách</Button>
+        <button className={classCss.button} onClick={() => onDelete(vehicle)}>Xóa xe khỏi danh sách</button>
       </Card.Body>
     </Card>
   )
