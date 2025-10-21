@@ -1,12 +1,11 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import './Navigate.css';
-import homeIcon from '../../assets/logo/home.png';
-import ruleIcon from '../../assets/logo/rule.png';
-import stationsIcon from '../../assets/logo/chargingStation.png';
-import bookingIcon from '../../assets/logo/booking.png';
-import profileIcon from '../../assets/logo/user.png';
-import styled from 'styled-components';
-
+import { NavLink, useLocation } from "react-router-dom";
+import "./Navigate.css";
+import homeIcon from "../../assets/logo/home.png";
+import ruleIcon from "../../assets/logo/rule.png";
+import stationsIcon from "../../assets/logo/chargingStation.png";
+import bookingIcon from "../../assets/logo/booking.png";
+import profileIcon from "../../assets/logo/user.png";
+import styled from "styled-components";
 
 const NavItem = styled(NavLink)`
   display: flex;
@@ -36,7 +35,8 @@ const NavItem = styled(NavLink)`
       margin-bottom: 0;
 
       img {
-        filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%);
+        filter: brightness(0) saturate(100%) invert(48%) sepia(79%)
+          saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%);
       }
     }
 
@@ -48,48 +48,49 @@ const NavItem = styled(NavLink)`
 
 export default function AppNavigation() {
   const location = useLocation();
-  
+
   const navItems = [
-    { 
-      path: '/', 
-      icon: homeIcon, 
-      label: 'Trang chủ'
+    {
+      path: "/",
+      icon: homeIcon,
+      label: "Trang chủ",
     },
-    { 
-      path: '/rules', 
-      icon: ruleIcon, 
-      label: 'Điều khoản'
+    {
+      path: "/rules",
+      icon: ruleIcon,
+      label: "Điều khoản",
     },
-    { 
-      path: '/stations', 
-      icon: stationsIcon, 
-      label: 'Trạm sạc'
+    {
+      path: "/stations",
+      icon: stationsIcon,
+      label: "Trạm sạc",
     },
-    { 
-      path: '/bookings', 
-      icon: bookingIcon, 
-      label: 'Đặt chỗ'
+    {
+      path: "/bookingInformation",
+      icon: bookingIcon,
+      label: "Đặt chỗ",
     },
-    { 
-      path: '/profile', 
-      icon: profileIcon, 
-      label: 'Hồ sơ'
-    }
+    {
+      path: "/profile",
+      icon: profileIcon,
+      label: "Hồ sơ",
+    },
   ];
 
   return (
     <nav className="navigationBar">
       <div className="navContainer">
         {navItems.map((item, index) => {
-          const isHomeActive = item.path === '/' && location.pathname === '/';
-          const isOtherActive = item.path !== '/' && location.pathname === item.path;
+          const isHomeActive = item.path === "/" && location.pathname === "/";
+          const isOtherActive =
+            item.path !== "/" && location.pathname === item.path;
           const isActive = isHomeActive || isOtherActive;
-          
+
           return (
             <NavLink
               key={index}
               to={item.path}
-              className={`navItem ${isActive ? 'navItemActive' : ''}`}
+              className={`navItem ${isActive ? "navItemActive" : ""}`}
               title={item.label}
             >
               <span className="navIcon">
@@ -103,4 +104,3 @@ export default function AppNavigation() {
     </nav>
   );
 }
-
