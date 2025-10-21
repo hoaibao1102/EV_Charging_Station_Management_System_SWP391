@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { isAuthenticated } from '../../utils/authUtils.js';
 import { toast } from 'react-toastify';
 import { useLogout } from '../../hooks/useAuth.js';
-import usePaths from '../../hooks/usePath.js';
+import paths from '../../path/paths.jsx';
 import girl from '../../assets/icon/girl.png';
 import man from '../../assets/icon/man.png';
 import './Profile.css';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const paths = usePaths();
   const userName = localStorage.getItem("userName");
   const userMail = localStorage.getItem("userMail");
   const userPhone = localStorage.getItem("userPhone");

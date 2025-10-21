@@ -1,12 +1,11 @@
 import { isAuthenticated } from '../../utils/authUtils.js';
 import React, { useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
-import usePaths from '../../hooks/usePath.js';
+import paths from '../../path/paths.jsx';
 import { toast } from 'react-toastify';
 
 export default function Booking() {
   const navigate = useNavigate();
-  const paths = usePaths();
 
   useEffect(() => {
       if (!isAuthenticated()) {

@@ -9,12 +9,14 @@ import ResponsiveLayout from "../layouts/ResponsiveLayout.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
 import Verify from "../pages/auth/Verify.jsx";
-// import MyVehicle from "../pages/profile/MyVehicle.jsx";
+import MyVehicles from "../pages/profile/MyVehicles.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
-// import EditProfile from "../pages/profile/EditProfile.jsx";
+import EditProfile from "../pages/profile/EditProfile.jsx";
 import Information from "../pages/profile/Information.jsx";
 // import Notifications from "../pages/profile/Notifications.jsx";
 // import ChargeHistory from "../pages/profile/ChargeHistory.jsx";
+
+
 
 const routes = [
     {
@@ -27,48 +29,46 @@ const routes = [
                 element: <Home />,
             },
             {
-                path: 'rules', 
+                path: 'rules',
                 element: <Rules />,
             },
             {
-                path: 'stations', 
+                path: 'stations',
                 element: <Stations />,
             },
             {
-                path: 'bookings', 
+                path: 'bookings',
                 element: <Booking />,
             },
             {
-                path: 'profile', 
+                path: 'profile',
                 element: <Profile />,
             },
             //khác
             {
-                path: 'login', 
+                path: 'login',
                 element: <Login />,
             },
             {
-                path: 'register', 
+                path: 'register',
                 element: <Register />,
             },
             {
-                path: 'verify-otp', 
+                path: 'verify-otp',
                 element: <Verify />,
             },
-            //trong profile - tạm thời comment để không bị lỗi
-            //Uncomment và tạo các component tương ứng khi cần
-            // {
-            //     path: 'my-vehicle', 
-            //     element: <MyVehicle />,
-            // },
+            {
+                path: 'profile/my-vehicle',
+                element: <MyVehicles />,
+            },
             // {
             //     path: 'my-bookings', 
             //     element: <MyBookings />,
             // },
-            // {
-            //     path: 'edit', 
-            //     element: <EditProfile />,
-            // },
+            {
+                path: '/profile/edit', 
+                element: <EditProfile />,
+            },
             {
                 path: 'profile/information', 
                 element: <Information />,
