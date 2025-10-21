@@ -100,12 +100,12 @@ const Login = () => {
       if (newFailedAttempts >= 3) {
         // Khóa tài khoản trong 3 phút
         setIsLocked(true);
-        const lockEnd = Date.now() + 1 * 60 * 1000; // 3 phút
+        const lockEnd = Date.now() + 3 * 60 * 1000; // 3 phút
         setLockEndTime(lockEnd);
         localStorage.setItem('loginLockEndTime', lockEnd.toString());
-        
-        toast.error("Đăng nhập sai 3 lần! Tài khoản bị khóa trong 1 phút.");
-        
+
+        toast.error("Đăng nhập sai 3 lần! Tài khoản bị khóa trong 3 phút.");
+
         // Tự động mở khóa sau 3 phút
         setTimeout(() => {
           setFailedAttempts(0);
@@ -114,7 +114,7 @@ const Login = () => {
           localStorage.removeItem('loginLockEndTime');
           localStorage.removeItem('loginFailedAttempts');
           toast.info("Tài khoản đã được mở khóa. Bạn có thể đăng nhập lại.");
-        }, 1 * 60 * 1000);
+        }, 3 * 60 * 1000);
       } else {
         toast.error(`${message || "Đăng nhập thất bại!"} (${newFailedAttempts}/3)`);
       }

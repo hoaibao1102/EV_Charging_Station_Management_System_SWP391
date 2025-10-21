@@ -55,3 +55,11 @@ export const addVehicleApi = (vehicle) => {
         'Thêm phương tiện thất bại'
     );
 }
+
+//lấy ra thông tin thông báo 
+export const getNotificationsApi = () => {
+    return handleApiCall(
+        () => apiClient.get('/api/notifications/unread'),
+        'Lấy danh sách thông báo thất bại'
+    );
+}
