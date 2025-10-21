@@ -47,3 +47,11 @@ export const getModelsByBrandApi = (brand) => {
         'Lấy danh sách mẫu xe theo thương hiệu thất bại'
     );
 }
+
+//add phương tiện cho driver
+export const addVehicleApi = (vehicle) => {
+    return handleApiCall(
+        () => apiClient.post('/api/driver/me/vehicles', vehicle),
+        'Thêm phương tiện thất bại'
+    );
+}
