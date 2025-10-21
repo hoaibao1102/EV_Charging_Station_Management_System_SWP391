@@ -36,6 +36,10 @@ const routes = [
         element: <Stations />,
       },
       {
+        path: "stations/:id",
+        element: <StationDetail />,
+      },
+      {
         path: "bookings",
         element: <Booking />,
       },
