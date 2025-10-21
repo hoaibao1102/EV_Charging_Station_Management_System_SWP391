@@ -8,6 +8,7 @@ export const loginApi = (phone, password) => {
     );
 };
 
+
 export const verifyOtp = (otp, profile) => {
     return handleApiCall(
         () => apiClient.post('/api/users/register/verify?otp=' + otp, profile),
@@ -32,3 +33,5 @@ export const logoutApi = () => {
         'Đăng xuất thất bại'
     );
 };
+
+

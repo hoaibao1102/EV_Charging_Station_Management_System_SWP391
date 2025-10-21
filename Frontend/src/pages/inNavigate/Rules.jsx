@@ -88,12 +88,12 @@ export default function Rules() {
     {
       id: "BR-05",
       text:
-        "Cấm vì vắng mặt nhiều lần: Vắng mặt = không bắt đầu phiên sạc trong vòng 30 phút sau giờ bắt đầu trong khi vẫn giữ slot. Sau 3 lần vắng mặt (tính cuốn chiếu), trạng thái sẽ chuyển sang BỊ CẤM.",
+        "Khóa tài khoản nếu vắng mặt nhiều lần: Vắng mặt = không bắt đầu phiên sạc trong vòng 30 phút sau giờ bắt đầu trong khi vẫn giữ slot. Sau 3 lần vắng mặt (tính cuốn chiếu), trạng thái tài khoản sẽ chuyển sang NGƯNG HOẠT ĐỘNG.",
     },
     {
       id: "BR-06",
       text:
-        "Để gỡ lệnh cấm, người dùng phải nộp phí phạt bằng thời lượng slot bị lãng phí (tính theo phút) nhân với mức phạt theo phút của đầu nối tương ứng.",
+        "Để gỡ KHÓA TÀI KHOẢN, người dùng phải nộp phí phạt bằng thời lượng slot bị lãng phí (tính theo phút) nhân với mức phạt theo phút của đầu nối tương ứng.",
     },
     {
       id: "BR-07",
@@ -107,11 +107,11 @@ export default function Rules() {
     },
     {
       id: "BR-09",
-      text: "Trong thời gian bị cấm, người dùng không thể tạo bất kỳ đặt chỗ nào.",
+      text: "Trong thời gian bị cấm, người dùng không thể đặt chỗ nào.",
     },
     {
       id: "BR-10",
-      text: "Người dùng phải đăng nhập mỗi khi thực hiện thao tác đặt chỗ, xem thông tin người dùng.",
+      text: "Người dùng phải đăng nhập mỗi khi thực hiện thao tác đặt chỗ và xem thông tin người dùng.",
     },
     {
       id: "BR-12",
@@ -180,7 +180,7 @@ export default function Rules() {
       </div>
 
       <div style={styles.note}>
-        <strong>Lưu ý:</strong> Mức phí phạt và thời lượng mỗi slot có thể khác nhau theo loại đầu nối và cấu hình của từng trạm.
+        <strong>Lưu ý:</strong> Mức phí phạt và thời lượng mỗi slot có thể khác nhau theo loại cổng sạc và cấu hình của từng trạm.
       </div>
     </div>
   );

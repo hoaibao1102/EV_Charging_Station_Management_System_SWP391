@@ -1,7 +1,4 @@
-import { PathContext } from "../context/PathContext.js";
-
-export const PathProvider = ({ children }) => {
-  const paths = {
+export const paths = {
     //trong navigate
     home: "/",
     rules: "/rules",
@@ -20,10 +17,9 @@ export const PathProvider = ({ children }) => {
     notifications: "/profile/notifications",
     chargeHistory: "/profile/charge-history",
   };
-  return (
-    <PathContext.Provider value={paths}>{children}</PathContext.Provider>
-  );
-};
+  
+export default paths;
+  
 
 
 
