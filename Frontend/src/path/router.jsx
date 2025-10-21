@@ -10,11 +10,11 @@ import ResponsiveLayout from "../layouts/ResponsiveLayout.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
 import Verify from "../pages/auth/Verify.jsx";
-import MyVehicles from "../pages/profile/MyVehicles.jsx";
+import Vehicles from "../pages/profile/Vehicles.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
 import EditProfile from "../pages/profile/EditProfile.jsx";
 import Information from "../pages/profile/Information.jsx";
-// import Notifications from "../pages/profile/Notifications.jsx";
+import Notification from "../pages/profile/Notification.jsx";
 // import ChargeHistory from "../pages/profile/ChargeHistory.jsx";
 
 
@@ -64,10 +64,10 @@ const routes = [
       },
       //trong profile - tạm thời comment để không bị lỗi
       //Uncomment và tạo các component tương ứng khi cần
-      // {
-      //     path: 'my-vehicle',
-      //     element: <MyVehicle />,
-      // },
+      {
+          path: 'profile/my-vehicle',
+          element: <Vehicles />,
+      },
       // {
       //     path: 'my-bookings',
       //     element: <MyBookings />,
@@ -80,10 +80,10 @@ const routes = [
         path: "profile/information",
         element: <Information />,
       },
-      // {
-      //     path: 'notifications',
-      //     element: <Notifications />,
-      // },
+      {
+          path: '/profile/notifications',
+          element: <Notification />,
+      },
       // {
       //     path: 'charge-history',
       //     element: <ChargeHistory />,
