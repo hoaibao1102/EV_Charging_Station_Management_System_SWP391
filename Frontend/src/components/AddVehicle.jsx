@@ -1,15 +1,17 @@
 import {getAllVehicleBrandsApi, getModelsByBrandApi} from '../api/driverApi.js';
 import { useEffect, useState } from 'react';
+import {addVehicleApi} from '../api/driverApi.js';
+import roast from 'react-toastify';
 
 export default function AddVehicle() {
     const [step, setStep] = useState(1);
     const [brands, setBrands] = useState([]);
     const [models, setModels] = useState([]);
     const [brand, setBrand] = useState('');
-    // const [vehicle, setVehicle] = useState({
-    // modelId: '',
-    // licensePlate: '',
-    // });
+    const [vehicle, setVehicle] = useState({
+    modelId: '',
+    licensePlate: '',
+    });
 
     const [model, setModel] = useState({
       modelId: '',
@@ -22,6 +24,24 @@ export default function AddVehicle() {
       connectorDefaultMaxPowerKW: '',   
     });
 
+    const handleAddVehicle = async () => {
+        if (!vehicle.licensePlate || !vehicle.modelId) {
+            alert("Vui lòng nhập đầy đủ thông tin xe!");
+            return;
+        }else{
+            try {
+                const response = await addVehicleApi(vehicle);
+                if (response.success) {
+                    roast.success("Thêm xe thành công!");
+                    setStep(1);
+                } else {
+                    roast.error(`Thêm xe thất bại!`);
+                }
+            } catch (error) {
+                console.error('Failed to add vehicle:', error);
+            }
+          }
+    };
     useEffect(() => {
         const fetchBrands = async () => {
             const response = await getAllVehicleBrandsApi();
@@ -80,6 +100,7 @@ export default function AddVehicle() {
                   {models.map((model) => (
                     <option key={model.id} value={model.id}>
                       {model.name}
+                      onChange={(e) => setVehicle({ ...vehicle, modelId: e.target.value })}
                     </option>
                   ))}
                 </select>
@@ -87,6 +108,25 @@ export default function AddVehicle() {
             )}
         </div>
       )}
+        {/* //STEP 2: NHẬP THÔNG TIN XE */}
+      {step === 2 && (  
+          <div>
+            <h2>Nhập thông tin xe</h2>
+            <label>
+              Biển số xe:
+              <input
+                type="text"
+                value={vehicle.licensePlate}
+                onChange={(e) => setVehicle({ ...vehicle, licensePlate: e.target.value })}
+              />
+            </label>
+            <button
+              onClick={handleAddVehicle}
+            >
+              Thêm xe
+            </button>
+          </div>
+        )}
     </>
-  )
+  );
 }
