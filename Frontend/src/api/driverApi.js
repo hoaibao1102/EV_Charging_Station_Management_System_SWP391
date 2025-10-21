@@ -35,7 +35,7 @@ export const deleteVehicleApi = (vehicleId) => {
 //lấy ra tất cả brand xe
 export const getAllVehicleBrandsApi = () => {
     return handleApiCall(
-        () => apiClient.get('/api/admin/vehicle-models/brands'),
+        () => apiClient.get('/api/vehicle-models/list-brands'),
         'Lấy danh sách thương hiệu xe thất bại'
     );
 }
@@ -43,7 +43,7 @@ export const getAllVehicleBrandsApi = () => {
 //lấy ra các mẫu xe theo brand
 export const getModelsByBrandApi = (brand) => {
     return handleApiCall(
-        () => apiClient.get(`/api/admin/vehicle-models/brand=${brand}`),
+        () => apiClient.get(`/api/vehicle-models?brand=${brand}`),
         'Lấy danh sách mẫu xe theo thương hiệu thất bại'
     );
 }
