@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.controller;
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelCreateRequest;
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
+import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import com.swp391.gr3.ev_management.service.VehicleModelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,15 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 @RestController
-@RequestMapping({"/api/admin/vehicle-models"})
 @Tag(name = "Vehicle Model Controller", description = "APIs for managing vehicle models")
+@RequestMapping("/api/vehicle-models")
 public class VehicleModelController {
 
     @Autowired
@@ -30,61 +26,68 @@ public class VehicleModelController {
 
     @Autowired
     private VehicleModelRepository vehicleModelRepository;
-    // GET /brands - lấy danh sách hãng xe (public, không cần quyền admin)
-    @GetMapping(path = "/brands", params = {})
-    @Operation(summary = "List all vehicle brands (public)", description = "Get all distinct vehicle brands for user/driver")
-    public ResponseEntity<List<String>> getAllBrandsPublic() {
+
+    // ============ PUBLIC ENDPOINTS (no auth required) ============
+    
+    // Step 1: GET /api/vehicle-models/brands - lấy danh sách tất cả hãng xe
+    @GetMapping("/list-brands")
+    @Operation(
+        summary = "Get all vehicle brands", 
+        description = "Get all distinct vehicle brands (Step 1: User selects a brand)"
+    )
+    public ResponseEntity<List<String>> getAllBrands() {
         List<String> brands = vehicleModelRepository.findAll()
                 .stream()
                 .map(vm -> vm.getBrand())
                 .distinct()
+                .sorted()
                 .collect(Collectors.toList());
         return ResponseEntity.ok(brands);
     }
 
-    // GET /api/vehicle-models?brand=... - lấy model theo hãng (public)
-    @GetMapping(params = {"brand"})
-    @Operation(summary = "List vehicle models by brand (public)", description = "Get all vehicle models for a brand for user/driver")
-    public ResponseEntity<List<VehicleModelResponse>> getModelsByBrandPublic(@RequestParam String brand) {
+    // Step 2: GET /api/vehicle-models?brand=Tesla - lấy models theo brand đã chọn
+    @GetMapping
+    @Operation(
+        summary = "Get vehicle models by brand", 
+        description = "Get all vehicle models for a specific brand (Step 2: After user clicks a brand)"
+    )
+    public ResponseEntity<List<VehicleModelResponse>> getModelsByBrand(
+            @RequestParam(required = true) String brand
+    ) {
         return ResponseEntity.ok(vehicleModelService.search(brand, null, null, null));
     }
 
-    // Alias create to match /create path expected by clients
+    // ============ ADMIN ENDPOINTS (require ADMIN role) ============
+
+    // POST /api/admin/vehicle-models/create
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/create")
-    @Operation(summary = "Create Vehicle Model", description = "Create a new vehicle model")
+    @PostMapping("/admin/create-model")
+    @Operation(summary = "Create Vehicle Model (Admin)", description = "Create a new vehicle model", hidden = false)
     public ResponseEntity<VehicleModelResponse> create(@Valid @RequestBody VehicleModelCreateRequest request) {
         return ResponseEntity.ok(vehicleModelService.create(request));
     }
 
-    // List all (or search via query params)
-    @GetMapping
-    @Operation(summary = "List or Search Vehicle Models", description = "List all vehicle models or search by brand, model, year, or connector type")
-    public ResponseEntity<List<VehicleModelResponse>> listOrSearch(
-            @RequestParam(required = false) String brand,
-            @RequestParam(required = false) String model,
-            @RequestParam(required = false) Integer year,
-            @RequestParam(required = false, name = "connectorTypeId") Integer connectorTypeId
-    ) {
-        if (brand != null || model != null || year != null || connectorTypeId != null) {
-            return ResponseEntity.ok(vehicleModelService.search(brand, model, year, connectorTypeId));
-        }
+    // GET /api/admin/vehicle-models
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
+    @GetMapping("/admin/list-models")
+    @Operation(summary = "List or Search Vehicle Models (Admin)", description = "Admin endpoint to list all vehicle models")
+    public ResponseEntity<List<VehicleModelResponse>> listOrSearchAdmin() {
         return ResponseEntity.ok(vehicleModelService.getAll());
     }
 
-    // Update
+    // PUT /api/admin/vehicle-models/{id}
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    @Operation(summary = "Update Vehicle Model", description = "Update an existing vehicle model by its ID")
+    @PutMapping("/admin/edit/{id}")
+    @Operation(summary = "Update Vehicle Model (Admin)", description = "Update an existing vehicle model by its ID")
     public ResponseEntity<VehicleModelResponse> update(@PathVariable Long id,
                                                        @Valid @RequestBody VehicleModelUpdateRequest request) {
         return ResponseEntity.ok(vehicleModelService.update(id, request));
     }
 
-    // Delete
+    // DELETE /api/admin/vehicle-models/{id}
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete Vehicle Model", description = "Delete a vehicle model by its ID")
+    @DeleteMapping("/admin/delete/{id}")
+    @Operation(summary = "Delete Vehicle Model (Admin)", description = "Delete a vehicle model by its ID", hidden = false)
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         vehicleModelService.delete(id);
         return ResponseEntity.noContent().build();

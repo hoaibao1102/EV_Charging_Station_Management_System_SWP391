@@ -88,11 +88,10 @@ public class DriverServiceImpl implements DriverService {
      */
     @Override
     @Transactional(readOnly = true)
-
-    public DriverResponse getByDriverId(Long userId) {
-        Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + userId));
-         return driverMapper.toDriverResponse(driver);
+    public DriverResponse getByDriverId(Long driverId) {
+        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + driverId));
+    return driverMapper.toDriverResponse(driver);
     }
 
     @Override
@@ -175,7 +174,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     // =================== UC-04: VEHICLE MANAGEMENT ===================
-    
+
     /**
      * BR-02: Driver thêm xe vào hồ sơ của mình
      * BR-03: Kiểm tra VehicleModel tồn tại và license plate chưa được đăng ký
@@ -184,15 +183,15 @@ public class DriverServiceImpl implements DriverService {
     @Transactional
     public VehicleResponse addVehicle(Long userId, AddVehicleRequest request) {
         log.info("Adding vehicle for userId: {}, licensePlate: {}", userId, request.getLicensePlate());
-        
+
         // Lấy driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
-        
+
         // BR-03: Kiểm tra VehicleModel có tồn tại
         VehicleModel vehicleModel = vehicleModelRepository.findById(request.getModelId())
                 .orElseThrow(() -> new NotFoundException("Vehicle model not found with ID: " + request.getModelId()));
-        
+
         // Chuẩn hoá biển số để kiểm tra trùng (chỉ chữ + số, bỏ hết ký tự đặc biệt)
         String normalizedPlate = normalizePlate(request.getLicensePlate());
 
@@ -204,20 +203,20 @@ public class DriverServiceImpl implements DriverService {
                 throw new ConflictException("License plate already registered: " + request.getLicensePlate());
             }
         }
-        
+
         // Format biển số theo chuẩn VN trước khi lưu: 86B381052 → 86B-381.05
         String formattedPlate = formatVietnamPlate(request.getLicensePlate());
-        
+
         // Tạo UserVehicle mới
         UserVehicle vehicle = UserVehicle.builder()
                 .driver(driver)
                 .vehiclePlate(formattedPlate) // Lưu dạng có format đẹp
                 .model(vehicleModel)
                 .build();
-        
+
         UserVehicle saved = userVehicleRepository.save(vehicle);
         log.info("Vehicle added successfully: {}", saved.getVehicleId());
-        
+
     return driverMapper.toVehicleResponse(saved);
     }
 
@@ -228,16 +227,16 @@ public class DriverServiceImpl implements DriverService {
         // Giữ lại chữ và số để tránh khác biệt do ký tự phân cách
         return trimmed.replaceAll("[ .-]", "");
     }
-    
+
     /**
      * Format biển số theo chuẩn VN: 86B381052 → 86B-381.05 hoặc 30G12345 → 30G-123.45
      * Format: [2 số][1-2 chữ]-[3 số].[2 số]
      */
     private String formatVietnamPlate(String plate) {
         if (plate == null || plate.isEmpty()) return plate;
-        
+
         String normalized = normalizePlate(plate);
-        
+
         // Phát hiện pattern: 2 số + 1-2 chữ + 4-5 số
         // VD: 86B381052 (9 ký tự) hoặc 30AB12345 (10 ký tự)
         if (normalized.length() >= 8 && normalized.length() <= 10) {
@@ -245,7 +244,7 @@ public class DriverServiceImpl implements DriverService {
             String prefix = normalized.substring(0, 2); // 86
             String letters = ""; // B hoặc AB
             String numbers = ""; // 381052
-            
+
             int i = 2;
             // Lấy chữ cái (1-2 chữ)
             while (i < normalized.length() && Character.isLetter(normalized.charAt(i))) {
@@ -254,7 +253,7 @@ public class DriverServiceImpl implements DriverService {
             }
             // Phần còn lại là số
             numbers = normalized.substring(i);
-            
+
             // Format: 86B-381.05 (nếu đủ 5 số) hoặc 30G-123.45 (nếu đủ 5 số)
             if (numbers.length() >= 4) {
                 String part1 = numbers.substring(0, 3); // 381 hoặc 123
@@ -266,11 +265,11 @@ public class DriverServiceImpl implements DriverService {
                 return prefix + letters + "-" + part1 + "." + part2;
             }
         }
-        
+
         // Nếu không match format chuẩn, trả về normalized (uppercase, no space)
         return normalized;
     }
-    
+
     /**
      * Lấy danh sách xe của driver
      */
@@ -278,19 +277,19 @@ public class DriverServiceImpl implements DriverService {
     @Transactional(readOnly = true)
     public List<VehicleResponse> getMyVehicles(Long userId) {
         log.info("Getting vehicles for userId: {}", userId);
-        
+
         // Lấy driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
-        
+
         // Lấy danh sách xe với thông tin chi tiết
         List<UserVehicle> vehicles = userVehicleRepository.findByDriverIdWithDetails(driver.getDriverId());
-        
+
     return vehicles.stream()
         .map(driverMapper::toVehicleResponse)
         .collect(Collectors.toList());
     }
-    
+
     /**
      * Xóa xe khỏi hồ sơ driver
      * BR-02: Chỉ được xóa xe thuộc về driver đang đăng nhập
@@ -300,20 +299,20 @@ public class DriverServiceImpl implements DriverService {
     @Transactional
     public void removeVehicle(Long userId, Long vehicleId) {
         log.info("Removing vehicle {} for userId: {}", vehicleId, userId);
-        
+
         // Lấy driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
-        
+
         // Lấy vehicle
         UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new NotFoundException("Vehicle not found with ID: " + vehicleId));
-        
+
         // Kiểm tra xe có thuộc về driver này không
         if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {
             throw new ConflictException("Vehicle does not belong to this driver");
         }
-        
+
         userVehicleRepository.delete(vehicle);
         log.info("Vehicle removed successfully: {}", vehicleId);
     }
