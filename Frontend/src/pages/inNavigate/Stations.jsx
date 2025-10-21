@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Stations.css";
 import stationsHeroMobile from "../../assets/img/home/home.jpg"; // Dùng tạm ảnh home
 import stationsHeroDesktop from "../../assets/img/home/home_lab.jpg";
 
 export default function Stations() {
+  const navigate = useNavigate();
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,7 +47,8 @@ export default function Stations() {
       const data = await response.json();
 
       const normalized = data.map((item) => ({
-        id: item.id,
+        id: item.id || item.StationID, // ✅ Ưu tiên id (MockAPI) rồi fallback sang StationID
+        StationID: item.StationID,
         name: item.StationName || item.name || "Trạm sạc chưa đặt tên",
         address: item.Address || item.address || "Chưa có địa chỉ",
         status: item.Status || item.status || "unknown",
@@ -103,6 +106,13 @@ export default function Stations() {
       : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
     window.open(url, "_blank");
+  };
+
+  // ===== Hàm xem chi tiết trạm sạc =====
+  const handleViewDetail = (stationId) => {
+    console.log("Navigating to station:", stationId);
+    console.log("Navigate path:", `/stations/${stationId}`);
+    navigate(`/stations/${stationId}`);
   };
 
   // ===== Lọc theo từ khóa =====
@@ -201,7 +211,12 @@ export default function Stations() {
                   >
                     🗺️ Chỉ đường
                   </button>
-                  <button className="btn-detail">Xem chi tiết</button>
+                  <button
+                    className="btn-detail"
+                    onClick={() => handleViewDetail(station.id)}
+                  >
+                    Xem chi tiết
+                  </button>
                 </div>
               </div>
             ))
