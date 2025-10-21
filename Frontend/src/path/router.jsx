@@ -70,10 +70,10 @@ const routes = [
       //     path: 'my-bookings',
       //     element: <MyBookings />,
       // },
-      // {
-      //     path: 'edit',
-      //     element: <EditProfile />,
-      // },
+      {
+        path: "profile/edit",
+        element: <EditProfile />,
+      },
       {
         path: "profile/information",
         element: <Information />,
