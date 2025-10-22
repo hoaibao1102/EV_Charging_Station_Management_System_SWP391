@@ -1,50 +1,36 @@
 package com.swp391.gr3.ev_management.entity;
 
-import com.swp391.gr3.ev_management.enums.StaffStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "StationStaffs")
-@Data
+@Table(name = "Station_Staff")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class StationStaff {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "StationStaffID")
     private Long stationStaffId;
-
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stationID", nullable = false)
-    private ChargingStation station;
-
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
-
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private StaffStatus status;
-
 
     @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt;
 
-
     @Column(name = "unassigned_at")
     private LocalDateTime unassignedAt;
 
+    // Quan hệ nhiều-nhiều được biểu diễn qua bảng này
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "StaffId")
+    private Staffs staff;
 
-    @OneToMany(mappedBy = "stationStaff", fetch = FetchType.LAZY)
-    private List<Incident> incidents;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "StationId")
+    private ChargingStation station;
 }

@@ -22,8 +22,8 @@ public class Incident {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "StationStaffID")
-    private StationStaff stationStaff;
+    @JoinColumn(name = "StaffId")
+    private Staffs staffs;
 
 
     @ManyToOne(fetch = FetchType.LAZY)

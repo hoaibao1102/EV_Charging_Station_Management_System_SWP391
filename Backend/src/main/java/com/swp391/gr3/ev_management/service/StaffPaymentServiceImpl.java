@@ -34,13 +34,13 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
     @Override
     @Transactional
     public ConfirmPaymentResponse confirmPayment(ConfirmPaymentRequest request) {
-        StationStaff staff = stationStaffRepository.findActiveByStationStaffId(request.getStaffId())
+        StationStaff stationStaff = stationStaffRepository.findActiveByStationStaffId(request.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
         Invoice invoice = invoiceRepository.findById(request.getInvoiceId())
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
-        if (!staff.getStation().getStationId()
+        if (!stationStaff.getStation().getStationId()
                 .equals(invoice.getSession().getBooking().getStation().getStationId())) {
             throw new RuntimeException("Staff has no permission for this station");
         }
@@ -88,8 +88,8 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
                 .paymentMethod(method.getMethodType())
                 .status(tx.getStatus())
                 .paidAt(invoice.getPaidAt())
-                .staffId(staff.getUser().getUserId())
-                .staffName(staff.getUser().getName())
+                .staffId(stationStaff.getStaff().getUser().getUserId())
+                .staffName(stationStaff.getStaff().getUser().getName())
                 .message("Payment confirmed successfully")
                 .build();
     }
