@@ -2,6 +2,8 @@ package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.entity.StationStaff;
+import com.swp391.gr3.ev_management.enums.StaffStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,70 +13,82 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StationStaffRepository extends JpaRepository<StationStaff,Long> {
+public interface StationStaffRepository extends JpaRepository<StationStaff, Long> {
 
-    // Tìm staff assignment active theo user ID
+    // Tìm assignment active theo user ID
+    // (fetch staff + station, KHÔNG fetch "cháu" staff.user)
     @Query("""
-              select ss from StationStaff ss
-              join fetch ss.user u
-              join fetch ss.station st
-              where u.userId = :userId
-                and ss.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
-            """)
+        select ss from StationStaff ss
+        join fetch ss.staff s
+        join s.user u
+        join fetch ss.station st
+        where u.userId = :userId
+          and s.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
+    """)
     Optional<StationStaff> findActiveByUserId(@Param("userId") Long userId);
 
     // Tìm tất cả staff của trạm
     List<StationStaff> findByStation_StationId(Long stationId);
 
-    // Tìm staff active của trạm
-    List<StationStaff> findByStation_StationIdAndStatus(Long stationId, String status);
+    List<StationStaff> findByStation_StationIdAndStaff_Status(Long stationId, StaffStatus status);
 
-    // Kiểm tra staff có active tại trạm không
-    @Query("SELECT CASE WHEN COUNT(ss) > 0 THEN true ELSE false END " +
-            "FROM StationStaff ss " +
-            "WHERE ss.user.userId = :userId " +
-            "AND ss.station.stationId = :stationId " +
-            "AND ss.status = 'active'")
-    boolean isStaffActiveAtStation(
-            @Param("userId") Long userId,
-            @Param("stationId") Long stationId
-    );
+    // Kiểm tra staff có active tại trạm không (so sánh enum)
+    @Query("""
+        select case when count(ss) > 0 then true else false end
+        from StationStaff ss
+        where ss.staff.user.userId = :userId
+          and ss.station.stationId = :stationId
+          and ss.staff.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
+    """)
+    boolean isStaffActiveAtStation(@Param("userId") Long userId,
+                                   @Param("stationId") Long stationId);
 
-    // Tìm lịch sử làm việc của staff
-    @Query("SELECT ss FROM StationStaff ss " +
-            "WHERE ss.user.userId = :userId " +
-            "ORDER BY ss.assignedAt DESC")
+    // Lịch sử làm việc của staff theo userId
+    @Query("""
+        select ss from StationStaff ss
+        where ss.staff.user.userId = :userId
+        order by ss.assignedAt desc
+    """)
     List<StationStaff> findWorkHistoryByUserId(@Param("userId") Long userId);
 
-    // Tìm staff theo user ID và station ID
-    Optional<StationStaff> findByUser_UserIdAndStation_StationId(Long userId, Long stationId);
+    // ❌ Sai: findByUser_UserId... — StationStaff không có field user
+    // ✅ Đúng: đi qua staff.user
+    Optional<StationStaff> findByStaff_User_UserIdAndStation_StationId(Long userId, Long stationId);
 
-    // Đếm số staff active của trạm
-    Long countByStation_StationIdAndStatus(Long stationId, String status);
+    // Đếm số staff theo status (nằm ở Staffs)
+    Long countByStation_StationIdAndStaff_Status(Long stationId, StaffStatus status);
 
+    // Tìm assignment theo id (active)
     @Query("""
-              select ss from StationStaff ss
-              join fetch ss.user u
-              join fetch ss.station st
-              where ss.stationStaffId = :stationStaffId
-                and ss.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
-            """)
+        select ss from StationStaff ss
+        join fetch ss.staff s
+        join s.user u
+        join fetch ss.station st
+        where ss.stationStaffId = :stationStaffId
+          and s.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
+    """)
     Optional<StationStaff> findActiveByStationStaffId(@Param("stationStaffId") Long stationStaffId);
 
+    // Projection DTO — KHÔNG dùng fetch join nên OK
     @Query("""
-        SELECT new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
+        select new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
             ss.stationStaffId,
             s.stationId,
             u.name,
             u.email,
             u.phoneNumber,
-            ss.status,
+            ss.staff.status,
             ss.assignedAt
         )
-        FROM StationStaff ss
-        JOIN ss.user u
-        JOIN ss.station s
-        WHERE u.userId = :userId
+        from StationStaff ss
+        join ss.staff stf
+        join stf.user u
+        join ss.station s
+        where u.userId = :userId
     """)
     Optional<StationStaffResponse> findByUserId(@Param("userId") Long userId);
+
+    // (Tuỳ chọn) Nếu muốn luôn load sâu staff.user + station mà không vi phạm fetch-join:
+    @EntityGraph(attributePaths = {"staff", "staff.user", "station"})
+    Optional<StationStaff> findById(Long id);
 }

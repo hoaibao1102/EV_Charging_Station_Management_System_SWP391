@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,23 +26,27 @@ public class NotificationController {
     @Autowired
     private final NotificationsService notificationsService;
 
-    @GetMapping("/unread")
-    public ResponseEntity<?> getUnreadNotifications(Authentication auth) {
+    @GetMapping
+    @Operation(summary = "Get all notifications", description = "Get all notifications for the logged-in user")
+    public ResponseEntity<?> getAllNotifications(Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
-        var notifications = notificationsService.getUnreadNotificationsByUser(userId);
+        var notifications = notificationsService.getNotificationsByUser(userId);
+
         if (notifications == null || notifications.isEmpty()) {
-            return ResponseEntity.ok(Map.of("message", "Không có thông báo chưa đọc"));
+            return ResponseEntity.ok(Map.of("message", "Không có thông báo"));
         }
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread/count")
+    @Operation(summary = "Get unread notification count", description = "Get the count of unread notifications for the logged-in user")
     public ResponseEntity<Long> getUnreadCount(Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
         return ResponseEntity.ok(notificationsService.getUnreadCount(userId));
     }
 
     @PutMapping("/{notificationId}/read")
+    @Operation(summary = "Mark notification as read", description = "Mark a specific notification as read for the logged-in user")
     public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId, Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
         notificationsService.markAsRead(notificationId, userId);

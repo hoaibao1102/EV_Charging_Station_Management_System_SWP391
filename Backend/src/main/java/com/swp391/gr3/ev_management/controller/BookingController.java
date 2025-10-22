@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.DTO.request.BookingRequest;
 import com.swp391.gr3.ev_management.DTO.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.DTO.response.BookingResponse;
 import com.swp391.gr3.ev_management.service.BookingService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Create a new booking", description = "Endpoint to create a new booking")
     public ResponseEntity<BookingResponse> createBooking(@RequestBody CreateBookingRequest request) {
         try {
             BookingResponse response = bookingService.createBooking(request);
@@ -32,6 +34,7 @@ public class BookingController {
     }
 
     @PutMapping(value = "/{bookingId}/confirm", produces = MediaType.IMAGE_PNG_VALUE)
+    @Operation(summary = "Confirm a booking and generate QR code", description = "Endpoint to confirm a booking and generate its QR code")
     public ResponseEntity<byte[]> confirmBooking(@PathVariable Long bookingId) {
         try {
             bookingService.confirmBooking(bookingId);
@@ -48,6 +51,7 @@ public class BookingController {
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @PostMapping("/qr/decode")
+    @Operation(summary = "Decode booking from QR code payload", description = "Endpoint to decode booking information from a base64-encoded QR code payload")
     public BookingRequest decode(@RequestBody String base64) {
         return bookingService.decodePayload(base64.trim());
     }
