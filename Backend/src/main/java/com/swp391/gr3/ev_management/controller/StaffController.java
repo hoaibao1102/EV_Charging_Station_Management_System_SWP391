@@ -9,13 +9,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/staff")
-@Tag(name = "Admin", description = "APIs for admin operations")
+@Tag(name = "Staff", description = "APIs for Staff operations")
 @RequiredArgsConstructor
 public class StaffController {
 
@@ -25,6 +26,7 @@ public class StaffController {
     @Autowired
     private TokenService tokenService;
 
+    @PreAuthorize("hasRole('STAFF')")
     @GetMapping("/own-profile-staff")
     @Operation(summary = "Get own staff profile", description = "Staff retrieves their own profile information")
     public ResponseEntity<StationStaffResponse> getOwnProfile(HttpServletRequest request) {

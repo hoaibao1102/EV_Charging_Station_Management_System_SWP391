@@ -1,12 +1,10 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.CreateStationStaffRequest;
-import com.swp391.gr3.ev_management.DTO.response.ChargingSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.DTO.response.GetUsersResponse;
-import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.DTO.response.*;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +36,9 @@ public class AdminController {
     private DriverService driverService;
 
     @Autowired
+    private StaffService staffService;
+
+    @Autowired
     private StaffStationService staffStationService;
 
     @Autowired
@@ -52,6 +53,7 @@ public class AdminController {
     // ADMIN: xem tất cả user
     @GetMapping("/all-users")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all users", description = "Admin get list of users")
     public List<GetUsersResponse> getAllUsers() {
         return userService.findAll()
                 .stream()
@@ -72,6 +74,7 @@ public class AdminController {
     // ADMIN: đăng ký user -> gắn làm staff
     @PostMapping(value = "/register-staff", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Register staff", description = "Admin register staff for a user")
     public ResponseEntity<?> adminRegisterStaff(@Valid @RequestBody CreateStationStaffRequest req) {
         User created = userService.registerAsStaff(
                 req.getUser(),
@@ -82,6 +85,15 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Đăng ký staff thành công",
                         "userId", created.getUserId()));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{userId}/update-status-staffs")
+    @Operation(summary = "Update staffs status", description = "Admin updates the status of a staff")
+    public ResponseEntity<StaffResponse> updateStaffStatus(
+            @PathVariable Long userId,
+            @RequestParam("status") StaffStatus status) {
+        return ResponseEntity.ok(staffService.updateStatus(userId, status));
     }
 
 

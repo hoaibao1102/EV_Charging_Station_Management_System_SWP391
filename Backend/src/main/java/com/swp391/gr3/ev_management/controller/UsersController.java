@@ -5,6 +5,7 @@ import java.util.Map;
 import com.swp391.gr3.ev_management.DTO.response.LoginResponse;
 import com.swp391.gr3.ev_management.service.OtpService;
 import com.swp391.gr3.ev_management.service.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
@@ -42,6 +43,8 @@ public class UsersController {
     @PostMapping(value = "/register",
             consumes = "application/json",
             produces = "application/json")
+    @Operation(summary = "Request OTP for registration",
+               description = "Sends an OTP to the user's email for verification during registration")
     public ResponseEntity<?> requestOtp(@Valid @RequestBody RegisterRequest req) {
         if (req.getEmail() == null || req.getEmail().isBlank()) {
             return ResponseEntity.badRequest().body("Email is required");
@@ -61,6 +64,8 @@ public class UsersController {
     }
 
     @PostMapping(value="/register/verify", produces=MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Verify OTP and complete registration",
+               description = "Verifies the OTP sent to the user's email and completes the registration process")
     public ResponseEntity<?> verifyOtpAndRegister(@RequestBody RegisterRequest req,
                                                   @RequestParam String otp) {
         if (!otpService.verifyOtp(req.getEmail(), otp)) {
@@ -76,6 +81,8 @@ public class UsersController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "User login",
+               description = "Authenticates user and returns JWT token upon successful login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             // Xác thực user
@@ -94,12 +101,16 @@ public class UsersController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "User logout",
+               description = "Logs out the user by invalidating the JWT token")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         return userService.logout(request);
     }
 
     @PreAuthorize("hasRole('DRIVER') or hasRole('STAFF') or hasRole('ADMIN')")
     @PostMapping("/complete-profile")
+    @Operation(summary = "Complete user profile",
+               description = "Allows users to complete their profile by adding missing information such as phone number")
     public ResponseEntity<?> completeProfile(HttpServletRequest request,
                                              @RequestBody CompleteProfileReq req) {
         if (req.getPhoneNumber() == null || req.getPhoneNumber().isBlank()) {

@@ -4,9 +4,12 @@ import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
 import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
 import com.swp391.gr3.ev_management.enums.ViolationStatus;
 import com.swp391.gr3.ev_management.service.ViolationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,8 +21,10 @@ import java.util.List;
 @RequestMapping("/api/violations")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Violation", description = "APIs for managing violation")
 public class ViolationController {
 
+    @Autowired
     private final ViolationService violationService;
 
     /**
@@ -28,6 +33,8 @@ public class ViolationController {
      */
     @PostMapping("/users/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")  // Chỉ admin/staff mới tạo được violation
+    @Operation(summary = "Create a new violation for a driver",
+            description = "Creates a new violation for the specified driver. Automatically bans the driver if they reach 3 active violations.")
     public ResponseEntity<ViolationResponse> createViolation(
             @PathVariable Long userId,
             @Valid @RequestBody ViolationRequest request) {
@@ -47,6 +54,8 @@ public class ViolationController {
      * GET /api/violations/users/{userId}
      */
     @GetMapping("/users/{userId}")
+    @Operation(summary = "Get all violations for a driver",
+            description = "Retrieves all violations associated with the specified driver.")
     public ResponseEntity<List<ViolationResponse>> getViolations(@PathVariable Long userId) {
         log.info("Getting all violations for userId: {}", userId);
         List<ViolationResponse> violations = violationService.getViolationsByUserId(userId);
@@ -58,6 +67,8 @@ public class ViolationController {
      * GET /api/violations/users/{userId}/status/{status}
      */
     @GetMapping("/users/{userId}/status/{status}")
+    @Operation(summary = "Get violations by status for a driver",
+            description = "Retrieves violations for the specified driver filtered by violation status.")
     public ResponseEntity<List<ViolationResponse>> getViolationsByStatus(
             @PathVariable Long userId,
             @PathVariable ViolationStatus status) {
@@ -72,6 +83,8 @@ public class ViolationController {
      * GET /api/violations/users/{userId}/count
      */
     @GetMapping("/users/{userId}/count")
+    @Operation(summary = "Count active violations for a driver",
+            description = "Counts the number of active violations for the specified driver.")
     public ResponseEntity<Integer> countActiveViolations(@PathVariable Long userId) {
         log.info("Counting active violations for userId: {}", userId);
         int count = violationService.countActiveViolations(userId);

@@ -47,10 +47,10 @@ public class DataInitializer implements CommandLineRunner {
 
         try {
             initConnectorTypes();
-            initVehicleModels();
+//            initVehicleModels();
             initRoles();
             initAdmins();
-            initDrivers();
+//            initDrivers();
             log.info("Data initialization completed.");
         } catch (Exception ex) {
             log.error("Data initialization failed: {}", ex.getMessage(), ex);
@@ -149,9 +149,9 @@ public class DataInitializer implements CommandLineRunner {
     // ===== Admin seeding =====
     private void initAdmins() {
         createAdminIfNotExists(
-                "0999999999",
-                "admin@example.com",
-                "Admin@123",
+                "0378554725",
+                "vminhquang05@gmail.com",
+                "123123",
                 "System Admin"
         );
     }
