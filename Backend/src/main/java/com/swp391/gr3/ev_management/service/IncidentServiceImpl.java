@@ -2,12 +2,15 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.CreateIncidentRequest;
 import com.swp391.gr3.ev_management.DTO.response.IncidentResponse;
+import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.Incident;
+import com.swp391.gr3.ev_management.entity.Staffs;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.enums.IncidentStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.mapper.IncidentMapper;
 import com.swp391.gr3.ev_management.repository.IncidentRepository;
+import com.swp391.gr3.ev_management.repository.StaffsRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +27,12 @@ public class IncidentServiceImpl implements IncidentService {
     private final IncidentRepository incidentRepository;
     private final StationStaffRepository staffRepository;
     private final IncidentMapper mapper;
+    private final StaffsRepository staffsRepository;
 
     @Override
     @Transactional
     public IncidentResponse createIncident(CreateIncidentRequest request) {
-        StationStaff staff = staffRepository.findById(request.getStationStaffId())
+        Staffs staff = staffsRepository.findById(request.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Station staff not found"));
 
         // ✅ Dùng enum thay vì string
@@ -37,8 +41,8 @@ public class IncidentServiceImpl implements IncidentService {
         }
 
         Incident incident = new Incident();
-        incident.setStationStaff(staff);
-        incident.setStation(staff.getStation());
+        incident.setStaffs(staff);
+        incident.setStation((ChargingStation) staff.getStationStaffs());
         incident.setTitle(request.getTitle());
         incident.setDescription(request.getDescription());
         incident.setSeverity(request.getSeverity());

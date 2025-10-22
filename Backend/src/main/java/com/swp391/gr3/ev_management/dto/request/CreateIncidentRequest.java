@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class CreateIncidentRequest {
-    private Long stationStaffId;
+    private Long StaffId;
     private String title;
     private String description;
     private String severity;

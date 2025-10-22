@@ -59,8 +59,5 @@ public class ChargingStation {
     private List<StationStaff> stationStaffs;
 
     @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
-    private List<Incident> incidents;
-
-    @OneToMany(mappedBy = "station", fetch = FetchType.LAZY)
     private List<Booking> bookings;
 }

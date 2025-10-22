@@ -2,18 +2,12 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
-import com.swp391.gr3.ev_management.entity.ChargingStation;
+import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
-import com.swp391.gr3.ev_management.entity.Role;
-import com.swp391.gr3.ev_management.entity.StationStaff;
-import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
-import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
-import com.swp391.gr3.ev_management.repository.RoleRepository;
-import com.swp391.gr3.ev_management.repository.StationStaffRepository;
-import com.swp391.gr3.ev_management.repository.UserRepository;
+import com.swp391.gr3.ev_management.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +38,7 @@ public class UserServiceImpl implements UserService{
     private final StationStaffRepository staffRepo;
     private final ChargingStationRepository stationRepo;
     private final ApplicationEventPublisher publisher;
+    private final StaffsRepository  staffsRepo;
 
     @Override
     public User findUsersByPhone(String phoneNumber) {
@@ -168,8 +163,8 @@ public class UserServiceImpl implements UserService{
         boolean isDriverActive = user.getDriver() != null
                 && user.getDriver().getStatus() == DriverStatus.ACTIVE;
 
-        boolean isStaffActive = user.getStationStaffs() != null
-                && user.getStationStaffs().getStatus() == StaffStatus.ACTIVE;
+        boolean isStaffActive = user.getStaffs() != null
+                && user.getStaffs().getStatus() == StaffStatus.ACTIVE;
 
         boolean isAdmin = user.getRole() != null
                 && user.getRole().getRoleName().equals("ADMIN");
@@ -228,14 +223,12 @@ public class UserServiceImpl implements UserService{
                 .build();
         user = userRepository.save(user);
 
-        StationStaff staff = StationStaff.builder()
+        Staffs staff = Staffs.builder()
                 .user(user)
-                .station(station)
-                .assignedAt(assignedAt != null ? assignedAt : LocalDateTime.now())
-                .unassignedAt(null)
                 .status(StaffStatus.ACTIVE)
+                .roleAtStation("STAFF")
                 .build();
-        staffRepo.save(staff);
+        staffsRepo.save(staff);
 
         // Thông báo cho staff mới
         publisher.publishEvent(new UserRegisteredEvent(user.getUserId(), user.getEmail(), user.getName()));
