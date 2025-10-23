@@ -54,7 +54,6 @@ export default function Profile() {
         <div className="ev-background">
         </div>
       </div>
-{/* img để tạm */}
       <div className="profile-card">
         <div className="avatar-container">
           <img 

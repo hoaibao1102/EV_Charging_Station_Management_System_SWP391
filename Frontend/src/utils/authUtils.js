@@ -1,19 +1,28 @@
-// Hàm tiện ích xử lý authentication
+// Chỉ lưu 2 thông tin tối thiểu này để duy trì phiên
+const TOKEN_KEY = "accessToken";
+const ROLE_KEY = "role";
 
-// Xóa tất cả thông tin đăng nhập khỏi localStorage
+export const getAuthData = () => {
+    return {
+        accessToken: localStorage.getItem(TOKEN_KEY),
+        role: localStorage.getItem(ROLE_KEY),
+    };
+};
+
+export const setAuthData = ({ accessToken, role }) => {
+    localStorage.setItem(TOKEN_KEY, accessToken);
+    localStorage.setItem(ROLE_KEY, role);
+};
+
 export const clearAuthData = () => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("userName");
-  localStorage.removeItem("isLoggedIn");
-  localStorage.removeItem("userMail");
-  localStorage.removeItem("userPhone");
-  localStorage.removeItem("userSex");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ROLE_KEY);
 };
 
-// Kiểm tra trạng thái đăng nhập
 export const isAuthenticated = () => {
-  return localStorage.getItem("isLoggedIn") === "true" && 
-         localStorage.getItem("accessToken");
-};
+    const token = localStorage.getItem(TOKEN_KEY);
+    return !!token;
+}
+
 
 

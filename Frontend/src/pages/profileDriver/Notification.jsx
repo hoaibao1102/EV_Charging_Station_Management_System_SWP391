@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { getNotificationsApi } from "../../api/driverApi.js";
 import { toast } from "react-toastify";
 import NotificationCard from "../../components/NotifiationCard.jsx";
+import { markNotificationAsReadApi } from '../../api/driverApi.js';
 import "./Notification.css";
 
 export default function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [readedNotifications, setReadedNotifications] = useState();
 
   const fetchNotifications = async () => {
     try {
@@ -26,7 +28,21 @@ export default function Notification() {
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [readedNotifications]);
+
+  const handleReaded = async (notification) => {
+    try {
+      const response = await markNotificationAsReadApi(notification.notificationId);
+      if (response.success) {
+        console.log(`Đánh dấu thông báo ${notification.notificationId} là đã đọc thành công`);
+        setReadedNotifications(notification.notificationId);
+      }
+    } catch (error) {
+      console.error(`Đánh dấu thông báo ${notification.notificationId} là đã đọc thất bại`, error);
+    }
+    console.log(`Đánh dấu thông báo ${notification.notificationId} là đã đọc`);
+
+  }
 
   const sortedNotifications = [...notifications].sort((a, b) => {
     return new Date(b.createdAt) - new Date(a.createdAt);
@@ -42,7 +58,7 @@ export default function Notification() {
       ) : (
         <ul className="notification-list">
           {sortedNotifications.map(notification => (
-            <NotificationCard key={notification.id} notification={notification} />
+            <NotificationCard key={notification.notificationId} notification={notification} onSelect={handleReaded} />
           ))}
         </ul>
       )}
