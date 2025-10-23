@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import "./Navigate.css";
+import "./DriverNavigate.css";
 import homeIcon from "../../assets/logo/home.png";
 import ruleIcon from "../../assets/logo/rule.png";
 import stationsIcon from "../../assets/logo/chargingStation.png";

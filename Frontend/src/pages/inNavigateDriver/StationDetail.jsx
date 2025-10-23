@@ -22,9 +22,8 @@ const StationDetail = () => {
       try {
         setLoading(true);
 
-        // 1️⃣ Lấy thông tin trạm
+        // const stationRes = await stationAPI.getStationById(id);
         const stationRes = await stationAPI.getStationById(id);
-        console.log("🏢 Station Info:", stationRes.data);
 
         // ✅ Fix: nếu trả về mảng, lấy phần tử đầu tiên
         const st = Array.isArray(stationRes.data)
@@ -32,34 +31,30 @@ const StationDetail = () => {
           : stationRes.data;
         setStation(st);
 
-        // 2️⃣ Lấy danh sách trụ và loại connector
         const [pointsRes, connectorsRes] = await Promise.all([
           stationAPI.getChargingPointsByStationId(id),
           stationAPI.getConnectorTypes(),
         ]);
 
-        console.log("🔋 Charging Points:", pointsRes.data);
-        console.log("🔌 Connector Types:", connectorsRes.data);
+        // console.log("🔋 Charging Points:", pointsRes.data);
+        // console.log("🔌 Connector Types:", connectorsRes.data);
 
         setChargingPoints(pointsRes.data);
         setConnectorTypes(connectorsRes.data);
 
-        // 3️⃣ Lấy danh sách xe của tài xế
+        // Lấy danh sách xe của tài xế
         const myVehiclesRes = await getMyVehiclesApi();
-        console.log("🚗 My Vehicles:", myVehiclesRes.data);
+        // console.log("🚗 My Vehicles:", myVehiclesRes.data);
 
         setMyVehicles(myVehiclesRes.data);
 
         // Tự động chọn xe đầu tiên nếu có
         if (myVehiclesRes.data?.length > 0) {
-          console.log(
-            "✅ Auto-selecting first vehicle:",
-            myVehiclesRes.data[0]
-          );
+          // console.log("✅ Auto-selecting first vehicle:", myVehiclesRes.data[0]);
           setSelectedVehicle(myVehiclesRes.data[0]);
         }
       } catch (error) {
-        console.error("❌ Lỗi khi tải dữ liệu:", error);
+         console.error("❌ Lỗi khi tải dữ liệu:", error);
       } finally {
         setLoading(false);
       }
@@ -74,10 +69,10 @@ const StationDetail = () => {
     );
 
     if (!result) {
-      console.log(`⚠️ Connector not found for ID: ${connectorTypeId}`, {
-        searchId: connectorTypeId,
-        availableIds: connectorTypes.map((c) => c.connectorTypeId),
-      });
+      // console.log(`⚠️ Connector not found for ID: ${connectorTypeId}`, {
+      //   searchId: connectorTypeId,
+      //   availableIds: connectorTypes.map((c) => c.connectorTypeId),
+      // });
     }
 
     return result;

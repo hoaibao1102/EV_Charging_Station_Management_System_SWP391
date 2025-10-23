@@ -1,7 +1,7 @@
 import "./Login.css";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogin } from "../../hooks/useAuth";
 const Login = () => {
@@ -86,11 +86,7 @@ const Login = () => {
       setLockEndTime(null);
       localStorage.removeItem('loginLockEndTime');
       localStorage.removeItem('loginFailedAttempts');
-      
-      toast.success("Đăng nhập thành công!");
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+  
     } else {
       // Tăng số lần thất bại
       const newFailedAttempts = failedAttempts + 1;
@@ -123,8 +119,6 @@ const Login = () => {
 
   return (
     <div className="auth-page">
-      <ToastContainer position="top-center" autoClose={2500} theme="colored" />
-
       {/* Desktop Welcome Section (Hidden on Mobile) */}
       <div className="auth-welcome-section">
         <div className="auth-welcome-content">

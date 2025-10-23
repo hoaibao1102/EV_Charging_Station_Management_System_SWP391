@@ -464,7 +464,8 @@ body {
 
 /* ===== CUSTOM CHECKBOX STYLING ===== */
 .auth-checkbox-label {
-  border: none;
+  margin: 10px !important;
+  border: none !important;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -877,7 +878,7 @@ body {
     max-width: 500px;
     min-height: 600px;
     margin: 0;
-    padding: 50px 50px 70px;
+    padding: 50px 50px 10px;
     border-radius: 0 20px 20px 0;
     box-shadow: 10px 0 40px rgba(0, 0, 0, 0.1);
     background: var(--login-white);

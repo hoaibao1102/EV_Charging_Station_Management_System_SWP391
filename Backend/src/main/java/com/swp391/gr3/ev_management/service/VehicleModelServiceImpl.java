@@ -10,7 +10,7 @@ import com.swp391.gr3.ev_management.exception.NotFoundException;
 import com.swp391.gr3.ev_management.mapper.VehicleModelMapper;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
-import com.swp391.gr3.ev_management.repository.UserVehicleRepository;
+import com.swp391.gr3.ev_management.repository.VehicleRepisitory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
 
     private final VehicleModelRepository vehicleModelRepository;
     private final ConnectorTypeRepository connectorTypeRepository;
-    private final UserVehicleRepository userVehicleRepository;
+    private final VehicleRepisitory vehicleRepisitory;
     private final VehicleModelMapper vehicleModelMapper;
 
     @Override
@@ -106,7 +106,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
         VehicleModel vm = vehicleModelRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("VehicleModel not found with id " + id));
 
-        long usage = userVehicleRepository.countByModel_ModelId(id);
+        long usage = vehicleRepisitory.countByModel_ModelId(id);
         if (usage > 0) {
             throw new ConflictException("Cannot delete VehicleModel in use by " + usage + " vehicle(s)");
         }
