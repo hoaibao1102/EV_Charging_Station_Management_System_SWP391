@@ -1,12 +1,19 @@
 import { useState } from "react";
 import { loginApi, registerApi, logoutApi } from "../api/authApi";
-import { clearAuthData } from "../utils/authUtils";
+import { setAuthData } from "../utils/authUtils";
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../redux/slices/authSlice.js';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
+import { logout as logoutAction } from "../redux/slices/authSlice.js";
 
 // Các hàm validate dùng chung
 const validatePhone = (phone) => {
   const phoneRegex = /^0[0-9]{9}$/;
   return phoneRegex.test(phone);
 };
+
+
 
 const validatePassword = (password) => {
   return password.length >= 6;
@@ -18,6 +25,8 @@ const validateConfirmPassword = (password, confirmPassword) => {
 
 // Custom hook đăng nhập
 export const useLogin = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
 
   const login = async (phone, password) => {
@@ -31,15 +40,25 @@ export const useLogin = () => {
     try {
       const response = await loginApi(phone, password);
       if (response.success) {
-        // Lưu thông tin đăng nhập vào localStorage
-        localStorage.setItem("isLoggedIn", "true");
         if (response.data) {
-          // API chỉ trả về token và tt user
-          if (response.data.token) localStorage.setItem("accessToken", response.data.token);
-          if (response.data.name) localStorage.setItem("userName", response.data.name);
-          if (response.data.email) localStorage.setItem("userMail", response.data.email);
-          if (response.data.phone) localStorage.setItem("userPhone", response.data.phone);
-          if (response.data.sex) localStorage.setItem("userSex", response.data.sex);
+          const {token, roleName, name, email, phone, gender} = response.data;
+          console.log("Login successful, role:", roleName);
+          //lưu vào localStorage
+          setAuthData({ accessToken: token, role: roleName });
+          //lưu vào store
+          dispatch(loginSuccess({ accessToken: token, role: roleName, userDetails: {name, email, phone, gender} }));
+          // 3. Chuyển hướng theo Vai trò
+          toast.success("Đăng nhập thành công!");
+          setTimeout(() => {
+            if (roleName === 'ADMIN') {
+                navigate('/admin', { replace: true });
+              } else if (roleName === 'STAFF') {
+                navigate('/staff', { replace: true });
+              } else if (roleName === 'DRIVER') {
+                navigate('/', { replace: true });
+            }
+          }, 2000);
+          
         }
         return { success: true };
       }
@@ -92,27 +111,25 @@ export const useRegister = () => {
 
 // Custom hook đăng xuất
 export const useLogout = () => {
-  const [loading, setLoading] = useState(false);
+    const dispatch = useDispatch();
+    const [loading, setLoading] = useState(false);
+    
+    // HÀM logout NÀY SẼ CHỊU TRÁCH NHIỆM HOÀN TẤT MỌI VIỆC
+    const logout = async () => {
+        setLoading(true);
+        let success = false;
+        try {
+            const response = await logoutApi(); 
+            if(response.success){
+              success = true;
+              dispatch(logoutAction());
+              setLoading(false);
+              return { success: success, message: "Đăng xuất thành công" }; 
+            }  
+        } catch (error) {
+            console.error("Logout API failed, continuing client cleanup.", error);
+        }       
+    };
 
-  const logout = async () => {
-    setLoading(true);
-    try {
-      const response = await logoutApi();
-      clearAuthData();
-      
-      if (response.success) {
-        return { success: true, message: "Đăng xuất thành công!" };
-      } else {
-        return { success: true, message: "Đã đăng xuất khỏi thiết bị!" };
-      }
-    } catch (error) {
-      console.error("Error during logout:", error);
-      clearAuthData();
-      return { success: true, message: "Đã đăng xuất khỏi thiết bị!" };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { logout, loading };
+    return { logout, loading };
 };
