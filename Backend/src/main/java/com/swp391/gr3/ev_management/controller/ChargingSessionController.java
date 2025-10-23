@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/staff/charging-sessions")
+@RequestMapping("/api/charging-sessions")
 @RequiredArgsConstructor
 @Tag(name = "Staff Charging Session", description = "APIs for staff to manage charging sessions")
 public class ChargingSessionController {

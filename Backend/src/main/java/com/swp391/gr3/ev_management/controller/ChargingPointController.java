@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/staff/charging-points")
+@RequestMapping("/api/charging-points")
 @RequiredArgsConstructor
 @Tag(name = "Staff Charging Point", description = "APIs for staff to manage charging points")
 public class ChargingPointController {
