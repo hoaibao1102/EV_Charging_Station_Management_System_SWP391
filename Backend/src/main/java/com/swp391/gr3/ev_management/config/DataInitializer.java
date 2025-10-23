@@ -3,8 +3,8 @@ package com.swp391.gr3.ev_management.config;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.Role;
-import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.entity.User;
+import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
@@ -13,11 +13,11 @@ import com.swp391.gr3.ev_management.repository.UserRepository;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,26 +46,28 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         try {
-            initConnectorTypes();
-//            initVehicleModels();
-            initRoles();
-            initAdmins();
-//            initDrivers();
-            log.info("Data initialization completed.");
+            initConnectorTypes();     // seed các loại đầu sạc phổ biến
+            initRoles();              // seed các role chuẩn
+            initAdmins();             // tạo 1 admin mặc định
+            // initVehicleModels();   // bật nếu cần demo VehicleModel (cần connector types)
+            // initDrivers();         // bật nếu cần demo Driver
+            log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
-            log.error("Data initialization failed: {}", ex.getMessage(), ex);
+            log.error("❌ Data initialization failed: {}", ex.getMessage(), ex);
         }
     }
 
+    // ================== CONNECTOR TYPES ==================
     private void initConnectorTypes() {
-        // Seed a minimal, useful set of connector types for testing VehicleModel creation
-        createConnectorIfNotExists("TYPE2", "AC", "Type 2 (Mennekes)", 22.0, false);
-        createConnectorIfNotExists("CCS2", "DC", "CCS Combo 2", 150.0, false);
-        createConnectorIfNotExists("CHADEMO", "DC", "CHAdeMO", 50.0, true);
-        createConnectorIfNotExists("TYPE1", "AC", "Type 1 (SAE J1772)", 7.4, true);
+        // Một bộ nhỏ đủ dùng cho demo
+        createConnectorIfNotExists("TYPE2",  "AC", "Type 2 (Mennekes)",     22.0,  false);
+        createConnectorIfNotExists("CCS2",   "DC", "CCS Combo 2",            150.0, false);
+        createConnectorIfNotExists("CHADEMO","DC", "CHAdeMO",                 50.0, true);
+        createConnectorIfNotExists("TYPE1",  "AC", "Type 1 (SAE J1772)",      7.4,  true);
     }
 
-    private void createConnectorIfNotExists(String code, String mode, String displayName, double defaultMaxPowerKW, boolean isDeprecated) {
+    private void createConnectorIfNotExists(String code, String mode, String displayName,
+                                            double defaultMaxPowerKW, boolean isDeprecated) {
         try {
             if (connectorTypeRepository.existsByCode(code)) {
                 log.info("ConnectorType already exists: {}", code);
@@ -79,25 +81,27 @@ public class DataInitializer implements CommandLineRunner {
                     .isDeprecated(isDeprecated)
                     .build();
             connectorTypeRepository.save(ct);
+            log.info("Created ConnectorType: {} ({} - {}kW)", code, mode, defaultMaxPowerKW);
         } catch (Exception e) {
             log.warn("Failed to create ConnectorType {}: {}", code, e.getMessage());
         }
     }
 
+    // ================== VEHICLE MODELS (tùy chọn) ==================
     private void initVehicleModels() {
-        // Ensure connector types exist before creating models
-        createModelIfNotExists("Tesla", "Model 3", 2023,"/images/vehicles/tesla-model3.png", "CCS2");
-        createModelIfNotExists("Tesla", "Model Y", 2023,"/images/vehicles/tesla-modely.png", "CCS2");
-        createModelIfNotExists("Hyundai", "Kona Electric", 2022, "/images/vehicles/hyundai-kona.png", "CCS2");
-        createModelIfNotExists("Kia", "EV6", 2023,"/images/vehicles/kia-ev6.png", "CCS2");
-        createModelIfNotExists("VinFast", "VF e34", 2022, "/images/vehicles/vinfast-vfe34.png", "CCS2");
-        createModelIfNotExists("Nissan", "Leaf", 2020, "/images/vehicles/nissan-leaf.png", "CHADEMO");
-        createModelIfNotExists("Mitsubishi", "Outlander PHEV", 2019, "/images/vehicles/mitsubishi-outlander.png", "TYPE1");
+        createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "CCS2");
+        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "CCS2");
+        createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "CCS2");
+        createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "CCS2");
+        createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "CCS2");
+        createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "CHADEMO");
+        createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "TYPE1");
     }
 
     private void createModelIfNotExists(String brand, String model, int year, String img, String connectorCode) {
         try {
-            boolean exists = vehicleModelRepository.existsByBrandIgnoreCaseAndModelIgnoreCaseAndYear(brand, model, year);
+            boolean exists = vehicleModelRepository
+                    .existsByBrandIgnoreCaseAndModelIgnoreCaseAndYear(brand, model, year);
             if (exists) {
                 log.info("VehicleModel already exists: {} {} {}", brand, model, year);
                 return;
@@ -113,9 +117,10 @@ public class DataInitializer implements CommandLineRunner {
                     .brand(brand)
                     .model(model)
                     .year(year)
-                    .imageUrl(img != null && !img.isEmpty() ? img : "default-vehicle.png")
+                    .imageUrl((img != null && !img.isEmpty()) ? img : "default-vehicle.png")
                     .connectorType(connector)
                     .build();
+
             vehicleModelRepository.save(vm);
             log.info("Created VehicleModel: {} {} {} ({})", brand, model, year, connectorCode);
         } catch (Exception e) {
@@ -123,9 +128,10 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    // ================== ROLES ==================
     private void initRoles() {
-        createRoleIfNotExists("ADMIN", "Quản trị viên có toàn quyền truy cập hệ thống");
-        createRoleIfNotExists("STAFF", "Nhân viên nhà ga chịu trách nhiệm quản lý các hoạt động tại địa phương");
+        createRoleIfNotExists("ADMIN",  "Quản trị viên có toàn quyền truy cập hệ thống");
+        createRoleIfNotExists("STAFF",  "Nhân viên nhà ga chịu trách nhiệm quản lý các hoạt động tại địa phương");
         createRoleIfNotExists("DRIVER", "Người lái xe đã đăng ký có thể sạc xe điện");
     }
 
@@ -137,7 +143,7 @@ public class DataInitializer implements CommandLineRunner {
                 role.setRoleName(roleName);
                 role.setDescription(description);
                 roleRepository.save(role);
-                log.info("Created default role: {}", roleName);
+                log.info("Created role: {}", roleName);
             } else {
                 log.info("Role already exists: {}", roleName);
             }
@@ -146,7 +152,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    // ===== Admin seeding =====
+    // ================== DEFAULT ADMIN ==================
     private void initAdmins() {
         createAdminIfNotExists(
                 "0378554725",
@@ -177,7 +183,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setName(name != null ? name : "Admin");
             admin.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Admin@123"));
             admin.setGender("M");
-            admin.setDateOfBirth(LocalDate.of(1969, 04, 22));
+            admin.setDateOfBirth(LocalDate.of(1969, 4, 22));
             admin.setAddress("HCM, Vietnam");
             admin.setRole(adminRole);
 
@@ -188,7 +194,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    // ===== Driver seeding =====
+    // ================== DEFAULT DRIVER (tùy chọn) ==================
     private void initDrivers() {
         createDriverIfNotExists(
                 "0911111111",
@@ -201,10 +207,9 @@ public class DataInitializer implements CommandLineRunner {
         );
     }
 
-    private void createDriverIfNotExists(String phoneNumber, String email, String rawPassword, 
+    private void createDriverIfNotExists(String phoneNumber, String email, String rawPassword,
                                          String name, String gender, LocalDate dateOfBirth, String address) {
         try {
-            // Check if user already exists
             boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
             boolean emailExists = email != null && userRepository.existsByEmail(email);
             if (phoneExists || emailExists) {
@@ -212,14 +217,12 @@ public class DataInitializer implements CommandLineRunner {
                 return;
             }
 
-            // Get DRIVER role
             Role driverRole = roleRepository.findByRoleName("DRIVER");
             if (driverRole == null) {
                 log.warn("DRIVER role not found; skipping driver creation");
                 return;
             }
 
-            // Create User first
             User user = new User();
             user.setPhoneNumber(phoneNumber);
             user.setEmail(email);
@@ -231,7 +234,6 @@ public class DataInitializer implements CommandLineRunner {
             user.setRole(driverRole);
             User savedUser = userRepository.save(user);
 
-            // Create Driver linked to User
             Driver driver = Driver.builder()
                     .user(savedUser)
                     .status(DriverStatus.ACTIVE)
@@ -239,7 +241,8 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             driverRepository.save(driver);
 
-            log.info("Created default driver: {} ({}) with status {}", savedUser.getName(), savedUser.getPhoneNumber(), driver.getStatus());
+            log.info("Created default driver: {} ({}) with status {}",
+                    savedUser.getName(), savedUser.getPhoneNumber(), driver.getStatus());
         } catch (Exception e) {
             log.error("Failed to create default driver (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
         }

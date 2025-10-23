@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(value = "/api/staff/incidents", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/incidents", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Staff Incident", description = "APIs for staff to manage incident reports")
 public class IncidentController {
 

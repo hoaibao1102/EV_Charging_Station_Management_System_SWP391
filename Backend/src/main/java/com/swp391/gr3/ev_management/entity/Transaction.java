@@ -27,6 +27,9 @@ public class Transaction {
     @Column(name = "Currency", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String currency;
 
+    @Column(name = "Description", columnDefinition = "NVARCHAR(100)", nullable = false)
+    private String description;
+
     //TODO: cần type ko?? ví dụ:  TopUp, Payment, Refund, SubscriptionFee
 //    @Column(name = "type", columnDefinition = "NVARCHAR(50)", nullable = false)
 //    private String type; // TopUp, Payment, Refund, SubscriptionFee
