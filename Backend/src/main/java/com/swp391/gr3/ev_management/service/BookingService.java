@@ -16,4 +16,6 @@ public interface BookingService {
     String buildQrPayload(Long bookingId);
     byte[] generateQrPng(String payload, int size);
     BookingRequest decodePayload(String base64);
+
+    BookingResponse getBookingById(Long bookingId);
 }

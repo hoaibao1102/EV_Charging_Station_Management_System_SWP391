@@ -9,5 +9,5 @@ public class ConfirmPaymentRequest {
     private Long invoiceId;
     private PaymentType paymentMethod;
     private String status;
-    private double amount;
+    private Long amount;
 }

@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
+import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
 import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.mapper.NotificationMapper;
@@ -112,5 +113,32 @@ public class NotificationsServiceImpl implements NotificationsService{
         n.setStatus("READ");
         n.setReadAt(LocalDateTime.now());
         notificationsRepository.save(n);// update status and readAt
+    }
+
+    @Override
+    public NotificationResponse getNotificationById(Long notificationId, Long userId) {
+        // Tìm thông báo theo ID
+        Notification notification = notificationsRepository.findById(notificationId)
+                .orElse(null);
+
+        // Nếu không có → trả null, để controller xử lý
+        if (notification == null) {
+            return null;
+        }
+
+        // Kiểm tra quyền sở hữu
+        if (!notification.getUser().getUserId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền truy cập thông báo này");
+        }
+
+        // Nếu thông báo chưa đọc → cập nhật trạng thái sang "READ"
+        if ("UNREAD".equalsIgnoreCase(notification.getStatus())) {
+            notification.setStatus("READ");
+            notification.setReadAt(LocalDateTime.now());
+            notificationsRepository.save(notification);
+        }
+
+        // Trả về DTO thông tin chi tiết
+        return notificationMapper.mapToNotificationResponse(notification);
     }
 }

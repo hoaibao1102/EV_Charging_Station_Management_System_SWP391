@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -51,6 +52,28 @@ public class NotificationController {
         Long userId = Long.valueOf(auth.getName());
         notificationsService.markAsRead(notificationId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{notificationId}")
+    @Operation(
+            summary = "Get notification by ID",
+            description = "Retrieve details of a specific notification by its ID for the logged-in user"
+    )
+    public ResponseEntity<?> getById(
+            @Parameter(description = "ID của thông báo", required = true)
+            @PathVariable Long notificationId,
+            Authentication auth
+    ) {
+        Long userId = Long.valueOf(auth.getName());
+        NotificationResponse notification = notificationsService.getNotificationById(notificationId, userId);
+
+        if (notification == null) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Không tìm thấy thông báo");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        return ResponseEntity.ok(notification);
     }
 
 }
