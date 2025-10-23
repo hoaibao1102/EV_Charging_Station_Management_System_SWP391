@@ -286,4 +286,13 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Failed to decode QR payload", e);
         }
     }
+
+    @Override
+    public BookingResponse getBookingById(Long bookingId) {
+        return mapper.convertValue(
+                bookingsRepository.findById(bookingId)
+                        .orElseThrow(() -> new RuntimeException("Booking not found")),
+                BookingResponse.class
+        );
+    }
 }

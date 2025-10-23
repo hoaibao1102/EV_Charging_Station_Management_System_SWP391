@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,8 +33,9 @@ public class SlotConfig {
     @Column(name = "Active_expire", nullable = false)
     private LocalDateTime activeExpire;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Is_Active", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String isActive;
+    private SlotConfigStatus isActive;
 
     @OneToMany(mappedBy = "config", fetch = FetchType.LAZY)
     private List<SlotTemplate> slotTemplates;

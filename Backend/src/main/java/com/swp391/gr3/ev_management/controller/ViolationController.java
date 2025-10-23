@@ -32,7 +32,7 @@ public class ViolationController {
      * POST /api/violations/users/{userId}
      */
     @PostMapping("/users/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")  // Chỉ admin/staff mới tạo được violation
+    @PreAuthorize("hasAnyRole('ADMIN' or 'STAFF')")  // Chỉ admin/staff mới tạo được violation
     @Operation(summary = "Create a new violation for a driver",
             description = "Creates a new violation for the specified driver. Automatically bans the driver if they reach 3 active violations.")
     public ResponseEntity<ViolationResponse> createViolation(

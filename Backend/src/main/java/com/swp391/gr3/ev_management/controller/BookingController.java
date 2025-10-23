@@ -55,4 +55,14 @@ public class BookingController {
     public BookingRequest decode(@RequestBody String base64) {
         return bookingService.decodePayload(base64.trim());
     }
+
+    @GetMapping("/{bookingId}")
+    @Operation(summary = "Get booking by ID", description = "Endpoint to retrieve booking details by booking ID")
+    public ResponseEntity<BookingResponse> getBookingById(@PathVariable Long bookingId) {
+        BookingResponse response = bookingService.getBookingById(bookingId);
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(response);
+    }
 }
