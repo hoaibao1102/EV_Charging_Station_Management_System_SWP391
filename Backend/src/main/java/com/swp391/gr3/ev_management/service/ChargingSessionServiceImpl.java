@@ -14,62 +14,78 @@ import com.swp391.gr3.ev_management.mapper.ChargingSessionMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
-public class StaffCharSessionServiceImpl implements StaffCharSessionService {
+public class ChargingSessionServiceImpl implements ChargingSessionService {
 
     private final ChargingSessionRepository sessionRepository;
     private final ChargingPointRepository pointRepository;
     private final BookingsRepository bookingsRepository;
     private final InvoiceRepository invoiceRepository;
-    private final StationStaffRepository staffRepository;
+    private final StaffsRepository staffRepository;
     private final ChargingSessionMapper mapper;
-    @Autowired
     private final NotificationsRepository notificationsRepository;
-
+    private final SessionSocCache sessionSocCache;
 
     @Override
     @Transactional
     public StartCharSessionResponse startChargingSession(StartCharSessionRequest request) {
+        // 1) Validate staff & quyền tại trạm
+        Staffs staff = staffRepository.findById(request.getStaffId())
+                .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
-        Booking booking = bookingsRepository.findByBookingIdAndStatus(request.getBookingId(), BookingStatus.CONFIRMED)
-                .orElseThrow(() -> new RuntimeException("Booking not found or not confirmed"));// check booking
+        // 2) Lấy booking ở trạng thái CONFIRMED
+        Booking booking = bookingsRepository
+                .findByBookingIdAndStatus(request.getBookingId(), BookingStatus.CONFIRMED)
+                .orElseThrow(() -> new RuntimeException("Booking not found or not confirmed"));
 
+        // 3) Staff phải thuộc cùng station với booking
+//        if (!staff.getStationStaffs().equals(booking.getStation())) {
+//            throw new RuntimeException("Staff has no permission for this station");
+//        }
+
+        // 4) Chưa có session nào gắn với booking này
         sessionRepository.findByBooking_BookingId(booking.getBookingId())
                 .ifPresent(s -> { throw new IllegalStateException("Session already exists for this booking"); });
 
-        // Tạo mới phiên sạc
+        // 5) Sinh mức pin ban đầu ngẫu nhiên (20–80%)
+        int initialSoc = ThreadLocalRandom.current().nextInt(20, 81);
+
+        // 6) Tạo session
         ChargingSession session = new ChargingSession();
         session.setBooking(booking);
         session.setStartTime(LocalDateTime.now());
         session.setStatus(ChargingSessionStatus.IN_PROGRESS);
         sessionRepository.save(session);
 
+        // 6.1) Lưu SoC vào cache theo sessionId
+        sessionSocCache.put(session.getSessionId(), initialSoc);
+
+        // 7) Cập nhật trạng thái booking (nếu có IN_PROGRESS thì nên dùng)
         booking.setStatus(BookingStatus.BOOKED);
         bookingsRepository.save(booking);
 
-        // Tìm noti gần nhất để update (hoặc tạo mới nếu không thấy)
-        Notification noti = notificationsRepository
-                .findTopByBookingAndTypeOrderByCreatedAtDesc(booking, NotificationTypes.BOOKING_CONFIRMED)
-                .orElseGet(() -> {
-                    Notification n = new Notification();
-                    n.setUser(booking.getVehicle().getDriver().getUser());
-                    n.setBooking(booking);
-                    n.setStatus("UNREAD");
-                    n.setTitle("Bắt đầu sạc #" + booking.getBookingId());
-                    return n;
-                });
+        // 8) Tạo noti CHARGING_STARTED
+        Notification noti = new Notification();
+        noti.setUser(booking.getVehicle().getDriver().getUser());
+        noti.setBooking(booking);
         noti.setSession(session);
+        noti.setTitle("Bắt đầu sạc #" + booking.getBookingId());
+        noti.setContentNoti("Pin hiện tại: " + initialSoc + "%");
+        noti.setType(NotificationTypes.CHARGING_STARTED);
+        noti.setStatus("UNREAD");
+        noti.setCreatedAt(LocalDateTime.now());
         notificationsRepository.save(noti);
 
+        // 9) Trả về response (kèm initialSoc)
         return StartCharSessionResponse.builder()
                 .sessionId(session.getSessionId())
                 .bookingId(booking.getBookingId())
@@ -77,6 +93,7 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
                 .vehiclePlate(booking.getVehicle().getVehiclePlate())
                 .startTime(session.getStartTime())
                 .status(session.getStatus())
+                .initialSoc(initialSoc)
                 .build();
     }
 
@@ -87,7 +104,8 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
         ChargingSession chargingSession = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new RuntimeException("Session not found"));
 
-        if (!"in_progress".equalsIgnoreCase(String.valueOf(chargingSession.getStatus()))) {
+        // 🔧 so sánh enum thay vì string
+        if (chargingSession.getStatus() != ChargingSessionStatus.IN_PROGRESS) {
             throw new RuntimeException("Session is not currently active");
         }
 
@@ -104,6 +122,9 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
         chargingSession.setStatus(ChargingSessionStatus.COMPLETED);
         sessionRepository.save(chargingSession);
 
+        // 🧹 Xoá SoC cached vì session đã kết thúc
+        sessionSocCache.remove(chargingSession.getSessionId());
+
         Booking booking = chargingSession.getBooking();
         booking.setStatus(BookingStatus.COMPLETED);
         bookingsRepository.save(booking);
@@ -119,8 +140,7 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
         invoice.setCurrency("VND");
         invoice.setStatus(InvoiceStatus.UNPAID);
         invoice.setIssuedAt(LocalDateTime.now());
-
-        invoice.setDriver(chargingSession.getBooking().getVehicle().getDriver()); // hoặc booking.getDriver()
+        invoice.setDriver(chargingSession.getBooking().getVehicle().getDriver());
         invoiceRepository.save(invoice);
 
         return StopCharSessionResponse.builder()
@@ -137,42 +157,29 @@ public class StaffCharSessionServiceImpl implements StaffCharSessionService {
 
     @Override
     public ViewCharSessionResponse getCharSessionById(Long sessionId) {
-
-        //  Tìm session theo ID
         ChargingSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Charging session not found"));
-        //  Kiểm tra quyền trạm
-        Long sessionStationId = session.getBooking().getStation().getStationId();
-
-        //  Mapping sang DTO trả về
         return mapper.toResponse(session);
     }
 
     @Override
     public List<ViewCharSessionResponse> getCharSessionsByStation(Long stationId) {
-
-        //  Lấy toàn bộ session của trạm
         List<ChargingSession> sessions = sessionRepository.findByBooking_Station_StationId(stationId);
-
-        //  Map sang DTO
-        return sessions.stream()
-                .map(mapper::toResponse)
-                .toList();
+        return sessions.stream().map(mapper::toResponse).toList();
     }
 
     @Override
     public List<ViewCharSessionResponse> getActiveCharSessionsByStation(Long stationId) {
-
-        //  Lấy các session đang hoạt động
         List<ChargingSession> activeSessions = sessionRepository.findActiveSessionsByStation(stationId);
-
-        //  Map sang DTO
-        return activeSessions.stream()
-                .map(mapper::toResponse)
-                .toList();
+        return activeSessions.stream().map(mapper::toResponse).toList();
     }
 
     public List<ChargingSession> getAll() {
         return sessionRepository.findAll();
+    }
+
+    @Override
+    public Optional<ChargingSession> findById(Long sessionId) {
+        return sessionRepository.findById(sessionId);
     }
 }

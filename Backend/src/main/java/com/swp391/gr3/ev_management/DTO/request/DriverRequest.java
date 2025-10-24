@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class DriverRequest {
     @Enumerated(EnumType.STRING)
     @NotBlank(message = "Status is required")
-    private DriverStatus driverStatus =  DriverStatus.PENDING; // Initial status when creating a driver
+    private DriverStatus driverStatus =  DriverStatus.ACTIVE; // Initial status when creating a driver
 
     private long driverId;
 

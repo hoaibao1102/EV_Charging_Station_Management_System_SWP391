@@ -34,7 +34,6 @@ public class DriverController {
     // =================== UC-03: PROFILE MANAGEMENT ===================
     
     // ✅ Driver xem hồ sơ chính mình (qua token)
-    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/profile")
     @Operation(summary = "Get own driver profile", description = "Driver retrieves their own profile information")
     public ResponseEntity<DriverResponse> getOwnProfile(HttpServletRequest request) {
@@ -44,7 +43,6 @@ public class DriverController {
     }
 
     // ✅ Driver cập nhật hồ sơ
-    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/profile")
     @Operation(summary = "Update own driver profile", description = "Driver updates their own profile information")
     public ResponseEntity<DriverResponse> updateOwnProfile(
@@ -62,7 +60,6 @@ public class DriverController {
      * BR-02: Xe phải thuộc về driver đang đăng nhập
      * BR-03: Kiểm tra model tồn tại và license plate chưa được đăng ký
      */
-    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping("/vehicles")
     @Operation(summary = "Add vehicle", description = "Driver adds a new vehicle to their profile")
     public ResponseEntity<VehicleResponse> addVehicle(
@@ -76,7 +73,6 @@ public class DriverController {
     /**
      * UC-04: Xem danh sách xe của driver
      */
-    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/vehicles")
     @Operation(summary = "Get my vehicles", description = "Driver retrieves list of their vehicles")
     public ResponseEntity<List<VehicleResponse>> getMyVehicles(HttpServletRequest request) {
@@ -88,7 +84,6 @@ public class DriverController {
     /**
      * UC-04: Xóa xe khỏi hồ sơ
      */
-    @PreAuthorize("hasRole('DRIVER')")
     @DeleteMapping("/vehicles/{vehicleId}")
     @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
     public ResponseEntity<Void> removeVehicle(

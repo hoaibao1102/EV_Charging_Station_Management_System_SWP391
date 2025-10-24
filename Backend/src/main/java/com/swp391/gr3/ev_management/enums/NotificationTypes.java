@@ -5,6 +5,7 @@ public enum NotificationTypes {
     USER_BANNED,
     BOOKING_CONFIRMED,
     BOOKING_OVERDUE,
+    CHARGING_STARTED,
     PAYMENT_SUCCESS,
     CHARGING_COMPLETED
 }
