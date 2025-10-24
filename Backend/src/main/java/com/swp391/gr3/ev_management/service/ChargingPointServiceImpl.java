@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class StaffPointServiceImpl implements StaffPointService{
+public class ChargingPointServiceImpl implements ChargingPointService {
 
     private final ChargingPointRepository pointRepository;
     private final StationStaffRepository staffRepository;

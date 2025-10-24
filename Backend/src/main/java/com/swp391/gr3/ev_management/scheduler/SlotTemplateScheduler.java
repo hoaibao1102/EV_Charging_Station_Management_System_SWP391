@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class SlotTemplateScheduler {
     // 🕛 Chạy tự động mỗi ngày lúc 00:00:00
     @Scheduled(cron = "0 0 0 * * *")
     public void autoGenerateTodayTemplates() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDateTime.now();
         log.info("🕛 Auto-generating slot templates for {}", today);
 
         // 🔥 Chỉ lấy những config đang active
