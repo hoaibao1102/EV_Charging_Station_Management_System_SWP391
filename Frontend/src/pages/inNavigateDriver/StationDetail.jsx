@@ -54,7 +54,7 @@ const StationDetail = () => {
           setSelectedVehicle(myVehiclesRes.data[0]);
         }
       } catch (error) {
-         console.error("❌ Lỗi khi tải dữ liệu:", error);
+        console.error("❌ Lỗi khi tải dữ liệu:", error);
       } finally {
         setLoading(false);
       }
@@ -176,6 +176,12 @@ const StationDetail = () => {
     setExpandedPoint(expandedPoint === pointId ? null : pointId);
 
   const handleBooking = (pointId, connectorId) => {
+    // Kiểm tra xem đã chọn xe chưa
+    if (!selectedVehicle) {
+      alert("⚠️ Vui lòng chọn xe trước khi đặt chỗ!");
+      return;
+    }
+
     console.log(`📅 Booking Point: ${pointId}, Connector: ${connectorId}`);
     navigate(`/bookings`);
   };
@@ -225,8 +231,8 @@ const StationDetail = () => {
         📍 {station?.Address || station?.address || "Đang cập nhật địa chỉ"}
       </p>
 
-      {/* ====== Dropdown chọn xe ====== */}
-      {myVehicles?.length > 0 && (
+      {/* ====== Dropdown chọn xe hoặc thông báo thêm xe ====== */}
+      {myVehicles?.length > 0 ? (
         <div className="vehicle-selector">
           <label htmlFor="vehicle-select" className="selector-label">
             🚗 Chọn xe bạn muốn sạc:
@@ -245,6 +251,78 @@ const StationDetail = () => {
               </option>
             ))}
           </select>
+          {!selectedVehicle && (
+            <p
+              style={{
+                color: "#ff9800",
+                marginTop: "10px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              ⚠️ Vui lòng chọn xe để xem trụ sạc tương thích và đặt chỗ
+            </p>
+          )}
+        </div>
+      ) : (
+        <div
+          className="vehicle-selector"
+          style={{
+            background: "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
+            border: "2px solid #ff9800",
+            padding: "20px",
+            borderRadius: "12px",
+          }}
+        >
+          <p
+            style={{
+              color: "#e65100",
+              fontSize: "16px",
+              fontWeight: "600",
+              marginBottom: "15px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            🚗 Bạn chưa có xe nào trong danh sách
+          </p>
+          <p
+            style={{
+              color: "#f57c00",
+              fontSize: "14px",
+              marginBottom: "15px",
+            }}
+          >
+            Vui lòng thêm xe của bạn để đặt chỗ sạc
+          </p>
+          <button
+            onClick={() => navigate("/profile/my-vehicle")}
+            style={{
+              background: "linear-gradient(135deg, #ff9800 0%, #f57c00 100%)",
+              color: "white",
+              border: "none",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 12px rgba(255, 152, 0, 0.3)",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 16px rgba(255, 152, 0, 0.4)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow =
+                "0 4px 12px rgba(255, 152, 0, 0.3)";
+            }}
+          >
+            ➕ Thêm xe của tôi
+          </button>
         </div>
       )}
 
@@ -301,17 +379,31 @@ const StationDetail = () => {
                       >
                         {connector.mode}
                       </div>
-                      {status?.toLowerCase() === "available" && (
-                        <button
-                          className="btn-book-small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBooking(pointId, connector.connectorTypeId);
-                          }}
-                        >
-                          📅 Đặt chỗ
-                        </button>
-                      )}
+                      {status?.toLowerCase() === "available" &&
+                        selectedVehicle && (
+                          <button
+                            className="btn-book-small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBooking(pointId, connector.connectorTypeId);
+                            }}
+                          >
+                            📅 Đặt chỗ
+                          </button>
+                        )}
+                      {status?.toLowerCase() === "available" &&
+                        !selectedVehicle && (
+                          <p
+                            style={{
+                              color: "#ff9800",
+                              fontSize: "13px",
+                              fontWeight: "500",
+                              margin: "5px 0",
+                            }}
+                          >
+                            ⚠️ Chọn xe để đặt chỗ
+                          </p>
+                        )}
                     </div>
                   </div>
                 </div>

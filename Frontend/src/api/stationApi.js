@@ -9,6 +9,17 @@ export const getConnectorTypes = () => {
   );
 };
 
+// ====== Lấy danh sách tất cả trạm sạc ======
+export const getAllStations = () => {
+  return handleApiCall(
+    () =>
+      apiClient.get(
+        "https://68f35999fd14a9fcc4288a78.mockapi.io/stationcharging"
+      ),
+    "Lấy danh sách trạm sạc thất bại"
+  );
+};
+
 // ====== Lấy thông tin trạm theo ID ======
 export const getStationById = (id) => {
   return handleApiCall(
@@ -31,9 +42,21 @@ export const getChargingPointsByStationId = (stationId) => {
   );
 };
 
+// ====== Lấy danh sách slot sạc theo trụ sạc ======
+export const getAvaila = (pointId) => {
+  return handleApiCall(
+    () =>
+      apiClient.get(
+        `https://68f6f46af7fb897c66141d83.mockapi.io/slot_available?PointID=${pointId}`
+      ),
+    "Lấy danh sách slot sạc thất bại"
+  );
+};
+
 // ====== Export default object ======
 export const stationAPI = {
   getConnectorTypes,
+  getAllStations,
   getStationById,
   getChargingPointsByStationId,
 };
