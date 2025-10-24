@@ -49,8 +49,8 @@ public class DataInitializer implements CommandLineRunner {
             initConnectorTypes();     // seed các loại đầu sạc phổ biến
             initRoles();              // seed các role chuẩn
             initAdmins();             // tạo 1 admin mặc định
-            // initVehicleModels();   // bật nếu cần demo VehicleModel (cần connector types)
-            // initDrivers();         // bật nếu cần demo Driver
+            initVehicleModels();   // bật nếu cần demo VehicleModel (cần connector types)
+            initDrivers();         // bật nếu cần demo Driver
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
             log.error("❌ Data initialization failed: {}", ex.getMessage(), ex);
