@@ -103,7 +103,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         // LẤY ROLE TỪ CLAIM, KHÔNG GỌI u.getRole()
         String roleName = tokenService.extractClaim(token, c -> c.get("role", String.class));
-        if (roleName == null || roleName.isBlank()) roleName = "USER";
+        if (roleName == null || roleName.isBlank()) roleName = "DRIVER";
         if (!roleName.startsWith("ROLE_")) roleName = "ROLE_" + roleName;
 
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(roleName));

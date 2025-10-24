@@ -20,4 +20,5 @@ public class StartCharSessionResponse {
     private String vehiclePlate;
     private LocalDateTime startTime;
     private ChargingSessionStatus status;
+    private Integer initialSoc; // 🔋 mức pin lúc bắt đầu
 }

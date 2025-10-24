@@ -122,7 +122,7 @@ public class EmailServiceImpl implements EmailService {
             ctx.setVariable("cid", "qr"); // used in template as th:src="'cid:' + ${cid}"
 
             String html = templateEngine.process("booking-confirmed", ctx);
-
+            helper.setFrom(from);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);

@@ -2,12 +2,9 @@ package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.StartCharSessionRequest;
 import com.swp391.gr3.ev_management.DTO.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.DTO.request.ViewCharSessionRequest;
-import com.swp391.gr3.ev_management.DTO.response.ChargingSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.StartCharSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.ViewCharSessionResponse;
-import com.swp391.gr3.ev_management.service.StaffCharSessionService;
+import com.swp391.gr3.ev_management.DTO.response.*;
+import com.swp391.gr3.ev_management.entity.ChargingSession;
+import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,12 +25,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Tag(name = "Staff Charging Session", description = "APIs for staff to manage charging sessions")
 public class ChargingSessionController {
-    private final StaffCharSessionService staffCharSessionService;
+    private final ChargingSessionService chargingSessionService;
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
     @GetMapping("all-session")
     public List<ChargingSessionResponse> getAllSession() {
-        return staffCharSessionService.getAll()
+        return chargingSessionService.getAll()
                 .stream()
                 .map(session -> new ChargingSessionResponse(
                         session.getStartTime(),
@@ -51,7 +50,7 @@ public class ChargingSessionController {
     public ResponseEntity<StartCharSessionResponse> startChargingSession(
             @Valid @RequestBody StartCharSessionRequest request
     ) {
-        StartCharSessionResponse response = staffCharSessionService.startChargingSession(request);
+        StartCharSessionResponse response = chargingSessionService.startChargingSession(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -61,7 +60,7 @@ public class ChargingSessionController {
     public ResponseEntity<StopCharSessionResponse> stopChargingSession(
             @Valid @RequestBody StopCharSessionRequest request
     ) {
-        StopCharSessionResponse response = staffCharSessionService.stopChargingSession(request);
+        StopCharSessionResponse response = chargingSessionService.stopChargingSession(request);
         return ResponseEntity.ok(response);
     }
 
@@ -71,7 +70,7 @@ public class ChargingSessionController {
     public ResponseEntity<ViewCharSessionResponse> getSessionById(
             @Parameter(description = "Session ID") @PathVariable Long sessionId
     ) {
-        ViewCharSessionResponse response = staffCharSessionService.getCharSessionById(sessionId);
+        ViewCharSessionResponse response = chargingSessionService.getCharSessionById(sessionId);
         return ResponseEntity.ok(response);
     }
 
@@ -81,7 +80,32 @@ public class ChargingSessionController {
     public ResponseEntity<List<ViewCharSessionResponse>> getActiveSessionsByStation(
             @Parameter(description = "Station ID") @RequestParam Long stationId
     ) {
-        List<ViewCharSessionResponse> sessions = staffCharSessionService.getActiveCharSessionsByStation(stationId);
+        List<ViewCharSessionResponse> sessions = chargingSessionService.getActiveCharSessionsByStation(stationId);
         return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/session/{sessionId}/status")
+    public ChargingStatusResponse getChargingStatus(
+            @PathVariable Long sessionId,
+            @RequestParam int initialSoc,
+            @RequestParam String connectorType // VD: "DC" hoặc "AC"
+    ) {
+        ChargingSession session = chargingSessionService.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        LocalDateTime start = session.getStartTime();
+        long minutes = Duration.between(start, LocalDateTime.now()).toMinutes();
+
+        double ratePerHour = connectorType.equalsIgnoreCase("DC") ? 25.0 : 10.0;
+        double ratePerMinute = ratePerHour / 60.0;
+
+        double currentSoc = Math.min(100, initialSoc + minutes * ratePerMinute);
+        double energyKWh = (currentSoc - initialSoc) * 0.5; // tuỳ bạn muốn mô phỏng
+        return ChargingStatusResponse.builder()
+                .sessionId(sessionId)
+                .currentSoc(currentSoc)
+                .energyKWh(energyKWh)
+                .minutesElapsed(minutes)
+                .build();
     }
 }

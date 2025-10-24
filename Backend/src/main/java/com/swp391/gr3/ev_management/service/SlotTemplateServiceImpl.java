@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +30,7 @@ public class SlotTemplateServiceImpl implements SlotTemplateService {
 
     @Override
     @Transactional
-    public List<SlotTemplateResponse> generateDailyTemplates(Long configId, LocalDate forDate) {
+    public List<SlotTemplateResponse> generateDailyTemplates(Long configId, LocalDateTime forDate) {
         SlotConfig config = slotConfigRepository.findByConfigId(configId);
         if (config == null) {
             throw new IllegalArgumentException("Không tìm thấy SlotConfig với id = " + configId);
@@ -52,8 +53,8 @@ public class SlotTemplateServiceImpl implements SlotTemplateService {
             throw new IllegalArgumentException("activeExpire (giờ trong ngày) phải > activeFrom.");
         }
 
-        LocalDateTime windowStart = forDate.atTime(fromTime);
-        LocalDateTime windowEnd   = forDate.atTime(toTime); // exclusive
+        LocalDateTime windowStart = forDate.toLocalDate().atTime(fromTime);
+        LocalDateTime windowEnd   = forDate.toLocalDate().atTime(toTime);
 
         long totalMinutes = Duration.between(windowStart, windowEnd).toMinutes();
         if (totalMinutes <= 0) {
@@ -92,15 +93,34 @@ public class SlotTemplateServiceImpl implements SlotTemplateService {
 
     @Override
     @Transactional
-    public List<SlotTemplateResponse> generateTemplatesForRange(Long configId, LocalDate startDate, LocalDate endDate) {
+    public List<SlotTemplateResponse> generateTemplatesForRange(Long configId, LocalDateTime startDate, LocalDateTime endDate) {
         if (startDate == null || endDate == null || endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("Khoảng ngày không hợp lệ.");
         }
         List<SlotTemplateResponse> all = new ArrayList<>();
-        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+        for (LocalDateTime d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
             all.addAll(generateDailyTemplates(configId, d)); // sau 23:59 sẽ reset tự nhiên cho ngày kế tiếp
         }
         return all;
+    }
+
+    @Override
+    @Transactional
+    public List<SlotTemplateResponse> generateTemplatesFromConfig(Long configId) {
+        SlotTemplate cfg = slotTemplateRepository.findById(configId)
+                .orElseThrow(() -> new IllegalArgumentException("Config not found: " + configId));
+
+        // Đổi tên field cho đúng model của bạn
+        LocalDateTime start = Optional.ofNullable(cfg.getStartTime())
+                .orElseThrow(() -> new IllegalArgumentException("Config.fromDate is required"));
+        LocalDateTime end = Optional.ofNullable(cfg.getEndTime()).orElse(start);
+
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("Config.toDate must be >= fromDate");
+        }
+
+        // Tận dụng hàm sẵn có
+        return generateTemplatesForRange(configId, start, end);
     }
 
     @Override

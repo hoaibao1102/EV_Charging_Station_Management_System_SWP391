@@ -8,7 +8,6 @@ import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +41,7 @@ public class AdminController {
     private StaffStationService staffStationService;
 
     @Autowired
-    private final StaffCharSessionService staffCharSessionService;
+    private final ChargingSessionService chargingSessionService;
 
     @Autowired
     private final NotificationsService notificationsService;
