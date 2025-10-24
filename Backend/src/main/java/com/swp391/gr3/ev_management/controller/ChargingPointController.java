@@ -2,7 +2,7 @@ package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.StopPointRequest;
 import com.swp391.gr3.ev_management.DTO.response.StopPointResponse;
-import com.swp391.gr3.ev_management.service.StaffPointService;
+import com.swp391.gr3.ev_management.service.ChargingPointService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +22,7 @@ import java.util.List;
 public class ChargingPointController {
 
     @Autowired
-    private final StaffPointService pointService;
+    private final ChargingPointService pointService;
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @PostMapping("/stop")

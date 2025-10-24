@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -27,17 +28,16 @@ public class SlotTemplateController {
     @PostMapping("/generate/daily")
     @Operation(summary = "Generate slot templates for today based on the given configuration ID")
     public ResponseEntity<List<SlotTemplateResponse>> generateDaily(@RequestParam Long configId) {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDateTime.now();
         return ResponseEntity.ok(slotTemplateService.generateDailyTemplates(configId, today));
     }
 
     // Tạo template cho NHIỀU ngày liên tiếp (reset sau 23:59 mỗi ngày)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/generate/range")
-    @Operation(summary = "Generate slot templates for a date range based on the given configuration ID")
-    public ResponseEntity<List<SlotTemplateResponse>> generateForTodayRange(@RequestParam Long configId) {
-        LocalDate today = LocalDate.now(); // Lấy ngày hôm nay
-        return ResponseEntity.ok(slotTemplateService.generateTemplatesForRange(configId, today, today));
+    @Operation(summary = "Generate slot templates using date range defined in config")
+    public ResponseEntity<List<SlotTemplateResponse>> generateFromConfig(@RequestParam Long configId) {
+        return ResponseEntity.ok(slotTemplateService.generateTemplatesFromConfig(configId));
     }
 
     @GetMapping("{templateId}")

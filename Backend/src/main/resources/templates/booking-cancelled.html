@@ -14,20 +14,31 @@
         :root {
             --bg: #f6f9fc;
             --card: #ffffff;
-            --muted: #6b7280;
-            --accent: #0b63ff;
+            --muted: #64748b;            /* slate-500 */
+            --text: #0f172a;             /* slate-900 */
+            --heading: #0b1220;          /* slightly darker */
+            --accent: #0b63ff;           /* primary */
+            --accent-2: #06b6d4;         /* secondary */
             --danger: #bf2b2b;
-            --pill-bg: #fff3f3;
+
+            --pill-bg: #fff5f5;
             --pill-text: #b42318;
-            --shadow: 0 8px 30px rgba(15,23,42,0.06);
+
+            --surface: #f8fafc;          /* subtle panel bg */
+            --stroke: rgba(15,23,42,0.08);
+            --shadow: 0 10px 35px rgba(15,23,42,0.08);
+            --radius: 16px;
         }
 
         html, body {
             height: 100%;
             margin: 0;
             font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-            background: linear-gradient(180deg, var(--bg), #eef4fb);
-            color: #0f172a;
+            background:
+                    radial-gradient(1200px 600px at 10% -10%, rgba(11,99,255,0.08), transparent 55%),
+                    radial-gradient(1200px 600px at 100% 0%, rgba(6,182,212,0.08), transparent 55%),
+                    linear-gradient(180deg, var(--bg), #eef4fb);
+            color: var(--text);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             padding: 28px 16px;
@@ -40,85 +51,122 @@
 
         .card-clean {
             background: var(--card);
-            border-radius: 14px;
+            border-radius: var(--radius);
             box-shadow: var(--shadow);
             overflow: hidden;
-            border: 1px solid rgba(15,23,42,0.04);
+            border: 1px solid var(--stroke);
+            backdrop-filter: saturate(130%) blur(2px);
         }
 
         .card-header {
             display: flex;
             align-items: center;
             gap: 16px;
-            padding: 18px 20px;
-            background: linear-gradient(90deg, rgba(11,99,255,0.95), rgba(6,182,212,0.95));
+            padding: 20px 22px;
+            background: linear-gradient(92deg, rgba(11,99,255,0.95), rgba(6,182,212,0.95));
             color: #fff;
         }
 
         .brand {
             width:56px;
             height:56px;
-            border-radius:12px;
+            border-radius:14px;
             background: rgba(255,255,255,0.12);
             display:flex;
             align-items:center;
             justify-content:center;
             font-weight:700;
             font-size:18px;
-            box-shadow: inset 0 -6px 18px rgba(255,255,255,0.04);
+            box-shadow: inset 0 -6px 18px rgba(255,255,255,0.06);
         }
 
-        .header-title { margin:0; font-weight:700; font-size:18px; }
-        .header-sub { margin:0; font-size:13px; opacity:0.95; }
+        .header-title { margin:0; font-weight:800; font-size:18px; letter-spacing:.2px; }
+        .header-sub   { margin:0; font-size:13px; opacity:.95; }
 
-        .card-body {
-            padding: 22px;
-        }
+        .card-body { padding: 24px; }
 
         .status-pill {
-            display:inline-block;
-            padding:6px 10px;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:6px 12px;
             border-radius:999px;
             background: var(--pill-bg);
             color: var(--pill-text);
             font-weight:700;
             font-size:13px;
+            border: 1px solid rgba(180,35,24,0.15);
             margin-bottom:12px;
         }
 
         .greeting {
-            margin:0 0 12px 0;
-            font-size:15px;
+            margin:0 0 10px 0;
+            font-size:16px;
+            color: var(--heading);
+            letter-spacing:.1px;
         }
 
         .grid {
             display:grid;
             grid-template-columns: 1fr 1fr;
-            gap:12px;
-            margin-top:10px;
+            gap:14px;
+            margin-top:12px;
         }
 
         .info {
-            background: linear-gradient(180deg,#fbfdff,#ffffff);
-            border-radius:10px;
-            padding:12px;
-            border:1px solid rgba(11,99,255,0.04);
+            background: linear-gradient(180deg, var(--surface), #ffffff);
+            border-radius:12px;
+            padding:14px;
+            border:1px solid var(--stroke);
         }
 
-        .label { font-size:12px; color:var(--muted); margin-bottom:6px; display:block; }
-        .value { font-weight:700; color:#071033; font-size:14px; }
+        .label {
+            font-size:12px;
+            color:var(--muted);
+            margin-bottom:6px;
+            display:block;
+            letter-spacing:.3px;
+        }
 
-        .time-badge {
-            display:inline-block;
-            padding:8px 12px;
-            border-radius:999px;
-            background: linear-gradient(90deg,var(--accent),#06b6d4);
-            color:#fff;
+        .value {
             font-weight:700;
-            font-size:13px;
+            color:#071033;
+            font-size:15px;
+            line-height:1.35;
         }
 
-        .muted { color:var(--muted); font-size:14px; }
+        /* ✅ Khắc phục badge “Khung giờ”: nền sáng, chữ đậm sẫm, viền rõ – không còn trắng trên trắng */
+        .time-badge {
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:8px 14px;
+            border-radius:999px;
+            background:
+                    linear-gradient(180deg, #f1f5ff, #ffffff); /* light luxury look */
+            color:#0b1b3a;                 /* dark text for high contrast */
+            font-weight:800;
+            font-size:13px;
+            border:1px solid rgba(11,99,255,0.20);
+            box-shadow: 0 2px 10px rgba(11,99,255,0.08);
+            letter-spacing:.2px;
+            white-space:nowrap;
+        }
+
+        /* Tuỳ chọn: icon chấm nhỏ cho badge (tạo cảm giác “chip” hiện đại) */
+        .time-badge::before {
+            content:"";
+            width:8px;
+            height:8px;
+            border-radius:999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            display:inline-block;
+        }
+
+        .muted {
+            color:var(--muted);
+            font-size:14px;
+        }
 
         .actions {
             margin-top:18px;
@@ -128,23 +176,26 @@
         }
 
         .btn-primary {
-            background: var(--accent);
+            background: linear-gradient(92deg, var(--accent), var(--accent-2));
             color:#fff;
             border:0;
-            padding:10px 14px;
-            border-radius:10px;
+            padding:10px 16px;
+            border-radius:12px;
             text-decoration:none;
-            font-weight:700;
+            font-weight:800;
+            box-shadow: 0 6px 16px rgba(11,99,255,0.20);
+            transition: transform .05s ease, box-shadow .15s ease;
         }
+        .btn-primary:active { transform: translateY(1px); box-shadow: 0 4px 12px rgba(11,99,255,0.18); }
 
         .btn-secondary {
             background:transparent;
             color:var(--accent);
-            border:1px solid rgba(11,99,255,0.12);
-            padding:10px 14px;
-            border-radius:10px;
+            border:1px solid rgba(11,99,255,0.25);
+            padding:10px 16px;
+            border-radius:12px;
             text-decoration:none;
-            font-weight:600;
+            font-weight:700;
         }
 
         .footer {
@@ -155,6 +206,7 @@
 
         @media (max-width:720px){
             .grid { grid-template-columns: 1fr; }
+            .time-badge { white-space: normal; }
         }
     </style>
 </head>
@@ -200,18 +252,8 @@
 
             <p class="muted" style="margin-top:12px">Nếu bạn vẫn cần sạc, vui lòng đặt lại khung giờ mới trong ứng dụng hoặc liên hệ hỗ trợ.</p>
 
-            <div class="actions">
-                <a th:href="@{|/bookings/${bookingId}|}" class="btn-primary">Xem chi tiết đặt chỗ</a>
-                <a th:href="@{|mailto:support@example.com?subject=Hỗ trợ Booking ${bookingId}|}" class="btn-secondary">Liên hệ hỗ trợ</a>
-            </div>
-
             <div class="footer">Cảm ơn bạn đã sử dụng EVMS. Lưu ý: hệ thống có thể tự động hủy booking nếu không được xác nhận đúng thời gian.</div>
 
-            <!-- Optional inline logo:
-            <div style="margin-top:14px">
-                <img th:src="@{'cid:logo'}" alt="EVMS" width="96" height="auto"/>
-            </div>
-            -->
         </div>
     </div>
 </div>
