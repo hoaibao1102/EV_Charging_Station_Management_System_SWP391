@@ -24,5 +24,5 @@ public interface UserService {
     public void addUser(User user);
     public List<User> findAll();
     public User findById(Long id);
-    public User registerAsStaff(RegisterRequest req, Long stationId, LocalDateTime assignedAt, StaffStatus status); // ADMIN
+    public User registerAsStaff(RegisterRequest req, Long stationId); // ADMIN
 }

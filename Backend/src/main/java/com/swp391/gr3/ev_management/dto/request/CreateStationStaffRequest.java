@@ -9,6 +9,4 @@ import java.time.LocalDateTime;
 public class CreateStationStaffRequest {
     private RegisterRequest user;   // thông tin user mới
     private Long stationId;       // trạm muốn gắn
-    private LocalDateTime assignedAt; // nếu null, service sẽ tự set = now
-    private StaffStatus status;
 }
