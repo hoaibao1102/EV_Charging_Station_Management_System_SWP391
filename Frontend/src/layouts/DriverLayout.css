@@ -1,3 +1,36 @@
+/* ========== LAYOUT CHO MÀN HÌNH LỚN (Desktop) ========== */
+.driver-layout-large {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.driver-layout-header {
+  height: 125px;
+  flex-shrink: 0;
+}
+
+/* ========== LAYOUT CHO MÀN HÌNH NHỎ (Mobile) ========== */
+.driver-layout-mobile {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.driver-layout-footer {
+  height: 70px;
+  flex-shrink: 0;
+}
+
+/* ========== MAIN CONTENT (chung cho cả mobile và desktop) ========== */
+.driver-layout-main {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ========== CÁC STYLES CŨ (giữ nguyên nếu cần) ========== */
 
 /* Container chính */
 .main-layout {
@@ -5,10 +38,8 @@
   max-height: 100vh;
   width: 100%;
   position: relative;
-  overflow-x: hidden; /* Ngăn scroll ngang */
+  overflow-x: hidden;
 }
-
-/* ========== MOBILE FIRST (Default) ========== */
 
 /* Sidebar ẩn trên mobile */
 .main-layout-sidebar {
@@ -20,10 +51,10 @@
   flex: 1;
   width: 100%;
   padding: 0;
-  padding-bottom: 70px; /* Khoảng trống cho bottom nav */
+  padding-bottom: 70px;
   overflow-x: hidden;
-  overflow-y: auto; /* Cho phép scroll dọc */
-  height: 100vh; /* Fix height để scroll đúng */
+  overflow-y: auto;
+  height: 100vh;
 }
 
 /* Bottom navigation - hiển thị trên mobile */
@@ -41,7 +72,7 @@
 /* ========== TABLET (768px+) ========== */
 @media (min-width: 768px) {
   .main-layout-content {
-    padding-bottom: 90px; /* Tăng padding cho tablet */
+    padding-bottom: 90px;
   }
 }
 
@@ -51,7 +82,6 @@
     flex-direction: row;
   }
 
-  /* Hiển thị sidebar trên desktop */
   .main-layout-sidebar {
     display: block;
     width: 280px;
@@ -65,18 +95,16 @@
     overflow-y: auto;
   }
 
-  /* Content điều chỉnh với sidebar */
   .main-layout-content {
     flex: 1;
     width: calc(100% - 280px);
     padding: 0;
-    padding-bottom: 0; /* Bỏ padding bottom trên desktop */
+    padding-bottom: 0;
     overflow-x: hidden;
-    overflow-y: auto; /* Scroll riêng cho content */
-    height: 100vh; /* Full viewport height */
+    overflow-y: auto;
+    height: 100vh;
   }
 
-  /* Ẩn bottom navigation trên desktop */
   .main-layout-bottom-nav {
     display: none;
   }
