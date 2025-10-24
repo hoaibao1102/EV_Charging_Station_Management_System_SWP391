@@ -77,9 +77,7 @@ public class AdminController {
     public ResponseEntity<?> adminRegisterStaff(@Valid @RequestBody CreateStationStaffRequest req) {
         User created = userService.registerAsStaff(
                 req.getUser(),
-                req.getStationId(),
-                req.getAssignedAt(),
-                req.getStatus()
+                req.getStationId()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Đăng ký staff thành công",

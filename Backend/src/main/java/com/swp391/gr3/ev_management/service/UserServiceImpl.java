@@ -201,15 +201,12 @@ public class UserServiceImpl implements UserService{
     // ===== ADMIN: đăng ký user và biến thành StationStaff của một trạm =====
     @Override
     @Transactional
-    public User registerAsStaff(RegisterRequest req, Long stationId, LocalDateTime assignedAt, StaffStatus status) {
+    public User registerAsStaff(RegisterRequest req, Long stationId) {
         if (userRepository.existsByEmail(req.getEmail())) throw new IllegalArgumentException("Email đã tồn tại");
         if (userRepository.existsByPhoneNumber(req.getPhoneNumber())) throw new IllegalArgumentException("Số điện thoại đã tồn tại");
 
         Role staffRole = roleRepository.findByRoleName("STAFF");
         if (staffRole == null) throw new IllegalStateException("Role STAFF chưa được seed");
-
-        ChargingStation station = stationRepo.findById(stationId)
-                .orElseThrow(() -> new IllegalArgumentException("Trạm không tồn tại"));
 
         User user = User.builder()
                 .email(req.getEmail())

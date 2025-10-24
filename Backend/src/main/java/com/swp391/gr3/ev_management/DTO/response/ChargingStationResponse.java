@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class ChargingStationResponse {
+    private Long stationId;
     private String stationName;
     private String address;
     private double latitude;
