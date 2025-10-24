@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .driver-layout-header {
@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .driver-layout-footer {
@@ -27,7 +27,7 @@
 /* ========== MAIN CONTENT (chung cho cả mobile và desktop) ========== */
 .driver-layout-main {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* ========== CÁC STYLES CŨ (giữ nguyên nếu cần) ========== */
