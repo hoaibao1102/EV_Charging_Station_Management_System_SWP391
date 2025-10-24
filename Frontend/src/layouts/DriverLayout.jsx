@@ -1,36 +1,19 @@
 import AppNavigation from "../components/navigate/DriverNavigate.jsx";
 import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import './MainLayout.css';
+import './DriverLayout.css';
 
 export default function DriverLayout() {
   const [isMobile, setIsMobile] = useState(false);
 
   function MainLayoutLarge() {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          overflow: "hidden", 
-        }}
-      >
-        <header
-          style={{
-            height: "125px",
-            flexShrink: 0, 
-          }}
-        >
+      <div className="driver-layout-large">
+        <header className="driver-layout-header">
           <AppNavigation />
         </header>
 
-        <main
-          style={{
-            flex: 1, 
-            overflowY: "auto", 
-          }}
-        >
+        <main className="driver-layout-main">
           <Outlet />
         </main>
       </div>
@@ -40,23 +23,12 @@ export default function DriverLayout() {
   // Layout cho màn hình NHỎ (Mobile) - Navigation ở DƯỚI
   function MainLayout() {
     return (
-      <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100vh',
-          overflow: 'hidden'
-      }}>
-        <main style={{
-            flex: 1, 
-            overflowY: 'auto', 
-        }}>
+      <div className="driver-layout-mobile">
+        <main className="driver-layout-main">
           <Outlet />
         </main>
 
-        <footer style={{
-            height: '70px',
-            flexShrink: 0 
-        }}>
+        <footer className="driver-layout-footer">
           <AppNavigation />
         </footer>
       </div>

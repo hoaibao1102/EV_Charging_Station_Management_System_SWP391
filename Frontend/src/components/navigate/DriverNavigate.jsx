@@ -1,77 +1,43 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./DriverNavigate.css";
 import homeIcon from "../../assets/logo/home.png";
 import ruleIcon from "../../assets/logo/rule.png";
 import stationsIcon from "../../assets/logo/chargingStation.png";
 import bookingIcon from "../../assets/logo/booking.png";
 import profileIcon from "../../assets/logo/user.png";
-import styled from "styled-components";
-
-const NavItem = styled(NavLink)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  padding: 8px;
-  transition: all 0.3s ease;
-  border-radius: 50%;
-  min-width: 50px;
-  min-height: 50px;
-  justify-content: center;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-
-  &.active {
-    background-color: #20b2aa;
-    color: white;
-    justify-content: center;
-    align-items: center;
-
-    .navIcon {
-      background-color: white;
-      transform: scale(1.3);
-      margin-bottom: 0;
-
-      img {
-        filter: brightness(0) saturate(100%) invert(48%) sepia(79%)
-          saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%);
-      }
-    }
-
-    .navLabel {
-      display: none;
-    }
-  }
-`;
+import paths from "../../path/paths.jsx";
+import {isAuthenticated} from "../../utils/authUtils.js";
+import classed from "../../assets/css/Main.module.css";
+import { useSelector } from "react-redux";
 
 export default function AppNavigation() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const isLoggedIn = useSelector(isAuthenticated);
 
   const navItems = [
     {
-      path: "/",
+      path: paths.home,
       icon: homeIcon,
       label: "Trang chủ",
     },
     {
-      path: "/rules",
+      path: paths.rules,
       icon: ruleIcon,
       label: "Điều khoản",
     },
     {
-      path: "/stations",
+      path: paths.stations,
       icon: stationsIcon,
       label: "Trạm sạc",
     },
     {
-      path: "/bookingInformation",
+      path: paths.booking,
       icon: bookingIcon,
       label: "Đặt chỗ",
     },
     {
-      path: "/profile",
+      path: paths.profile,
       icon: profileIcon,
       label: "Hồ sơ",
     },
@@ -100,6 +66,7 @@ export default function AppNavigation() {
             </NavLink>
           );
         })}
+      {!isLoggedIn && <button className={classed.button} onClick={() => navigate(paths.login)}>ĐĂNG NHẬP</button>}
       </div>
     </nav>
   );

@@ -3,25 +3,36 @@ export const paths = {
   login: "/login",
   register: "/register",
   verify: "/verify-otp",
+  error: "/error",
   //driver
   home: "/",
   rules: "/rules",
   stations: "/stations",
-  bookings: "/bookings",
+  booking: "/bookings",
   profile: "/profile",
   myVehicle: "/profile/my-vehicle",
   myBookings: "/profile/my-bookings",
   editProfile: "/profile/edit",
-  myInformation: "/profile/information",
+  information: "/profile/information",
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
 
   //admin
   adminDashboard: "/admin",
+  userManagement: "/admin/manage-users",
+  stationManagement: "/admin/manage-stations",
+  modelManagement: "/admin/manage-models",
+  chargerManagement: "/admin/manage-chargers",
+  businessStatistics: "/admin/business-statistics",
+  accidentReports: "/admin/accident-reports",
 
 
   //staff
   staffDashboard: "/staff",
+  manageSessionCharging: "/manage-session-charging",
+  transactionManagement: "/transaction-management",
+  reportAccidents: "/report-accidents",
+
 
 };
 

@@ -7,15 +7,16 @@ import paths from '../../path/paths.jsx';
 import girl from '../../assets/icon/girl.png';
 import man from '../../assets/icon/man.png';
 import './Profile.css';
+import { useSelector } from 'react-redux';
+import {selectUser} from '../../redux/slices/authSlice.js';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const userName = localStorage.getItem("userName");
-  const userMail = localStorage.getItem("userMail");
-  const userPhone = localStorage.getItem("userPhone");
-  const userSex = localStorage.getItem("userSex");
-  // const [userProfile, setUserProfile] = useState(null);
-  
+  const user = useSelector(selectUser);
+  const userPhone = user?.phone;
+  const userSex = user?.gender;
+  const userMail = user?.email;
+  const userName = user?.name;
   const { logout, loading } = useLogout();
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function Profile() {
     }
   };
   const menuItems = [
-    { label: 'Thông tin chi tiết', icon: '📝', path: paths.myInformation }, 
+    { label: 'Thông tin chi tiết', icon: '📝', path: paths.information }, 
     { label: 'Phương tiện của tôi', icon: '🚗', path: paths.myVehicle }, 
     { label: 'Giao dịch của tôi', icon: '💸', path: paths.myBookings }, 
     { label: 'Thay đổi thông tin', icon: '🛠️', path: paths.editProfile }, 

@@ -1,0 +1,46 @@
+
+/* Root Layout Container */
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background-color: white;
+}
+
+/* Sidebar Navigation - Cố định bên trái */
+.admin-sidebar {
+  width: 15% ;
+  background-color: aliceblue;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Main Content Area */
+.admin-main {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Biến CSS cho màu sắc */
+:root {
+  --primary-color: #20b2aa;    /* Màu phụ (teal) */
+  --secondary-color: white;     /* Màu chủ đạo */
+  --sidebar-width: 64px;
+}
+
+/* Utility classes */
+.bg-primary {
+  background-color: var(--primary-color);
+}
+
+.bg-secondary {
+  background-color: var(--secondary-color);
+}
+
+.text-primary {
+  color: var(--primary-color);
+}
+
+.text-secondary {
+  color: var(--secondary-color);
+}

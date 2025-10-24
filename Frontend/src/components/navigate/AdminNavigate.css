@@ -1,0 +1,149 @@
+/* Container cho tất cả nav items */
+.navContainer {
+  margin-top: 20px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: aliceblue;
+  padding: 12px;
+}
+
+/* Mỗi mục navigation */
+.navItem {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  background-color: white;
+  border: 2px solid #20b2aa;
+  border-radius: 8px !important;
+  text-decoration: none;
+  color: #333;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 60px;
+}
+
+/* Hover effect - phóng to cả button */
+.navItem:hover {
+  background-color: #f0fffe;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.25);
+}
+
+/* Active state - khi được chọn */
+.navItemActive {
+  background-color: #e6f9f8;
+  border-color: #20b2aa;
+  box-shadow: 0 2px 8px rgba(32, 178, 170, 0.2);
+}
+
+.navItemActive:hover {
+  background-color: #d9f5f3;
+}
+
+/* Active state click effect */
+.navItem:active {
+  transform: scale(1.02);
+  background-color: #d9f5f3;
+}
+
+/* Icon container - nền tròn màu xanh */
+.navIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background-color: #20b2aa;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.navIcon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  /* Filter này giữ icon màu trắng */
+}
+
+/* Label text */
+.navLabel {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect cho label - đậm hơn */
+.navItem:hover .navLabel {
+  font-weight: 600;
+  color: #20b2aa;
+}
+
+/* Active label */
+.navItemActive .navLabel {
+  color: #20b2aa;
+  font-weight: 600;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 768px) {
+  .navContainer {
+    padding: 12px 8px;
+  }
+  
+  .navItem {
+    padding: 12px 16px;
+    min-height: 56px;
+    gap: 12px;
+  }
+  
+  .navLabel {
+    font-size: 14px;
+  }
+  
+  .navIcon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .navIcon img {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Animation cho khi load trang */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.navItem {
+  animation: slideIn 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+.navItem:nth-child(1) { animation-delay: 0.05s; }
+.navItem:nth-child(2) { animation-delay: 0.1s; }
+.navItem:nth-child(3) { animation-delay: 0.15s; }
+.navItem:nth-child(4) { animation-delay: 0.2s; }
+.navItem:nth-child(5) { animation-delay: 0.25s; }
+.navItem:nth-child(6) { animation-delay: 0.3s; }
+.navItem:nth-child(7) { animation-delay: 0.35s; }
