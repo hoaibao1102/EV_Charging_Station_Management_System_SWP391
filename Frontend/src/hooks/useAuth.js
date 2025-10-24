@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { loginApi, registerApi, logoutApi } from "../api/authApi";
-import { setAuthData } from "../utils/authUtils";
+import { setAuthData, clearAuthData } from "../utils/authUtils";
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../redux/slices/authSlice.js';
 import { useNavigate } from 'react-router-dom';
@@ -114,21 +114,33 @@ export const useLogout = () => {
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     
-    // HÀM logout NÀY SẼ CHỊU TRÁCH NHIỆM HOÀN TẤT MỌI VIỆC
+    // HÀM logout NÀY SẼ CHỊU TRÁCH NHIỆM HOÀN TẤT MỌI VIỆC từ xóa trong store/ localstorage đến gọi API logout
     const logout = async () => {
         setLoading(true);
-        let success = false;
         try {
             const response = await logoutApi(); 
             if(response.success){
-              success = true;
+              // Xóa Redux store
               dispatch(logoutAction());
-              setLoading(false);
-              return { success: success, message: "Đăng xuất thành công" }; 
-            }  
+              // Xóa localStorage
+              clearAuthData();
+              toast.success("Đăng xuất thành công!");
+              return { success: true, message: "Đăng xuất thành công" }; 
+            } else {
+              // Nếu API trả về thất bại nhưng vẫn clear client-side
+              dispatch(logoutAction());
+              clearAuthData();
+              return { success: false, message: response.message || "Đăng xuất thất bại" };
+            }
         } catch (error) {
             console.error("Logout API failed, continuing client cleanup.", error);
-        }       
+            // Vẫn clear client-side dù API lỗi
+            dispatch(logoutAction());
+            clearAuthData();
+            return { success: false, message: "Lỗi khi đăng xuất, nhưng đã xóa phiên làm việc" };
+        } finally {
+            setLoading(false);
+        }
     };
 
     return { logout, loading };

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute.jsx';
+import paths from './paths.jsx';
 
 // Import Layouts
 import AdminLayout from '../layouts/AdminLayout';
@@ -7,7 +8,7 @@ import StaffLayout from '../layouts/StaffLayout';
 import DriverLayout from '../layouts/DriverLayout';
  
 // Public Pages =====================================
-import Error404 from "../pages/inNavigateDriver/Error404.jsx";
+import Error404 from "../pages/auth/Error404.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
 import Verify from "../pages/auth/Verify.jsx";
@@ -28,6 +29,9 @@ import Vehicles from "../pages/profileDriver/Vehicles.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
 
 // Admin Pages ====================================
+import AdminDashboard  from "../pages/admin/AdminDashboard.jsx";
+import ManagementStation  from "../pages/admin/ManagementStation.jsx";
+import ManagementUser  from "../pages/admin/ManagementUser.jsx";
 
 // Staff Pages ====================================
 
@@ -36,16 +40,18 @@ const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path={paths.error} element={<Error404 />} />
+
         {/* ======================= PUBLIC ROUTES (Không cần đăng nhập) ======================= */}
         <Route path="/" element={<DriverLayout />}>
           <Route index element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-otp" element={<Verify />} />
-          <Route path="/error" element={<Error404 />} />
-          <Route path="stations" element={<Stations />} />
-          <Route path="rules" element={<Rules />} />
-          <Route path="stations/:id" element={<StationDetail />} />
+          <Route path={paths.login} element={<Login />} />
+          <Route path={paths.register} element={<Register />} />
+          <Route path={paths.verify} element={<Verify />} />
+
+          <Route path={paths.stations} element={<Stations />} />
+          <Route path={paths.rules} element={<Rules />} />
+          <Route path={paths.stationDetail} element={<StationDetail />} />
         </Route>
         
         
@@ -55,21 +61,21 @@ const AppRouter = () => {
         <Route element={<ProtectedRoute allowedRoles={['DRIVER']} />}>
           <Route path="/" element={<DriverLayout />}> 
             <Route index element={<Home />} />           
-            <Route path="bookings" element={<Booking />} />
-            <Route path="bookingInformation" element={<BookingInfo />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="profile/my-vehicle" element={<Vehicles />} />
-            <Route path="profile/edit" element={<EditProfile />} />
-            <Route path="profile/information" element={<Information />} />
-            <Route path="profile/notifications" element={<Notification />} />
+            <Route path={paths.booking} element={<Booking />} />
+            <Route path={paths.bookingInformation} element={<BookingInfo />} />
+            <Route path={paths.profile} element={<Profile />} />
+            <Route path={paths.myVehicle} element={<Vehicles />} />
+            <Route path={paths.editProfile} element={<EditProfile />} />
+            <Route path={paths.information} element={<Information />} />
+            <Route path={paths.notifications} element={<Notification />} />
           </Route>
         </Route>
 
         {/* 2. ADMIN Routes - Chỉ ADMIN mới truy cập được */}
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<div>Admin Dashboard</div>} />
-            <Route path="users" element={<div>User Management</div>} />
+          <Route path={paths.adminDashboard} element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path={paths.userManagement} element={<ManagementUser />} />
           </Route>
         </Route>
 

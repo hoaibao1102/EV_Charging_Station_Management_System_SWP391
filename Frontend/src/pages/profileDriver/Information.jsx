@@ -132,11 +132,14 @@ export default function Information() {
                         <div className="info-field">
                             <label className="info-label">Trạng thái tài khoản:</label>
                             <div>
-                                <span className={`info-status-badge ${profile.status === 'PENDING' ? 'active' : 'inactive'}`}>
+                                <span className={`info-status-badge ${profile.status === 'ACTIVE' ? 'active' : 'inactive'}`}>
                                     <span className="info-status-dot"></span>
-                                    {profile.status === 'PENDING' ? 'Đang hoạt động' : 'Đang ngưng hoạt động'}
+                                    {profile.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đang ngưng hoạt động'}
                                 </span>
                             </div>
+                            {profile.status !== 'ACTIVE' && (
+                                <button className="info-activate-btn">Kích hoạt tài khoản</button>
+                            )}
                         </div>
                     </div>
                 </div>

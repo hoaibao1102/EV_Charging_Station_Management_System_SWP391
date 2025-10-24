@@ -6,7 +6,7 @@ const initialData = getAuthData();
 
 const initialState = {
   isLoggedIn: isAuthenticated(), // Kiểm tra trạng thái đăng nhập
-  user: null, // Thông tin chi tiết của người dùng (ID, username, email, phone...)
+  user: null, 
   role: initialData.role || null, // Vai trò (ADMIN, STAFF, DRIVER)
   accessToken: initialData.accessToken || null,
 };
@@ -34,5 +34,7 @@ export const { loginSuccess, logout } = authSlice.actions;
 
 export const selectRole = (state) => state.auth.role;
 export const selectIsLoggedIn = (state) => state.auth.isLoggedIn;
+export const selectUser = (state) => state.auth.user;
+// userDetails: {name, email, phone, gender}
 
 export default authSlice.reducer;

@@ -205,3 +205,33 @@
 p{
     color: black;
 }
+
+/* 1. Lớp phủ nền */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  /* Nền ngoài MÀU TRẮNG */
+  background-color: #ffffff;
+  
+  /* Căn giữa .formContainer */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+/* 2. Khung Form */
+.formContainer {
+  background-color: #ffffff; 
+  border: 2px solid #20b2aa; 
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); 
+  border-radius: 12px;
+  padding: 2.5rem; 
+  max-width: 700px; 
+  width: 100%; 
+  box-sizing: border-box; 
+}
