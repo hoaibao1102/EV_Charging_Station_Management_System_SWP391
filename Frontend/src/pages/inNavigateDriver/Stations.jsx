@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Stations.css";
+import { stationAPI } from "../../api/stationApi.js";
 import stationsHeroMobile from "../../assets/img/home/home.jpg"; // Dùng tạm ảnh home
 import stationsHeroDesktop from "../../assets/img/home/home_lab.jpg";
 
@@ -41,10 +42,9 @@ export default function Stations() {
 
   const fetchStations = async () => {
     try {
-      const response = await fetch(
-        "https://68f35999fd14a9fcc4288a78.mockapi.io/stationcharging"
-      );
-      const data = await response.json();
+      const response = await stationAPI.getAllStations();
+      // ✅ response.data đã là array rồi, không cần .json()
+      const data = response.data;
 
       const normalized = data.map((item) => ({
         id: item.id || item.StationID, // ✅ Ưu tiên id (MockAPI) rồi fallback sang StationID

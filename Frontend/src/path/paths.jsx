@@ -16,6 +16,7 @@ export const paths = {
   information: "/profile/information",
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
+  stationDetail: "/stations/:id",
 
   //admin
   adminDashboard: "/admin",
@@ -26,14 +27,11 @@ export const paths = {
   businessStatistics: "/admin/business-statistics",
   accidentReports: "/admin/accident-reports",
 
-
   //staff
   staffDashboard: "/staff",
   manageSessionCharging: "/manage-session-charging",
   transactionManagement: "/transaction-management",
   reportAccidents: "/report-accidents",
-
-
 };
 
 export default paths;
