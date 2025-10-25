@@ -1,14 +1,19 @@
 package com.swp391.gr3.ev_management.config;
 
+import com.swp391.gr3.ev_management.entity.Admin;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.Role;
+import com.swp391.gr3.ev_management.entity.Staffs;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.enums.StaffStatus;
+import com.swp391.gr3.ev_management.repository.AdminRepository;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
+import com.swp391.gr3.ev_management.repository.StaffsRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +39,8 @@ public class DataInitializer implements CommandLineRunner {
     private final ConnectorTypeRepository connectorTypeRepository;
     private final VehicleModelRepository vehicleModelRepository;
     private final DriverRepository driverRepository;
+    private final AdminRepository adminRepository;
+    private final StaffsRepository staffsRepository;
 
     @Value("${app.data.init.enabled:true}")
     private boolean enabled;
@@ -48,9 +55,10 @@ public class DataInitializer implements CommandLineRunner {
         try {
             initConnectorTypes();     // seed các loại đầu sạc phổ biến
             initRoles();              // seed các role chuẩn
-            initAdmins();             // tạo 1 admin mặc định
-            initVehicleModels();   // bật nếu cần demo VehicleModel (cần connector types)
-            initDrivers();         // bật nếu cần demo Driver
+            initAdmins();             // tạo 1 admin mặc định + map bảng Admin
+            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
+            initVehicleModels();      // seed VehicleModel (cần connector types)
+            initDrivers();            // seed Driver
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
             log.error("❌ Data initialization failed: {}", ex.getMessage(), ex);
@@ -166,31 +174,108 @@ public class DataInitializer implements CommandLineRunner {
         try {
             boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
             boolean emailExists = email != null && userRepository.existsByEmail(email);
+            User adminUser;
             if (phoneExists || emailExists) {
-                log.info("Admin account already exists (phone={}, email={})", phoneNumber, email);
-                return;
+                // Nếu user đã tồn tại, lấy ra để đảm bảo map sang bảng Admin
+                adminUser = email != null ? userRepository.findByEmail(email) : userRepository.findByPhoneNumber(phoneNumber);
+                log.info("Admin User already exists (phone={}, email={})", phoneNumber, email);
+            } else {
+                Role adminRole = roleRepository.findByRoleName("ADMIN");
+                if (adminRole == null) {
+                    log.warn("ADMIN role not found; skipping admin creation");
+                    return;
+                }
+
+                adminUser = new User();
+                adminUser.setPhoneNumber(phoneNumber);
+                adminUser.setEmail(email);
+                adminUser.setName(name != null ? name : "Admin");
+                adminUser.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "123123"));
+                adminUser.setGender("M");
+                adminUser.setDateOfBirth(LocalDate.of(1969, 4, 22));
+                adminUser.setAddress("HCM, Vietnam");
+                adminUser.setRole(adminRole);
+
+                adminUser = userRepository.save(adminUser);
+                log.info("Created default admin USER: {} ({})", adminUser.getName(), adminUser.getPhoneNumber());
             }
 
-            Role adminRole = roleRepository.findByRoleName("ADMIN");
-            if (adminRole == null) {
-                log.warn("ADMIN role not found; skipping admin creation");
-                return;
+            // Map sang bảng Admin nếu chưa có
+            if (!adminRepository.existsByUser_UserId(adminUser.getUserId())) {
+                Admin admin = Admin.builder()
+                        .user(adminUser)
+                        .roleLevel("ADMIN")
+                        .build();
+                adminRepository.save(admin);
+                log.info("Mapped USER {} to ADMIN table (roleLevel={})", adminUser.getUserId(), "ADMIN");
+            } else {
+                log.info("Admin mapping already exists for userId={}", adminUser.getUserId());
             }
-
-            User admin = new User();
-            admin.setPhoneNumber(phoneNumber);
-            admin.setEmail(email);
-            admin.setName(name != null ? name : "Admin");
-            admin.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Admin@123"));
-            admin.setGender("M");
-            admin.setDateOfBirth(LocalDate.of(1969, 4, 22));
-            admin.setAddress("HCM, Vietnam");
-            admin.setRole(adminRole);
-
-            userRepository.save(admin);
-            log.info("Created default admin: {} ({})", admin.getName(), admin.getPhoneNumber());
         } catch (Exception e) {
             log.error("Failed to create default admin (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
+        }
+    }
+
+    // ================== DEFAULT STAFF (do Admin tạo) ==================
+    private void initStaffs() {
+        createStaffIfNotExists(
+                "0900000001",
+                "staff1@example.com",
+                "123123",
+                "Default Staff",
+                "F",
+                LocalDate.of(1998, 1, 1),
+                "HCM, Vietnam",
+                "OPERATOR"
+        );
+    }
+
+    private void createStaffIfNotExists(String phoneNumber, String email, String rawPassword,
+                                        String name, String gender, LocalDate dateOfBirth, String address,
+                                        String roleAtStation) {
+        try {
+            boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
+            boolean emailExists = email != null && userRepository.existsByEmail(email);
+
+            User staffUser;
+            if (phoneExists || emailExists) {
+                staffUser = email != null ? userRepository.findByEmail(email) : userRepository.findByPhoneNumber(phoneNumber);
+                log.info("Staff user already exists (phone={}, email={})", phoneNumber, email);
+            } else {
+                Role staffRole = roleRepository.findByRoleName("STAFF");
+                if (staffRole == null) {
+                    log.warn("STAFF role not found; skipping staff creation");
+                    return;
+                }
+
+                staffUser = new User();
+                staffUser.setPhoneNumber(phoneNumber);
+                staffUser.setEmail(email);
+                staffUser.setName(name != null ? name : "Staff");
+                staffUser.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Staff@123"));
+                staffUser.setGender(gender);
+                staffUser.setDateOfBirth(dateOfBirth);
+                staffUser.setAddress(address);
+                staffUser.setRole(staffRole);
+                staffUser = userRepository.save(staffUser);
+                log.info("Created default STAFF USER: {} ({})", staffUser.getName(), staffUser.getPhoneNumber());
+            }
+
+            // Tạo bản ghi Staffs nếu chưa có
+            if (staffUser.getStaffs() == null) {
+                Staffs staffs = Staffs.builder()
+                        .user(staffUser)
+                        .status(StaffStatus.ACTIVE)
+                        .roleAtStation(roleAtStation)
+                        .build();
+                staffsRepository.save(staffs);
+                log.info("Mapped USER {} to STAFFS table (status={}, roleAtStation={})",
+                        staffUser.getUserId(), StaffStatus.ACTIVE, roleAtStation);
+            } else {
+                log.info("Staffs mapping already exists for userId={}", staffUser.getUserId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to create default staff (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
         }
     }
 
