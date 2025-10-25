@@ -92,13 +92,8 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Register staff", description = "Admin register staff for a user")
     public ResponseEntity<?> adminRegisterStaff(@Valid @RequestBody CreateStationStaffRequest req) {
-        User created = userService.registerAsStaff(
-                req.getUser(),
-                req.getStationId()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Đăng ký staff thành công",
-                        "userId", created.getUserId()));
+        Map<String, Object> response = userService.registerStaffAndAssignStation(req.getUser(), req.getStationId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

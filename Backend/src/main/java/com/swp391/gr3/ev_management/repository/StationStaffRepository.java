@@ -91,4 +91,6 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     // (Tuỳ chọn) Nếu muốn luôn load sâu staff.user + station mà không vi phạm fetch-join:
     @EntityGraph(attributePaths = {"staff", "staff.user", "station"})
     Optional<StationStaff> findById(Long id);
+
+    boolean existsByStaff_StaffIdAndUnassignedAtIsNull(Long staffId);
 }
