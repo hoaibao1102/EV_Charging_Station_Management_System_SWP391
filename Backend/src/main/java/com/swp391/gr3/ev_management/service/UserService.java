@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public interface UserService {
@@ -25,4 +26,6 @@ public interface UserService {
     public List<User> findAll();
     public User findById(Long id);
     public User registerAsStaff(RegisterRequest req, Long stationId); // ADMIN
+
+    Map<String, Object> registerStaffAndAssignStation(RegisterRequest user, Long stationId);
 }
