@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -208,6 +209,7 @@ public class UserServiceImpl implements UserService{
         Role staffRole = roleRepository.findByRoleName("STAFF");
         if (staffRole == null) throw new IllegalStateException("Role STAFF chưa được seed");
 
+        // 1) Tạo user
         User user = User.builder()
                 .email(req.getEmail())
                 .phoneNumber(req.getPhoneNumber())
@@ -220,18 +222,70 @@ public class UserServiceImpl implements UserService{
                 .build();
         user = userRepository.save(user);
 
+        // 2) Tạo Staffs
         Staffs staff = Staffs.builder()
                 .user(user)
                 .status(StaffStatus.ACTIVE)
                 .roleAtStation("STAFF")
                 .build();
-        staffsRepo.save(staff);
+        staff = staffsRepo.save(staff);
 
-        // Thông báo cho staff mới
-        publisher.publishEvent(new UserRegisteredEvent(user.getUserId(), user.getEmail(), user.getName()));
+        // 3) Gán vào Station_Staff (nếu có stationId)
+        if (stationId != null) {
+            var station = stationRepo.findById(stationId)
+                    .orElseThrow(() -> new IllegalArgumentException("Station không tồn tại: " + stationId));
+
+            // (khuyến nghị) chặn 1 staff có hơn 1 assignment active
+            boolean hasActive = staffRepo.existsByStaff_StaffIdAndUnassignedAtIsNull(staff.getStaffId());
+            if (hasActive) {
+                throw new IllegalStateException("Staff đã được gán station khác và chưa unassign.");
+            }
+
+            var link = StationStaff.builder()
+                    .staff(staff)
+                    .station(station)
+                    .assignedAt(LocalDateTime.now())
+                    .build();
+
+            link = staffRepo.save(link);
+
+            // Nếu muốn cập nhật quan hệ 2 chiều trong bộ nhớ (không bắt buộc):
+            // staff.getStationStaffs().add(link);
+        }
+
 
         return user;
     }
 
+    @Transactional
+    public Map<String, Object> registerStaffAndAssignStation(RegisterRequest req, Long stationId) {
+        // Gọi lại logic cũ
+        User user = registerAsStaff(req, stationId);
+
+        // Lấy staff
+        Staffs staff = staffsRepo.findByUser_UserId(user.getUserId())
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy staff cho user " + user.getUserId()));
+
+        // Lấy StationStaff active (vừa gán trong registerAsStaff)
+        Long stationStaffId = null;
+        if (stationId != null) {
+            var assigned = staffRepo.findAll().stream()
+                    .filter(s -> s.getStaff().getStaffId().equals(staff.getStaffId()) && s.getUnassignedAt() == null)
+                    .findFirst()
+                    .orElse(null);
+            stationStaffId = assigned != null ? assigned.getStationStaffId() : null;
+        }
+
+        // Thông báo cho staff mới
+        publisher.publishEvent(new UserRegisteredEvent(user.getUserId(), user.getEmail(), user.getName()));
+
+        return Map.of(
+                "message", "Đăng ký staff thành công",
+                "userId", user.getUserId(),
+                "staffId", staff.getStaffId(),
+                "stationId", stationId,
+                "stationStaffId", stationStaffId
+        );
+    }
 
 }

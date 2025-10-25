@@ -19,4 +19,6 @@ public interface StaffsRepository extends JpaRepository<Staffs, Long> {
            where u.userId = :userId
            """)
     Optional<Staffs> findByUserIdWithUser(@Param("userId") Long userId);
+
+    Optional<Staffs> findByUser_UserId(Long userId);
 }
