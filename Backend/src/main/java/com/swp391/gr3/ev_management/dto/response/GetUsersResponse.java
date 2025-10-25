@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,11 +12,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GetUsersResponse {
+    private Long userId;
     private String email;
     private String phoneNumber;
     private String name;
     private LocalDate dateOfBirth;
     private String gender;
     private String address;
+    private String status;
     private String roleName; // ADMIN, STAFF, EV_DRIVER
 }
