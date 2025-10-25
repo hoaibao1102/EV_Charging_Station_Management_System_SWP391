@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.enums.ChargingStationStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,6 @@ public class ChargingStationResponse {
     private double latitude;
     private double longitude;
     private String operatingHours;
-    private String status;
+    private ChargingStationStatus status;
     private LocalDateTime createdAt;
 }

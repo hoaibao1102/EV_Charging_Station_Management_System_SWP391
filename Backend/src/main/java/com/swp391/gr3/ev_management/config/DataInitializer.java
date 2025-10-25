@@ -1,21 +1,8 @@
 package com.swp391.gr3.ev_management.config;
 
-import com.swp391.gr3.ev_management.entity.Admin;
-import com.swp391.gr3.ev_management.entity.ConnectorType;
-import com.swp391.gr3.ev_management.entity.Driver;
-import com.swp391.gr3.ev_management.entity.Role;
-import com.swp391.gr3.ev_management.entity.Staffs;
-import com.swp391.gr3.ev_management.entity.User;
-import com.swp391.gr3.ev_management.entity.VehicleModel;
-import com.swp391.gr3.ev_management.enums.DriverStatus;
-import com.swp391.gr3.ev_management.enums.StaffStatus;
-import com.swp391.gr3.ev_management.repository.AdminRepository;
-import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
-import com.swp391.gr3.ev_management.repository.DriverRepository;
-import com.swp391.gr3.ev_management.repository.RoleRepository;
-import com.swp391.gr3.ev_management.repository.StaffsRepository;
-import com.swp391.gr3.ev_management.repository.UserRepository;
-import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
+import com.swp391.gr3.ev_management.entity.*;
+import com.swp391.gr3.ev_management.enums.*;
+import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +28,11 @@ public class DataInitializer implements CommandLineRunner {
     private final DriverRepository driverRepository;
     private final AdminRepository adminRepository;
     private final StaffsRepository staffsRepository;
+    private final ChargingStationRepository chargingStationRepository;
+    private final ChargingPointRepository chargingPointRepository;
+    private final SlotConfigRepository slotConfigRepository;
+    private final SlotTemplateRepository slotTemplateRepository;
+    private final SlotAvailabilityRepository slotAvailabilityRepository;
 
     @Value("${app.data.init.enabled:true}")
     private boolean enabled;
@@ -59,9 +51,202 @@ public class DataInitializer implements CommandLineRunner {
             initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
             initVehicleModels();      // seed VehicleModel (cần connector types)
             initDrivers();            // seed Driver
+            initChargingStations();   // seed trạm sạc theo Seed_Data
+            initChargingPoints();     // seed điểm sạc theo Seed_Data
+            initSlotAvailability();   // seed mẫu slot theo Seed_Data
+
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
             log.error("❌ Data initialization failed: {}", ex.getMessage(), ex);
+        }
+    }
+
+    // ================== STATIONS ==================
+    private void initChargingStations() {
+        createStationIfNotExists(
+                "VinFast SmartCharge - Quận 1",
+                "15 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh",
+                10.776889, 106.700806,
+                "24/7"
+
+        );
+        createStationIfNotExists(
+                "EVN Station - Thủ Đức City",
+                "268 Võ Văn Ngân, Thủ Đức, TP. Hồ Chí Minh",
+                10.84942, 106.76973,
+                "06:00-23:00"
+
+        );
+        createStationIfNotExists(
+                "VinFast Station - Landmark 81",
+                "720A Điện Biên Phủ, Bình Thạnh, TP. Hồ Chí Minh",
+                10.794187, 106.72164,
+                "24/7"
+
+        );
+    }
+
+    private void createStationIfNotExists(String name, String address, double lat, double lng,
+                                          String operatingHours) {
+        try {
+            if (chargingStationRepository.existsByStationNameIgnoreCaseAndAddressIgnoreCase(name, address)) {
+                log.info("ChargingStation already exists: {} - {}", name, address);
+                return;
+            }
+            var station = ChargingStation.builder()
+                    .stationName(name)
+                    .address(address)
+                    .latitude(lat)
+                    .longitude(lng)
+                    .operatingHours(operatingHours)
+                    .status(ChargingStationStatus.ACTIVE)
+                    .build();
+            chargingStationRepository.save(station);
+            log.info("Created ChargingStation: {}", name);
+        } catch (Exception e) {
+            log.warn("Failed to create ChargingStation {}: {}", name, e.getMessage());
+        }
+    }
+
+    // ================== CHARGING POINTS ==================
+    private void initChargingPoints() {
+        // Seed 10 points for station 1 as sample
+        var stationOpt = chargingStationRepository.findByStationName("VinFast SmartCharge - Quận 1");
+        if (stationOpt.isEmpty()) {
+            log.warn("Base station for points not found; skip point seeding");
+            return;
+        }
+        var station = stationOpt.get();
+
+        createPointIfNotExists(station, "S1-A1", ChargingPointStatus.AVAILABLE, "S1-A1-2025", 150);
+        createPointIfNotExists(station, "S1-A2", ChargingPointStatus.AVAILABLE, "S1-A2-2025", 22);
+        createPointIfNotExists(station, "S1-A3", ChargingPointStatus.OCCUPIED, "S1-A3-2025", 50);
+        createPointIfNotExists(station, "S1-A4", ChargingPointStatus.AVAILABLE, "S1-A4-2025", 250);
+        createPointIfNotExists(station, "S1-A5", ChargingPointStatus.AVAILABLE, "S1-A5-2025", 60);
+        createPointIfNotExists(station, "S1-A6", ChargingPointStatus.OCCUPIED, "S1-A6-2025", 7);
+        createPointIfNotExists(station, "S1-A7", ChargingPointStatus.AVAILABLE, "S1-A7-2025", 150);
+        createPointIfNotExists(station, "S1-A8", ChargingPointStatus.MAINTENANCE, "S1-A8-2025", 22);
+        createPointIfNotExists(station, "S1-A9", ChargingPointStatus.AVAILABLE, "S1-A9-2025", 50);
+        createPointIfNotExists(station, "S1-A10", ChargingPointStatus.AVAILABLE, "S1-A10-2025", 250);
+    }
+
+    private void createPointIfNotExists(
+            ChargingStation station,
+            String pointNumber,
+            ChargingPointStatus pointStatus,
+            String serialNumber,
+            double maxPowerKW
+    ) {
+        try {
+            // Check duplicates by pointNumber within station or by serialNumber
+            var existedByPoint = chargingPointRepository.findByStation_StationIdAndPointNumber(station.getStationId(), pointNumber);
+            if (existedByPoint.isPresent()) {
+                log.info("ChargingPoint already exists: {}", pointNumber);
+                return;
+            }
+            var existedBySerial = chargingPointRepository.findBySerialNumber(serialNumber);
+            if (existedBySerial.isPresent()) {
+                log.info("ChargingPoint already exists by serial: {}", serialNumber);
+                return;
+            }
+
+            var connector = mapConnectorByPower(maxPowerKW);
+            if (connector == null) {
+                log.warn("No suitable ConnectorType for power {}kW, skipping point {}", maxPowerKW, pointNumber);
+                return;
+            }
+
+            var cp = ChargingPoint.builder()
+                    .station(station)
+                    .connectorType(connector)
+                    .pointNumber(pointNumber)
+                    .status(pointStatus)
+                    .serialNumber(serialNumber)
+                    .installationDate(LocalDateTime.now())
+                    .lastMaintenanceDate(LocalDateTime.now())
+                    .maxPowerKW(maxPowerKW)
+                    .build();
+            chargingPointRepository.save(cp);
+            log.info("Created ChargingPoint: {} ({}kW)", pointNumber, maxPowerKW);
+        } catch (Exception e) {
+            log.warn("Failed to create ChargingPoint {}: {}", pointNumber, e.getMessage());
+        }
+    }
+
+    private ConnectorType mapConnectorByPower(double maxPowerKW) {
+        // Simple heuristic mapping derived from sample data
+        if (maxPowerKW >= 120) return connectorTypeRepository.findByCode("CCS2");
+        if (maxPowerKW >= 45 && maxPowerKW < 120) return connectorTypeRepository.findByCode("CHADEMO");
+        if (maxPowerKW <= 8) return connectorTypeRepository.findByCode("TYPE1");
+        return connectorTypeRepository.findByCode("TYPE2");
+    }
+
+    // ================== SLOT AVAILABILITY ==================
+    private void initSlotAvailability() {
+        try {
+            var stationOpt = chargingStationRepository.findByStationName("VinFast SmartCharge - Quận 1");
+            if (stationOpt.isEmpty()) {
+                log.warn("Base station not found; skip slot availability seeding");
+                return;
+            }
+            var station = stationOpt.get();
+
+            // Ensure a SlotConfig exists for station
+            var existingConfig = slotConfigRepository.findByStation_StationId(station.getStationId());
+            if (existingConfig == null) {
+                var cfg = SlotConfig.builder()
+                        .station(station)
+                        .slotDurationMin(60)
+                        .activeFrom(java.time.LocalDate.now().atStartOfDay())
+                        .activeExpire(java.time.LocalDate.now().plusYears(1).atStartOfDay())
+                        .isActive(SlotConfigStatus.ACTIVE)
+                        .build();
+                existingConfig = slotConfigRepository.save(cfg);
+                log.info("Created SlotConfig for station {}", station.getStationName());
+            }
+
+            // Recreate 24 templates for a base day (today)
+            var baseStart = java.time.LocalDate.now().atStartOfDay();
+            var baseEnd = baseStart.plusDays(1);
+            slotTemplateRepository.deleteByConfig_ConfigIdAndStartTimeBetween(existingConfig.getConfigId(), baseStart, baseEnd);
+
+            var templates = new java.util.ArrayList<SlotTemplate>();
+            for (int i = 0; i < 24; i++) {
+                var st = SlotTemplate.builder()
+                        .config(existingConfig)
+                        .slotIndex(i + 1)
+                        .startTime(baseStart.plusHours(i))
+                        .endTime(baseStart.plusHours(i + 1))
+                        .build();
+                templates.add(slotTemplateRepository.save(st));
+            }
+            log.info("Created {} SlotTemplates for config {}", templates.size(), existingConfig.getConfigId());
+
+            // Seed availability for a specific date from Seed_Data: 2025-10-24
+            var targetDate = java.time.LocalDate.parse("2025-10-24").atStartOfDay();
+            var connector = connectorTypeRepository.findByCode("TYPE2");
+            if (connector == null) connector = connectorTypeRepository.findByCode("CCS2");
+
+            for (var t : templates) {
+                boolean exists = slotAvailabilityRepository
+                        .existsByTemplate_TemplateIdAndConnectorType_ConnectorTypeIdAndDate(
+                                t.getTemplateId(),
+                                connector != null ? connector.getConnectorTypeId() : null,
+                                targetDate
+                        );
+                if (exists) continue;
+
+                var sa = SlotAvailability.builder()
+                        .template(t)
+                        .connectorType(connector)
+                        .status(SlotStatus.AVAILABLE)
+                        .date(targetDate)
+                        .build();
+                slotAvailabilityRepository.save(sa);
+            }
+            log.info("Seeded slot availability for {} templates on date {}", templates.size(), targetDate.toLocalDate());
+        } catch (Exception e) {
+            log.warn("Failed to seed slot availability: {}", e.getMessage());
         }
     }
 

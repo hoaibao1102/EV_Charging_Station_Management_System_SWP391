@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.StopPointRequest;
-import com.swp391.gr3.ev_management.DTO.response.StopPointResponse;
+import com.swp391.gr3.ev_management.DTO.request.*;
+import com.swp391.gr3.ev_management.DTO.response.*;
 import com.swp391.gr3.ev_management.service.ChargingPointService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,35 +25,46 @@ public class ChargingPointController {
     @Autowired
     private final ChargingPointService pointService;
 
+    @PostMapping(value = "/create")
+    @Operation(summary = "Create a new point", description = "Endpoint to create a new charging point")
+    public ResponseEntity<BookingResponse> createBooking(@RequestBody CreateChargingPointRequest request) {
+        try {
+            BookingResponse response = pointService.createChargingPoint(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @PostMapping("/stop")
     @Operation(summary = "Stop charging point", description = "Staff stops a charging point for maintenance or other reasons")
-    public ResponseEntity<StopPointResponse> stopChargingPoint(
-            @Valid @RequestBody StopPointRequest request
+    public ResponseEntity<ChargingPointResponse> stopChargingPoint(
+            @Valid @RequestBody StopChargingPointRequest request
     ) {
-        StopPointResponse response = pointService.stopChargingPoint(request);
+        ChargingPointResponse response = pointService.stopChargingPoint(request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{pointId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get charging point status", description = "Get detailed status of a charging point")
-    public ResponseEntity<StopPointResponse> getPointStatus(
+    public ResponseEntity<ChargingPointResponse> getPointStatus(
             @Parameter(description = "Charging Point ID") @PathVariable Long pointId,
             @Parameter(description = "Staff ID") @RequestParam Long staffId
     ) {
-        StopPointResponse response = pointService.getPointStatus(pointId, staffId);
+        ChargingPointResponse response = pointService.getPointStatus(pointId, staffId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get all charging points", description = "Get list of all charging points at a station")
-    public ResponseEntity<List<StopPointResponse>> getPointsByStation(
+    public ResponseEntity<List<ChargingPointResponse>> getPointsByStation(
             @Parameter(description = "Station ID") @RequestParam Long stationId,
             @Parameter(description = "Staff ID") @RequestParam Long staffId
     ) {
-        List<StopPointResponse> points = pointService.getPointsByStation(stationId, staffId);
+        List<ChargingPointResponse> points = pointService.getPointsByStation(stationId, staffId);
         return ResponseEntity.ok(points);
     }
 

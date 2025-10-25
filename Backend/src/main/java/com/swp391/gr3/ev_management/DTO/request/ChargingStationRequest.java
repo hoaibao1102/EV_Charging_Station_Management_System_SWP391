@@ -1,5 +1,7 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
+import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
+import com.swp391.gr3.ev_management.enums.ChargingStationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +19,6 @@ public class ChargingStationRequest {
     private double latitude;
     private double longitude;
     private String operatingHours;
-    private String status;
+    private ChargingStationStatus status;
     private LocalDateTime createdAt;
 }
