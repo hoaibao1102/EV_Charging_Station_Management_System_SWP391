@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,8 +36,9 @@ public class ChargingPoint {
     @Column(name = "PointNumber", columnDefinition = "NVARCHAR(20)", nullable = false, unique = true)
     private String pointNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status;
+    private ChargingPointStatus status;
 
     @Column(name = "SerialNumber", columnDefinition = "NVARCHAR(100)", nullable = false, unique = true)
     private String serialNumber;

@@ -1,8 +1,12 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.StopPointRequest;
-import com.swp391.gr3.ev_management.DTO.response.StopPointResponse;
+import com.swp391.gr3.ev_management.DTO.request.CreateChargingPointRequest;
+import com.swp391.gr3.ev_management.DTO.request.StopChargingPointRequest;
+import com.swp391.gr3.ev_management.DTO.response.BookingResponse;
+import com.swp391.gr3.ev_management.DTO.response.ChargingPointResponse;
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
+import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
+import com.swp391.gr3.ev_management.mapper.ChargingPointMapper;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.repository.ChargingPointRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
@@ -12,18 +16,18 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ChargingPointServiceImpl implements ChargingPointService {
 
-    private final ChargingPointRepository pointRepository;
-    private final StationStaffRepository staffRepository;
+        private final ChargingPointRepository pointRepository;
+        private final StationStaffRepository staffRepository;
+        private final ChargingPointMapper chargingPointMapper;
 
     @Override
     @Transactional
-    public StopPointResponse stopChargingPoint(StopPointRequest request) {
+    public ChargingPointResponse stopChargingPoint(StopChargingPointRequest request) {
         StationStaff staff = staffRepository.findActiveByStationStaffId(request.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
@@ -34,7 +38,7 @@ public class ChargingPointServiceImpl implements ChargingPointService {
             throw new RuntimeException("No permission to manage this charging point");
         }
 
-        if ("in_use".equalsIgnoreCase(point.getStatus())) {
+                if (point.getStatus() == ChargingPointStatus.OCCUPIED) {
             throw new RuntimeException("Cannot stop point while in use");
         }
 
@@ -42,17 +46,11 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         point.setUpdatedAt(LocalDateTime.now());
         pointRepository.save(point);
 
-        return StopPointResponse.builder()
-                .pointId(point.getPointId())
-                .stationName(point.getStation().getStationName())
-                .pointNumber(point.getPointNumber())
-                .status(point.getStatus())
-                .updatedAt(point.getUpdatedAt())
-                .build();
+                return chargingPointMapper.toResponse(point);
     }
 
     @Override
-    public StopPointResponse getPointStatus(Long pointId, Long staffId) {
+    public ChargingPointResponse getPointStatus(Long pointId, Long staffId) {
         ChargingPoint point = pointRepository.findById(pointId)
                 .orElseThrow(() -> new RuntimeException("Point not found"));
         StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
@@ -61,28 +59,22 @@ public class ChargingPointServiceImpl implements ChargingPointService {
             throw new RuntimeException("Staff has no permission for this point");
         }
 
-        return StopPointResponse.builder()
-                .pointId(point.getPointId())
-                .stationName(point.getStation().getStationName())
-                .status(point.getStatus())
-                .build();
+        return chargingPointMapper.toResponse(point);
     }
 
     @Override
-    public List<StopPointResponse> getPointsByStation(Long stationId, Long staffId) {
+    public List<ChargingPointResponse> getPointsByStation(Long stationId, Long staffId) {
         StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
                 .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
         if (!staff.getStation().getStationId().equals(stationId)) {
             throw new RuntimeException("Staff has no permission for this station");
         }
 
-        return pointRepository.findByStation_StationId(stationId)
-                .stream()
-                .map(p -> StopPointResponse.builder()
-                        .pointId(p.getPointId())
-                        .stationName(p.getStation().getStationName())
-                        .status(p.getStatus())
-                        .build())
-                .collect(Collectors.toList());
+        return chargingPointMapper.toResponses(pointRepository.findByStation_StationId(stationId));
+    }
+
+    @Override
+    public BookingResponse createChargingPoint(CreateChargingPointRequest request) {
+        return null;
     }
 }

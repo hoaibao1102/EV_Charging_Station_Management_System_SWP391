@@ -1,6 +1,8 @@
 package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
+import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
+import com.swp391.gr3.ev_management.enums.ChargingStationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,16 +17,17 @@ public interface ChargingPointRepository extends JpaRepository<ChargingPoint,Lon
     List<ChargingPoint> findByStation_StationId(Long stationId);
 
     // Tìm charging point theo trạm và status
-    List<ChargingPoint> findByStation_StationIdAndStatus(Long stationId, String status);
+    List<ChargingPoint> findByStation_StationIdAndStatus(Long stationId, ChargingPointStatus status);
 
     // Tìm charging point available theo connector type
     @Query("SELECT cp FROM ChargingPoint cp " +
             "WHERE cp.station.stationId = :stationId " +
             "AND cp.connectorType.connectorTypeId = :connectorTypeId " +
-            "AND cp.status = 'available'")
-    List<ChargingPoint> findAvailablePointsByStationAndConnector(
+            "AND cp.status = :status" )
+    List<ChargingPoint> findChargingPointByConnectorTypeAndStatus_Available(
             @Param("stationId") Long stationId,
-            @Param("connectorTypeId") Long connectorTypeId
+            @Param("connectorTypeId") Long connectorTypeId,
+            @Param("status") ChargingPointStatus status
     );
 
     // Tìm charging point theo QR code (khi staff scan QR)
