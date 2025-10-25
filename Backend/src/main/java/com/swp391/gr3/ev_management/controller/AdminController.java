@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -54,18 +53,36 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users", description = "Admin get list of users")
     public List<GetUsersResponse> getAllUsers() {
-        return userService.findAll()
+        return userService.findAll() // đảm bảo method này gọi repo có fetch như trên
                 .stream()
                 .map(user -> new GetUsersResponse(
+                        user.getUserId(),
                         user.getEmail(),
                         user.getPhoneNumber(),
                         user.getName(),
                         user.getDateOfBirth(),
                         user.getGender(),
                         user.getAddress(),
-                        user.getRole().getRoleName()
+                        extractStatus(user),                 // 👈 status
+                        user.getRole() != null ? user.getRole().getRoleName() : null
                 ))
-                .collect(Collectors.toList());
+                .toList();
+    }
+
+    private String extractStatus(User user) {
+        // Ưu tiên theo role, có thể đổi thứ tự nếu bạn muốn
+        if (user.getDriver() != null && user.getDriver().getStatus() != null) {
+            return user.getDriver().getStatus().name();   // DriverStatus enum
+        }
+        if (user.getStaffs() != null && user.getStaffs().getStatus() != null) {
+            return user.getStaffs().getStatus().name();   // StaffStatus enum
+        }
+        if (user.getAdmin() != null) {
+            // Nếu Admin cũng có status thì lấy tương tự:
+            // return user.getAdmin().getStatus().name();
+            return "ACTIVE"; // hoặc null / giá trị mặc định nếu Admin không có status
+        }
+        return null;
     }
 
     // ----------------------ADMIN: Quản lý STAFF----------------------------- //
@@ -85,13 +102,14 @@ public class AdminController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{userId}/update-status-staffs")
+    @PutMapping("/{userId}/status-staffs")
     @Operation(summary = "Update staffs status", description = "Admin updates the status of a staff")
     public ResponseEntity<StaffResponse> updateStaffStatus(
             @PathVariable Long userId,
             @RequestParam("status") StaffStatus status) {
         return ResponseEntity.ok(staffService.updateStatus(userId, status));
     }
+
 
 
     // ----------------------ADMIN: Quản lý DRIVER----------------------------- //
@@ -106,7 +124,7 @@ public class AdminController {
 
     // ✅ Admin cập nhật trạng thái driver (ACTIVE, SUSPENDED,...)
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{userId}/update-status-divers")
+    @PutMapping("/{userId}/status-divers")
     @Operation(summary = "Update driver status", description = "Admin updates the status of a driver")
     public ResponseEntity<DriverResponse> updateDriverStatus(
             @PathVariable Long userId,
