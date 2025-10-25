@@ -2,7 +2,9 @@ package com.swp391.gr3.ev_management.controller;
 
 import java.util.Map;
 
+import com.swp391.gr3.ev_management.DTO.request.*;
 import com.swp391.gr3.ev_management.DTO.response.LoginResponse;
+import com.swp391.gr3.ev_management.service.AuthService;
 import com.swp391.gr3.ev_management.service.OtpService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,8 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
-import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.service.UserService;
 
@@ -30,15 +30,10 @@ import jakarta.validation.Valid;
 @Tag(name = "Users", description = "APIs for user registration and authentication")
 @RequiredArgsConstructor
 public class UsersController {
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private TokenService tokenService;
-
-    @Autowired
-    private OtpService otpService;
+    private final UserService userService;
+    private final TokenService tokenService;
+    private final OtpService otpService;
+    private final AuthService authService;
 
     @PostMapping(value = "/register",
             consumes = "application/json",
@@ -132,6 +127,29 @@ public class UsersController {
     @Data
     public static class CompleteProfileReq {
         private String phoneNumber;
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request password reset OTP", description = "Gửi OTP qua email để đặt lại mật khẩu")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        authService.sendResetOtp(req.getEmail());
+        // Trả message chung chung để không lộ thông tin người dùng
+        return ResponseEntity.ok().body("Nếu email tồn tại, OTP đã được gửi.");
+    }
+
+//    @PostMapping("/verify-otp")
+//    @Operation(summary = "Verify OTP", description = "Xác thực mã OTP đã gửi qua email")
+//    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest req) {
+//        boolean ok = authService.verifyResetOtp(req.getEmail(), req.getOtp());
+//        return ok ? ResponseEntity.ok("OTP hợp lệ.")
+//                : ResponseEntity.badRequest().body("OTP không hợp lệ hoặc đã hết hạn.");
+//    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password", description = "Đặt lại mật khẩu bằng OTP còn hạn")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        authService.resetPassword(req.getEmail(), req.getOtp(), req.getNewPassword());
+        return ResponseEntity.ok("Đổi mật khẩu thành công.");
     }
 
 }
