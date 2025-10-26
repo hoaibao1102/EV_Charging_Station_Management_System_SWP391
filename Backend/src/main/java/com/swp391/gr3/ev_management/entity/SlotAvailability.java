@@ -25,12 +25,15 @@ public class SlotAvailability {
     private SlotTemplate template;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ConnectorTypeID")
-    private ConnectorType connectorType;
+    @JoinColumn(name = "PointID")
+    private ChargingPoint chargingPoint;
 
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private SlotStatus status;
+
+    @OneToOne(mappedBy = "slot", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private BookingSlot bookingSlot;
 
     @Column(name = "Date")
     private LocalDateTime date;

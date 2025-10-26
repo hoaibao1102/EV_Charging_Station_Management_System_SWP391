@@ -12,7 +12,7 @@ public class SlotAvailabilityMapper {
         return SlotAvailabilityResponse.builder()
                 .slotId(entity.getSlotId())
                 .templateId(entity.getTemplate() != null ? entity.getTemplate().getTemplateId() : null)
-                .connectorTypeId(entity.getConnectorType() != null ? entity.getConnectorType().getConnectorTypeId() : null)
+                .pointId(entity.getChargingPoint().getPointId() != null ? entity.getChargingPoint().getPointId() : null)
                 .status(entity.getStatus())
                 .date(entity.getDate())
                 .build();

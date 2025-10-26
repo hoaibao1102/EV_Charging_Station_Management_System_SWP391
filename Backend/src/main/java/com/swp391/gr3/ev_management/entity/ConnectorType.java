@@ -20,7 +20,7 @@ public class ConnectorType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ConnectorTypeID")
-    private int connectorTypeId;
+    private Long connectorTypeId;
 
     @Column(name = "Code", columnDefinition = "NVARCHAR(20)", unique = true, nullable = false)
     private String code;
@@ -50,9 +50,6 @@ public class ConnectorType {
 
     @OneToMany(mappedBy = "connectorType", fetch = FetchType.LAZY)
     private List<VehicleModel> vehicleModels;
-
-    @OneToMany(mappedBy = "connectorType", fetch = FetchType.LAZY)
-    private List<SlotAvailability> slotAvailabilities;
 
     @OneToMany(mappedBy = "connectorType", fetch = FetchType.LAZY)
     private List<Tariff> tariffs;

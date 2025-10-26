@@ -33,6 +33,6 @@ public class SlotTemplate {
     @JoinColumn(name = "ConfigID", nullable = false)
     private SlotConfig config;
 
-    @OneToMany(mappedBy = "template", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "template", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SlotAvailability> slotAvailabilities;
 }

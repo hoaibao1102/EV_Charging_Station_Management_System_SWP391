@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class StaffStationServiceImpl implements StaffStationService {
 
-    @Autowired
     private final StationStaffRepository stationStaffRepository;
 
 

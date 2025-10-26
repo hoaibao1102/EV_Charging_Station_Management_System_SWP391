@@ -9,6 +9,8 @@ import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
 import com.swp391.gr3.ev_management.mapper.ChargingPointMapper;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.repository.ChargingPointRepository;
+import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
+import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,8 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         private final ChargingPointRepository pointRepository;
         private final StationStaffRepository staffRepository;
         private final ChargingPointMapper chargingPointMapper;
+        private final ChargingStationRepository chargingStationRepository;
+        private final ConnectorTypeRepository connectorTypeRepository;
 
     @Override
     @Transactional
@@ -74,7 +78,29 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     }
 
     @Override
-    public BookingResponse createChargingPoint(CreateChargingPointRequest request) {
-        return null;
+    @Transactional
+    public ChargingPointResponse createChargingPoint(CreateChargingPointRequest request) {
+        // 1️⃣ Kiểm tra Station
+        var station = chargingStationRepository.findById(request.getStationId())
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        // 2️⃣ Kiểm tra ConnectorType
+        var connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
+                .orElseThrow(() -> new RuntimeException("Connector type not found"));
+
+        // 3️⃣ Kiểm tra trùng
+        if (pointRepository.findByStation_StationIdAndPointNumber(request.getStationId(), request.getPointNumber()).isPresent()) {
+            throw new RuntimeException("Point number already exists in this station");
+        }
+        if (pointRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
+            throw new RuntimeException("Serial number already exists");
+        }
+
+        // 4️⃣ Dùng mapper để tạo Entity
+        ChargingPoint point = chargingPointMapper.toEntity(request, station, connectorType);
+        pointRepository.save(point);
+
+        // 5️⃣ Dùng mapper để trả Response
+        return chargingPointMapper.toResponse(point);
     }
 }

@@ -44,6 +44,7 @@ public class BookingServiceImpl implements BookingService {
     private final ObjectMapper mapper;
     private final ChargingSessionRepository chargingSessionRepository;
     private final ViolationService violationService;
+    private final BookingSlotLogRepository bookingSlotLogRepository;
 
     @Override
     @Transactional
@@ -94,7 +95,7 @@ public class BookingServiceImpl implements BookingService {
 
         // 5️⃣ Lấy giá và tính tổng (tuỳ bạn muốn theo giờ hay cộng gộp)
         double totalPrice = slots.stream()
-                .mapToDouble(slot -> tariffRepository.findByConnectorType(slot.getConnectorType())
+                .mapToDouble(slot -> tariffRepository.findByConnectorType(slot.getChargingPoint().getConnectorType())
                         .map(Tariff::getPricePerKWh)
                         .orElse(0.0))
                 .sum();
@@ -111,7 +112,7 @@ public class BookingServiceImpl implements BookingService {
                 .slotName("Slots: " + slots.stream()
                         .map(s -> s.getSlotId().toString())
                         .collect(Collectors.joining(", ")))
-                .connectorType(slots.get(0).getConnectorType().getDisplayName())
+                .connectorType(slots.get(0).getChargingPoint().getConnectorType().getDisplayName())
                 .timeRange(timeRanges)
                 .bookingDate(slots.get(0).getDate())
                 .price(totalPrice)
@@ -144,7 +145,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         SlotAvailability slot = booking.getBookingSlots().get(0).getSlot();
-        double price = tariffRepository.findByConnectorType(slot.getConnectorType())
+        double price = tariffRepository.findByConnectorType(slot.getChargingPoint().getConnectorType())
                 .map(Tariff::getPricePerKWh)
                 .orElse(0.0);
 
@@ -159,11 +160,46 @@ public class BookingServiceImpl implements BookingService {
         noti.setUser(booking.getVehicle().getDriver().getUser()); // chỉnh theo model thật
         noti.setTitle("Xác nhận đặt chỗ #" + booking.getBookingId());
         noti.setContentNoti("Trạm: " + stationName + " | Khung giờ: " + timeRange
-                + " | Cổng: " + slot.getConnectorType().getDisplayName());
+                + " | Cổng: " + slot.getChargingPoint().getConnectorType().getDisplayName());
         noti.setType(NotificationTypes.BOOKING_CONFIRMED); // enum
         noti.setStatus("UNREAD");
         noti.setBooking(booking);                          // dùng quan hệ booking
         notificationsRepository.save(noti);
+
+        // --- Ghi log BookingSlotLogs ---
+        if (bookingSlotLogRepository.existsByBooking_BookingId(bookingId)) {
+            // tránh nhân bản log khi confirm lại
+            bookingSlotLogRepository.deleteByBooking_BookingId(bookingId);
+        }
+
+        // Sắp xếp slot theo thời gian bắt đầu thực tế
+        List<BookingSlot> ordered = booking.getBookingSlots().stream()
+                .sorted((a, b) -> {
+                    var sa = a.getSlot();
+                    var sb = b.getSlot();
+                    var startA = sa.getDate().with(sa.getTemplate().getStartTime());
+                    var startB = sb.getDate().with(sb.getTemplate().getStartTime());
+                    return startA.compareTo(startB);
+                })
+                .toList();
+
+        for (int i = 0; i < ordered.size(); i++) {
+            BookingSlot bs = ordered.get(i);
+            SlotAvailability s = bs.getSlot();
+
+            // Tính thời lượng phút của slot
+            var start = s.getDate().with(s.getTemplate().getStartTime());
+            var end   = s.getDate().with(s.getTemplate().getEndTime());
+            int durationMin = (int) java.time.Duration.between(start, end).toMinutes();
+
+            BookingSlotLog log = BookingSlotLog.builder()
+                    .booking(booking)
+                    .slotIndex(i)              // 0,1,2...
+                    .slotDurationMin(durationMin)
+                    .build();
+
+            bookingSlotLogRepository.save(log);
+        }
 
         // 📣 Publish event đúng 1 lần
         eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
@@ -173,7 +209,7 @@ public class BookingServiceImpl implements BookingService {
                 .vehicleName(booking.getVehicle().getModel().getModel())
                 .stationName(stationName)
                 .slotName("Slot " + slot.getSlotId())
-                .connectorType(slot.getConnectorType().getDisplayName())
+                .connectorType(slot.getChargingPoint().getConnectorType().getDisplayName())
                 .timeRange(timeRange)
                 .bookingDate(slot.getDate())
                 .price(price)

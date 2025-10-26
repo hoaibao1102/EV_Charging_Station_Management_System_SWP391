@@ -127,4 +127,12 @@ public class SlotTemplateServiceImpl implements SlotTemplateService {
     public SlotTemplateResponse getById(Long templateId) {
         return  mapper.toResponse(slotTemplateRepository.findById(templateId).orElse(null));
     }
+
+    @Override
+    public List<SlotTemplateResponse> getAll() {
+        return slotTemplateRepository.findAll()
+                .stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
+    }
 }

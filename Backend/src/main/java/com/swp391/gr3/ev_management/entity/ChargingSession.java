@@ -33,6 +33,12 @@ public class ChargingSession {
     @Column(name = "EndTime")
     private LocalDateTime endTime;
 
+    @Column(name = "InitialSoc", nullable = false)
+    private Integer initialSoc;
+
+    @Column(name = "FinalSoc")
+    private Integer finalSoc;
+
     @Column(name = "EnergyKWh")
     private double energyKWh;
 

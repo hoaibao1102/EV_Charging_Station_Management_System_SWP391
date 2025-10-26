@@ -33,6 +33,9 @@ public class ChargingPoint {
     @JoinColumn(name = "ConnectorTypeID", nullable = false)
     private ConnectorType connectorType;
 
+    @OneToMany(mappedBy = "chargingPoint", fetch = FetchType.LAZY)
+    private List<SlotAvailability> slotAvailabilities;
+
     @Column(name = "PointNumber", columnDefinition = "NVARCHAR(20)", nullable = false, unique = true)
     private String pointNumber;
 

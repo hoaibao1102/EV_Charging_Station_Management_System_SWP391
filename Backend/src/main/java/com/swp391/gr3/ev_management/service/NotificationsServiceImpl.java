@@ -20,16 +20,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NotificationsServiceImpl implements NotificationsService{
 
-    @Autowired
     private final NotificationsRepository notificationsRepository;
-
-    @Autowired
     private final NotificationMapper notificationMapper;
-
-    @Autowired
     private final NotificationMapper mapper;
-
-    @Autowired
     private final ApplicationEventPublisher eventPublisher;  // để publish event
 
     @Override

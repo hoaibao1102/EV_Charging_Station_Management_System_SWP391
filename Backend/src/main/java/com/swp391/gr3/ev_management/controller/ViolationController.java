@@ -24,7 +24,6 @@ import java.util.List;
 @Tag(name = "Violation", description = "APIs for managing violation")
 public class ViolationController {
 
-    @Autowired
     private final ViolationService violationService;
 
     /**

@@ -24,7 +24,7 @@ public class VehicleModelCreateRequest {
     private String imageUrl;
 
     @NotNull(message = "connectorTypeId is required")
-    private Integer connectorTypeId;
+    private Long connectorTypeId;
 
 //    @SuppressWarnings("unused")
 //    @AssertTrue(message = "Year cannot be in the far future")

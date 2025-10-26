@@ -22,4 +22,5 @@ public interface SlotTemplateRepository extends JpaRepository<SlotTemplate, Long
             LocalDateTime startInclusive,
             LocalDateTime endExclusive
     );
+
 }
