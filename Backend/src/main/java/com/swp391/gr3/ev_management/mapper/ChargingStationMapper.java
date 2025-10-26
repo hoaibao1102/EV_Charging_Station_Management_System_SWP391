@@ -36,6 +36,7 @@ public class ChargingStationMapper {
     public ChargingStationResponse toResponse(ChargingStation cs) {
         if (cs == null) return null;
         ChargingStationResponse res = new ChargingStationResponse();
+        res.setStationId(cs.getStationId());
         res.setStationName(cs.getStationName());
         res.setAddress(cs.getAddress());
         res.setLatitude(cs.getLatitude());
