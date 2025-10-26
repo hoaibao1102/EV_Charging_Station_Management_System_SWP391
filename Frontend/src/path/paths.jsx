@@ -18,7 +18,6 @@ export const paths = {
   chargeHistory: "/profile/charge-history",
   stationDetail: "/stations/:id", 
 
-
   //admin
   adminDashboard: "/admin",
   userManagement: "/admin/manage-users",

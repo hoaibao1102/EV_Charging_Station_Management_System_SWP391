@@ -39,7 +39,7 @@ import PriceConfiguration from '../pages/admin/PriceConfiguration.jsx';
 import ManagementModel from '../pages/admin/ManagementModel.jsx';
 
 // Staff Pages ====================================
-import ReportAccidents from '../pages/staff/ReportAccidents.jsx';
+import ReportAccidents from '../pages/staff/ReportAccident.jsx';
 import ManagementTransaction from '../pages/staff/ManagementTransaction.jsx';
 import SessionCharging from '../pages/staff/SessionCharging.jsx';
 import StaffDashboard from '../pages/staff/StaffDashboard.jsx';

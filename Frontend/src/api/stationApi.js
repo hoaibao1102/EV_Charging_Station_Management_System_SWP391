@@ -12,11 +12,24 @@ export const getConnectorTypes = () => {
 // ====== Lấy danh sách tất cả trạm sạc ======
 export const getAllStations = () => {
   return handleApiCall(
-    () =>
-      apiClient.get(
-        "https://68f35999fd14a9fcc4288a78.mockapi.io/stationcharging"
-      ),
+    () => apiClient.get("/api/charging-stations"),
     "Lấy danh sách trạm sạc thất bại"
+  );
+};
+
+//thay đổi status trạm sạc
+export const updateStationStatus = (stationId, status) => {
+  return handleApiCall(
+    () => apiClient.put(`/api/charging-stations/${stationId}/status?status=${status}`),
+    "Cập nhật trạng thái trạm sạc thất bại"
+  );
+};
+
+//thêm mới trạm sạc
+export const addStationApi = (stationData) => {
+  return handleApiCall(
+    () => apiClient.post("/api/charging-stations", stationData),
+    "Thêm mới trạm sạc thất bại"
   );
 };
 
