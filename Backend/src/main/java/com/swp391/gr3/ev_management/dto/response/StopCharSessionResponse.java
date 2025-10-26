@@ -19,5 +19,8 @@ public class StopCharSessionResponse {
     private double cost;
     private int durationMinutes;
     private ChargingSessionStatus status;
-
+    private Integer initialSoc; // thêm
+    private Integer finalSoc;   // thêm
+    private Double pricePerKWh; // thêm
+    private String currency;
 }

@@ -69,8 +69,8 @@ public class NotificationEmailListener {
                         var bs = b.getBookingSlots().get(0);
                         var slot = (bs != null) ? bs.getSlot() : null;
                         slotName = "Slot " + (slot != null ? slot.getSlotId() : "N/A");
-                        connector = (slot != null && slot.getConnectorType() != null)
-                                ? safe(slot.getConnectorType().getDisplayName())
+                        connector = (slot != null && slot.getChargingPoint().getConnectorType() != null)
+                                ? safe(slot.getChargingPoint().getConnectorType().getDisplayName())
                                 : "";
                     }
 

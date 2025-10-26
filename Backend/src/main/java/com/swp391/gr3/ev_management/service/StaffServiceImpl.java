@@ -18,12 +18,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class StaffServiceImpl implements  StaffService {
 
-    @Autowired
-    private StaffsRepository staffsRepository;
+    private final StaffsRepository staffsRepository;
 
-    @Autowired
-    private StaffMapper staffMapper;
-
+    private final StaffMapper staffMapper;
 
     @Override
     public Staffs findByStaffId(Long staffId) {

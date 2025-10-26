@@ -20,6 +20,16 @@ public class SlotConfigController {
 
     private final SlotConfigService slotConfigService;
 
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{configId}")
+    @Operation(summary = "Update an existing slot configuration")
+    public ResponseEntity<SlotConfigResponse> update(@PathVariable Long configId, @RequestBody SlotConfigRequest req) {
+        SlotConfigResponse updated = slotConfigService.updateSlotConfig(configId, req);
+        if (updated == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(updated);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     @Operation(summary = "Get all slot configurations")
@@ -43,22 +53,5 @@ public class SlotConfigController {
         SlotConfigResponse response = slotConfigService.findByStation_StationId(stationId);
         if (response == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(response);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    @Operation(summary = "Add a new slot configuration")
-    public ResponseEntity<SlotConfigResponse> add(@RequestBody SlotConfigRequest req) {
-        SlotConfigResponse created = slotConfigService.addSlotConfig(req);
-        return ResponseEntity.ok(created);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{configId}")
-    @Operation(summary = "Update an existing slot configuration")
-    public ResponseEntity<SlotConfigResponse> update(@PathVariable Long configId, @RequestBody SlotConfigRequest req) {
-        SlotConfigResponse updated = slotConfigService.updateSlotConfig(configId, req);
-        if (updated == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(updated);
     }
 }

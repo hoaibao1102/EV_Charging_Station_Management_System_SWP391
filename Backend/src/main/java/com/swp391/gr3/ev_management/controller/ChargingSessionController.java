@@ -25,7 +25,27 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Tag(name = "Staff Charging Session", description = "APIs for staff to manage charging sessions")
 public class ChargingSessionController {
+
     private final ChargingSessionService chargingSessionService;
+
+    @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
+    @PostMapping("/start")
+    @Operation(summary = "Start charging session", description = "Staff starts a new charging session for a confirmed booking")
+    public ResponseEntity<StartCharSessionResponse> startChargingSession(
+            @Valid @RequestBody StartCharSessionRequest request
+    ) {
+        StartCharSessionResponse response = chargingSessionService.startChargingSession(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/stop")
+    @Operation(summary = "Stop charging session", description = "Staff stops an ongoing charging session and records final energy")
+    public ResponseEntity<StopCharSessionResponse> stopChargingSession(
+            @Valid @RequestBody StopCharSessionRequest request
+    ) {
+        StopCharSessionResponse response = chargingSessionService.stopChargingSession(request);
+        return ResponseEntity.ok(response);
+    }
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
     @GetMapping("all-session")
@@ -42,26 +62,6 @@ public class ChargingSessionController {
                         session.getInvoice()
                 ))
                 .collect(Collectors.toList());
-    }
-
-    @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
-    @PostMapping("/start")
-    @Operation(summary = "Start charging session", description = "Staff starts a new charging session for a confirmed booking")
-    public ResponseEntity<StartCharSessionResponse> startChargingSession(
-            @Valid @RequestBody StartCharSessionRequest request
-    ) {
-        StartCharSessionResponse response = chargingSessionService.startChargingSession(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
-    @PostMapping("/stop")
-    @Operation(summary = "Stop charging session", description = "Staff stops an ongoing charging session and records final energy")
-    public ResponseEntity<StopCharSessionResponse> stopChargingSession(
-            @Valid @RequestBody StopCharSessionRequest request
-    ) {
-        StopCharSessionResponse response = chargingSessionService.stopChargingSession(request);
-        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")

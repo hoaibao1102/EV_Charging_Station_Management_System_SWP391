@@ -24,27 +24,7 @@ import java.util.Map;
 @Tag(name = "Notifications", description = "APIs for managing notifications")
 public class NotificationController {
 
-    @Autowired
     private final NotificationsService notificationsService;
-
-    @GetMapping
-    @Operation(summary = "Get all notifications", description = "Get all notifications for the logged-in user")
-    public ResponseEntity<?> getAllNotifications(Authentication auth) {
-        Long userId = Long.valueOf(auth.getName());
-        var notifications = notificationsService.getNotificationsByUser(userId);
-
-        if (notifications == null || notifications.isEmpty()) {
-            return ResponseEntity.ok(Map.of("message", "Không có thông báo"));
-        }
-        return ResponseEntity.ok(notifications);
-    }
-
-    @GetMapping("/unread/count")
-    @Operation(summary = "Get unread notification count", description = "Get the count of unread notifications for the logged-in user")
-    public ResponseEntity<Long> getUnreadCount(Authentication auth) {
-        Long userId = Long.valueOf(auth.getName());
-        return ResponseEntity.ok(notificationsService.getUnreadCount(userId));
-    }
 
     @PutMapping("/{notificationId}/read")
     @Operation(summary = "Mark notification as read", description = "Mark a specific notification as read for the logged-in user")
@@ -74,6 +54,25 @@ public class NotificationController {
         }
 
         return ResponseEntity.ok(notification);
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all notifications", description = "Get all notifications for the logged-in user")
+    public ResponseEntity<?> getAllNotifications(Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        var notifications = notificationsService.getNotificationsByUser(userId);
+
+        if (notifications == null || notifications.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "Không có thông báo"));
+        }
+        return ResponseEntity.ok(notifications);
+    }
+
+    @GetMapping("/unread/count")
+    @Operation(summary = "Get unread notification count", description = "Get the count of unread notifications for the logged-in user")
+    public ResponseEntity<Long> getUnreadCount(Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        return ResponseEntity.ok(notificationsService.getUnreadCount(userId));
     }
 
 }

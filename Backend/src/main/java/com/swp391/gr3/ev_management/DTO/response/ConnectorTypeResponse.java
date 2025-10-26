@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ConnectorTypeResponse {
-    private Integer connectorTypeId;
+    private Long connectorTypeId;
     private String code;
     private String mode;
     private String displayName;

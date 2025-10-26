@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.SlotAvailabilityCreateRequest;
 import com.swp391.gr3.ev_management.DTO.response.SlotAvailabilityResponse;
+import com.swp391.gr3.ev_management.DTO.response.SlotTemplateResponse;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 import com.swp391.gr3.ev_management.service.SlotAvailabilityService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,23 +23,6 @@ public class SlotAvailabilityController {
 
     private final SlotAvailabilityService slotAvailabilityService;
 
-    // Tạo availability cho danh sách template + connector types chỉ định
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    @Operation(summary = "Create slot availability for specified templates and connector types")
-    public ResponseEntity<List<SlotAvailabilityResponse>> create(@RequestBody SlotAvailabilityCreateRequest req) {
-        return ResponseEntity.ok(slotAvailabilityService.createForTemplates(req));
-    }
-
-    // Tạo availability cho TẤT CẢ templates trong NGÀY (của 1 config) và tất cả ConnectorTypes của station
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/generate/daily")
-    @Operation(summary = "Create slot availability for all templates of a config for today")
-    public ResponseEntity<List<SlotAvailabilityResponse>> createForConfigToday(@RequestParam Long configId) {
-        LocalDate today = LocalDate.now();
-        return ResponseEntity.ok(slotAvailabilityService.createForConfigInDate(configId, today));
-    }
-
     // Cập nhật trạng thái slot availability
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{slotAvailabilityId}/status")
@@ -48,6 +32,13 @@ public class SlotAvailabilityController {
             @RequestParam SlotStatus status
     ) {
         return ResponseEntity.ok(slotAvailabilityService.updateStatus(slotAvailabilityId, status));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    @Operation(summary = "Get all slot configurations")
+    public ResponseEntity<List<SlotAvailabilityResponse>> getAll() {
+        return ResponseEntity.ok(slotAvailabilityService.findAll());
     }
 
     @GetMapping("/{slotAvailabilityId}")

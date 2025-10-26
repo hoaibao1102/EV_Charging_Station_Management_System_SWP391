@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class TariffResponse {
 
     private Long tariffId;
-    private int connectorTypeId;
+    private Long connectorTypeId;
     private String connectorTypeCode;
     private String connectorTypeName;
     private double pricePerKWh;

@@ -45,7 +45,7 @@ public class SecurityConfig {
 
             String roleName = (u.getRole() != null && u.getRole().getRoleName() != null)
                     ? u.getRole().getRoleName()
-                    : "DRIVER";
+                    : "USER";
             if (!roleName.startsWith("ROLE_")) roleName = "ROLE_" + roleName;
 
             return org.springframework.security.core.userdetails.User

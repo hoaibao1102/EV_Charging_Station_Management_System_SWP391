@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class SlotAvailabilityResponse {
     private Long slotId;
     private Long templateId;
-    private Integer connectorTypeId;
+    private Long pointId;
     private SlotStatus status;
     private LocalDateTime date; // hoặc LocalDate tuỳ bạn
 }

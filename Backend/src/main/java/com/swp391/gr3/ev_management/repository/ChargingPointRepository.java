@@ -16,22 +16,6 @@ public interface ChargingPointRepository extends JpaRepository<ChargingPoint,Lon
     // Tìm tất cả charging point của trạm
     List<ChargingPoint> findByStation_StationId(Long stationId);
 
-    // Tìm charging point theo trạm và status
-    List<ChargingPoint> findByStation_StationIdAndStatus(Long stationId, ChargingPointStatus status);
-
-    // Tìm charging point available theo connector type
-    @Query("SELECT cp FROM ChargingPoint cp " +
-            "WHERE cp.station.stationId = :stationId " +
-            "AND cp.connectorType.connectorTypeId = :connectorTypeId " +
-            "AND cp.status = :status" )
-    List<ChargingPoint> findChargingPointByConnectorTypeAndStatus_Available(
-            @Param("stationId") Long stationId,
-            @Param("connectorTypeId") Long connectorTypeId,
-            @Param("status") ChargingPointStatus status
-    );
-
-    // Tìm charging point theo QR code (khi staff scan QR)
-    Optional<ChargingPoint> findByQrCode(String qrCode);
 
     // Tìm charging point theo serial number
     Optional<ChargingPoint> findBySerialNumber(String serialNumber);
@@ -39,18 +23,7 @@ public interface ChargingPointRepository extends JpaRepository<ChargingPoint,Lon
     // Tìm charging point theo point number và station
     Optional<ChargingPoint> findByStation_StationIdAndPointNumber(Long stationId, String pointNumber);
 
-    // Đếm point available của trạm
-    Long countByStation_StationIdAndStatus(Long stationId, String status);
-
-    // Đếm tổng số point của trạm
-    Long countByStation_StationId(Long stationId);
-
-    // Tìm point cần bảo trì (lastMaintenanceDate > 6 tháng)
-    @Query("SELECT cp FROM ChargingPoint cp " +
-            "WHERE cp.station.stationId = :stationId " +
-            "AND cp.lastMaintenanceDate < :sixMonthsAgo")
-    List<ChargingPoint> findPointsNeedingMaintenance(
-            @Param("stationId") Long stationId,
-            @Param("sixMonthsAgo") java.sql.Date sixMonthsAgo
+    List<ChargingPoint> findByStation_StationIdAndConnectorType_ConnectorTypeId(
+            Long station_stationId, Long connectorType_connectorTypeId
     );
 }
