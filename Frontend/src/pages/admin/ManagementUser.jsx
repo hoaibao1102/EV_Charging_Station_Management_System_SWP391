@@ -1,5 +1,4 @@
-import icon_station from '../../assets/icon/staff/charging-station.png';
-import icon_user from '../../assets/logo/user.png';
+
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../redux/slices/authSlice';
 import Nav from 'react-bootstrap/Nav';
@@ -10,6 +9,7 @@ import AddStaffForm from '../../components/admin/AddStaffForm.jsx';
 import { useNavigate } from 'react-router-dom';
 import paths from '../../path/paths.jsx';
 import './ManagementUser.css';
+import Header from '../../components/admin/Header.jsx';
 
 export default function ManagementUser() {
   const navigator = useNavigate();
@@ -45,6 +45,10 @@ export default function ManagementUser() {
   const handleSelect = (selectedKey) => {
     setActiveTab(selectedKey);
     setCurrentPage(1); // Reset về trang 1 khi chuyển tab
+  };
+
+  const handleSetLoading = () => {
+    setLoading(pre => !pre);
   };
 
   const handleSearchChange = (e) => {
@@ -178,19 +182,11 @@ export default function ManagementUser() {
 
   return (
     <>
-      {showAddStaffForm && <AddStaffForm onClose={handleCloseForm} />}
+      {showAddStaffForm && <AddStaffForm onClose={handleCloseForm} onAddSuccess={handleSetLoading} />}
       {!showAddStaffForm && (
         <div className="management-user-container">
           {/* Header Section */}
-          <div className="header-section">
-            <div className="header-left">
-              <img src={icon_station} alt="Icon Station" />
-            </div>
-            <div className="header-right">
-              <img src={icon_user} alt="Icon User" />
-              <h1>Chào mừng {user?.name || "System Admin"} trở lại hệ thống!</h1>             
-            </div>
-          </div>
+          <Header />
 
           {/* Action Section */}
           <div className="action-section">

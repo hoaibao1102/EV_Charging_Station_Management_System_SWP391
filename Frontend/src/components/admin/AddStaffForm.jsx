@@ -38,19 +38,19 @@ const initialFormErrors = {
 };
 
 
-export default function AddStaffForm({ onClose }) {
+export default function AddStaffForm({ onClose, onAddSuccess }) {
   const [stations, setStations] = useState([]);
   const [formData, setFormData] = useState(initialFormData);
   const [formErrors, setFormErrors] = useState(initialFormErrors);
   const [apiError, setApiError] = useState(''); // State riêng cho lỗi từ backend
 
   useEffect(() => {
-    // (Phần fetchStations giữ nguyên, không đổi)
     const fetchStations = async () => {
       try {
         const stationList = await getAllStations();
         if (stationList.success) {
           setStations(stationList.data);
+          console.log("Fetched stations:", stationList.data);
         } else {
           console.error("Failed to fetch stations:", stationList.message);
         }
@@ -61,8 +61,6 @@ export default function AddStaffForm({ onClose }) {
     fetchStations();
   }, []);
 
-  // --- HÀM VALIDATE MỚI ---
-  // Hàm này sẽ kiểm tra 1 field và trả về tin nhắn lỗi (hoặc chuỗi rỗng)
   const validateField = (name, value) => {
     switch (name) {
       case 'formBasicName':
@@ -175,6 +173,7 @@ export default function AddStaffForm({ onClose }) {
       const result = await addStaffApi(data);
       if (result.success) {
         console.log("Thêm nhân viên thành công:", result.data);
+        onAddSuccess(); // Thông báo cho cha biết thêm thành công
         onClose(); // Đóng form
       } else {
         setApiError(result.message || 'Thêm nhân viên thất bại.');
@@ -303,7 +302,7 @@ export default function AddStaffForm({ onClose }) {
           >
             <option value="" disabled>Chọn ...</option>
             {stations.map((station) => (
-              <option key={station.stationid} value={station.stationid}>
+              <option key={station.stationId} value={station.stationId}>
                 {station.stationName}
               </option>
             ))}
