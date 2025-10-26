@@ -48,7 +48,7 @@ public class TokenService {
                 .claim("fullName", user.getName())
                 .claim("role", roleName)
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plusSeconds(900))) // 15 phút
+                .setExpiration(Date.from(Instant.now().plusSeconds(9000))) // 15 phút
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import classed from '../assets/css/Main.module.css';
+import classed from '../../assets/css/Main.module.css';
 
 
 const Card = styled.div`

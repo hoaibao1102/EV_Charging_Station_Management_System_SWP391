@@ -7,16 +7,10 @@ import paths from '../../path/paths.jsx';
 import girl from '../../assets/icon/girl.png';
 import man from '../../assets/icon/man.png';
 import './Profile.css';
-import { useSelector } from 'react-redux';
-import {selectUser} from '../../redux/slices/authSlice.js';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const user = useSelector(selectUser);
-  const userPhone = user?.phone;
-  const userSex = user?.gender;
-  const userMail = user?.email;
-  const userName = user?.name;
+  const {name, email, phone, gender} = localStorage.getItem('userDetails') ? JSON.parse(localStorage.getItem('userDetails')) : {};
   const { logout, loading } = useLogout();
 
   useEffect(() => {
@@ -58,7 +52,7 @@ export default function Profile() {
       <div className="profile-card">
         <div className="avatar-container">
           <img 
-            src={userSex === 'M' ? man : girl} 
+            src={gender === 'M' ? man : girl} 
             alt="Profile Avatar" 
             className="avatar"
           />
@@ -66,8 +60,8 @@ export default function Profile() {
 
         {/* User Info */}
         <div className="user-info">
-          <h2 className="user-name">{userName}</h2>
-          <p className="user-email">{userMail} || {userPhone}</p>
+          <h2 className="user-name">{name}</h2>
+          <p className="user-email">{email} || {phone}</p>
         </div>
 
         {/* Menu Items */}

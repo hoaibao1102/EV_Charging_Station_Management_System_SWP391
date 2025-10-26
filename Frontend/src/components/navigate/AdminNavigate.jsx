@@ -42,14 +42,24 @@ export default function AdminNavigate() {
       label: "Quản lý trạm sạc",
     },
     {
+      path: paths.chargingPointManagement,
+      icon: modelIcon,
+      label: "Quản lý trụ sạc",
+    },
+    {
+      path: paths.chargerManagement,
+      icon: modelIcon,
+      label: "Quản lý cổng sạc",
+    },
+    {
       path: paths.modelManagement,
       icon: modelIcon,
       label: "Quản lý mẫu xe",
     },
     {
-      path: paths.chargerManagement,
+      path: paths.chargingPriceConfiguration,
       icon: charger,
-      label: "Quản lý cổng sạc",
+      label: "Cấu hình giá sạc",
     },
     {
       path: paths.businessStatistics,
