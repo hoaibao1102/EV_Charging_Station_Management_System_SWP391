@@ -1,5 +1,5 @@
 import Card from 'react-bootstrap/Card';
-import classCss from '../assets/css/Main.module.css'
+import classCss from '../../assets/css/Main.module.css'
 
 export default function VehicleCard({ vehicle , onDelete}) {   
   return (

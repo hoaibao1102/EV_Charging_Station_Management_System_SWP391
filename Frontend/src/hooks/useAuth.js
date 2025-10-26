@@ -44,7 +44,7 @@ export const useLogin = () => {
           const {token, roleName, name, email, phone, gender} = response.data;
           console.log("Login successful, role:", roleName);
           //lưu vào localStorage
-          setAuthData({ accessToken: token, role: roleName });
+          setAuthData({ accessToken: token, role: roleName, userDetails: {name, email, phone, gender} });
           //lưu vào store
           dispatch(loginSuccess({ accessToken: token, role: roleName, userDetails: {name, email, phone, gender} }));
           // 3. Chuyển hướng theo Vai trò

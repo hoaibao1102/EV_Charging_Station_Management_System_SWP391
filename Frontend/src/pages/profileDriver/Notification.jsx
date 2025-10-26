@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getNotificationsApi } from "../../api/driverApi.js";
 import { toast } from "react-toastify";
-import NotificationCard from "../../components/NotifiationCard.jsx";
+import NotificationCard from "../../components/driver/NotifiationCard.jsx";
 import { markNotificationAsReadApi } from '../../api/driverApi.js';
 import "./Notification.css";
 
