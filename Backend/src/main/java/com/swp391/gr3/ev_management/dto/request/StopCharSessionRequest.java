@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class StopCharSessionRequest {
     private Long sessionId;
-    private double finalEnergyKWh;
+    private Integer finalSoc;
 }

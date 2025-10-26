@@ -31,6 +31,9 @@ public class VehicleModel {
     @Column(name = "Year",nullable = false)
     private int year;
 
+    @Column(name = "BatteryCapacityKWh", nullable = false)
+    private double batteryCapacityKWh;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ConnectorTypeID",nullable = false)
     private ConnectorType connectorType;

@@ -8,85 +8,206 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"/>
     <style>
         :root{
+            --bg:#f6f9fc;
+            --card:#ffffff;
+            --muted:#64748b;
+            --text:#0f172a;
+            --heading:#0b1220;
             --accent:#0b63ff;
-            --muted:#6b7280;
-            --card-bg:#ffffff;
-            --page-bg:#f4f7fb;
-            --success:#10b981;
-            --border:rgba(16,24,40,0.06);
+            --accent-2:#06b6d4;
+            --danger:#bf2b2b;
+
+            --pill-bg:#fff5f5;
+            --pill-text:#b42318;
+
+            --surface:#f8fafc;
+            --stroke:rgba(15,23,42,.08);
+            --shadow:0 10px 35px rgba(15,23,42,.08);
+            --radius:16px;
         }
-        body{
-            font-family: "Inter", Arial, Helvetica, sans-serif;
-            background:var(--page-bg);
-            color:#0f172a;
-            padding:24px;
+
+        /* Reset nhỏ cho layout ổn định hơn */
+        *,
+        *::before,
+        *::after{ box-sizing:border-box }
+        html,body{
+            height:100%;
+            margin:0;
+            font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+            background:
+                    radial-gradient(1200px 600px at 10% -10%, rgba(11,99,255,.08), transparent 55%),
+                    radial-gradient(1200px 600px at 100% 0%, rgba(6,182,212,.08), transparent 55%),
+                    linear-gradient(180deg,var(--bg),#eef4fb);
+            color:var(--text);
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+            padding:28px 16px;
+            line-height:1.5;
         }
-        .email-wrap{
-            max-width:720px;
-            margin:0 auto;
-        }
-        .card-custom{
-            background:linear-gradient(180deg, rgba(255,255,255,0.98), var(--card-bg));
-            border-radius:12px;
-            box-shadow:0 10px 30px rgba(15,23,42,0.06);
+
+        .container-card{ max-width:760px; margin:24px auto }
+
+        .card-clean{
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
             overflow:hidden;
-            border:1px solid var(--border);
+            border:1px solid var(--stroke);
+            backdrop-filter:saturate(130%) blur(2px);
         }
+
         .card-header{
-            background:linear-gradient(90deg, rgba(11,99,255,0.95), rgba(6,182,212,0.95));
-            color:#fff;
-            padding:20px 24px;
             display:flex;
             align-items:center;
             gap:16px;
+            padding:20px 22px;
+            background:linear-gradient(92deg, rgba(11,99,255,.95), rgba(6,182,212,.95));
+            color:#fff;
         }
-        .brand-mark{
-            width:46px;height:46px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:700;
-            box-shadow:inset 0 -6px 18px rgba(255,255,255,0.04);
+
+        .brand{
+            width:56px; height:56px; border-radius:14px;
+            background:rgba(255,255,255,.12);
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:18px;
+            box-shadow:inset 0 -6px 18px rgba(255,255,255,.06);
+            user-select:none;
         }
-        .title{
-            font-size:18px;font-weight:700;margin:0;
+
+        .header-title{ margin:0; font-weight:800; font-size:18px; letter-spacing:.2px }
+        .header-sub{ margin:0; font-size:13px; opacity:.95 }
+
+        .card-body{ padding:24px }
+
+        /* Trạng thái & cảnh báo */
+        .status-pill{
+            display:inline-flex; align-items:center; gap:8px;
+            padding:6px 12px; border-radius:999px;
+            background:var(--pill-bg); color:var(--pill-text);
+            font-weight:700; font-size:13px;
+            border:1px solid rgba(180,35,24,.15);
+            margin-bottom:12px;
         }
-        .booking-id{
-            font-size:13px;opacity:0.95;
+
+        .greeting{
+            margin:0 0 10px 0;
+            font-size:16px; color:var(--heading); letter-spacing:.1px;
         }
-        .card-body{
-            padding:22px;
+
+        .grid{
+            display:grid; grid-template-columns:1fr 1fr;
+            gap:14px; margin-top:12px;
         }
-        .greeting{margin:0 0 12px 0;color:var(--muted)}
-        .details{
-            display:flex;flex-wrap:wrap;gap:12px;
-            margin-top:8px;
+
+        .info{
+            background:linear-gradient(180deg, var(--surface), #ffffff);
+            border-radius:12px; padding:14px;
+            border:1px solid var(--stroke);
         }
-        .detail-item{
-            flex:1 1 50%;
-            min-width:180px;
-            background: #fbfdff;
-            border-radius:8px;
-            padding:12px;
-            border:1px solid rgba(11,99,255,0.04);
+
+        .label{
+            font-size:12px; color:var(--muted);
+            margin-bottom:6px; display:block; letter-spacing:.3px;
         }
-        .detail-label{font-size:12px;color:var(--muted);margin-bottom:6px}
-        .detail-value{font-weight:600;color:#071033}
+
+        .value{
+            font-weight:700; color:#071033;
+            font-size:15px; line-height:1.35; word-break:break-word;
+        }
+
+        /* Badge khung giờ: tương phản cao + dễ đọc trên mobile */
         .time-badge{
-            display:inline-block;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent),#06b6d4);color:#fff;font-weight:700;
-            font-size:14px;
+            display:inline-flex; align-items:center; gap:8px;
+            padding:8px 14px; border-radius:999px;
+            background:linear-gradient(180deg,#f1f5ff,#ffffff);
+            color:#0b1b3a; font-weight:800; font-size:13px;
+            border:1px solid rgba(11,99,255,.20);
+            box-shadow:0 2px 10px rgba(11,99,255,.08);
+            letter-spacing:.2px; white-space:nowrap;
         }
-        .qr-wrap{margin-top:18px;padding:16px;background:linear-gradient(90deg, rgba(11,99,255,0.03), rgba(6,182,212,0.02));border-radius:10px;text-align:center;border:1px dashed rgba(11,99,255,0.06)}
-        .qr-wrap img{max-width:200px;border-radius:6px}
-        .note{color:var(--muted);font-size:13px;margin-top:12px}
-        .cta{
-            margin-top:18px;
-            display:flex;
-            gap:10px;
-            align-items:center;
-            flex-wrap:wrap;
+        .time-badge::before{
+            content:""; width:8px; height:8px; border-radius:999px;
+            background:linear-gradient(90deg,var(--accent),var(--accent-2));
+            display:inline-block; flex:0 0 8px;
         }
-        .btn-view{background:#0b63ff;color:#fff;border:0;padding:10px 14px;border-radius:8px;font-weight:600}
-        .meta{font-size:12px;color:var(--muted);margin-top:14px}
-        @media (max-width:520px){
-            .detail-item{flex:1 1 100%}
-            .card-body{padding:16px}
+
+        /* Văn bản phụ & khu hành động */
+        .muted{ color:var(--muted); font-size:14px }
+        .actions{ margin-top:18px; display:flex; gap:10px; flex-wrap:wrap }
+
+        /* Nút: hover/focus rõ ràng, hỗ trợ bàn phím */
+        .btn-primary{
+            background:linear-gradient(92deg,var(--accent),var(--accent-2));
+            color:#fff; border:0; padding:10px 16px; border-radius:12px;
+            text-decoration:none; font-weight:800;
+            box-shadow:0 6px 16px rgba(11,99,255,.20);
+            transition:transform .05s ease, box-shadow .15s ease, filter .15s ease;
+        }
+        .btn-primary:hover{ filter:brightness(.97) }
+        .btn-primary:active{ transform:translateY(1px); box-shadow:0 4px 12px rgba(11,99,255,.18) }
+        .btn-primary:focus-visible{
+            outline:2px solid #fff; outline-offset:2px;
+            box-shadow:0 0 0 3px rgba(11,99,255,.45);
+        }
+
+        .btn-secondary{
+            background:transparent; color:var(--accent);
+            border:1px solid rgba(11,99,255,.25);
+            padding:10px 16px; border-radius:12px;
+            text-decoration:none; font-weight:700;
+        }
+        .btn-secondary:hover{ background:rgba(11,99,255,.06) }
+        .btn-secondary:focus-visible{
+            outline:2px solid #fff; outline-offset:2px;
+            box-shadow:0 0 0 3px rgba(11,99,255,.35);
+        }
+
+        .footer{ margin-top:18px; font-size:13px; color:var(--muted) }
+
+        /* Mobile cải thiện đọc & tránh tràn */
+        @media (max-width:720px){
+            .grid{ grid-template-columns:1fr }
+            .time-badge{ white-space:normal; line-height:1.4 }
+            .card-body{ padding:18px }
+        }
+
+        /* Hỗ trợ giảm chuyển động cho người nhạy cảm */
+        @media (prefers-reduced-motion:reduce){
+            .btn-primary, .btn-secondary{ transition:none }
+        }
+
+        /* Dark mode nhẹ nhàng, tự động theo hệ thống */
+        @media (prefers-color-scheme:dark){
+            :root{
+                --bg:#0b1220;
+                --card:#0f172a;
+                --text:#e6e8ee;
+                --heading:#f8fafc;
+                --surface:#0b1220;
+                --stroke:rgba(255,255,255,.08);
+                --shadow:0 10px 35px rgba(0,0,0,.55);
+                --pill-bg:#2a0f10;
+                --pill-text:#ffb4a9;
+            }
+            body{
+                background:
+                        radial-gradient(1200px 600px at 10% -10%, rgba(11,99,255,.18), transparent 55%),
+                        radial-gradient(1200px 600px at 100% 0%, rgba(6,182,212,.18), transparent 55%),
+                        linear-gradient(180deg,#0b1220,#0f172a);
+            }
+            .value{ color:#f1f5f9 }
+            .time-badge{
+                background:linear-gradient(180deg,#0f1a3a,#0c122a);
+                color:#cfe0ff; border-color:rgba(99,153,255,.35);
+                box-shadow:none;
+            }
+        }
+
+        /* In ấn gọn gàng */
+        @media print{
+            body{ background:#fff; padding:0 }
+            .card-clean{ box-shadow:none; border:1px solid #ddd }
+            .card-header{ color:#000; background:#e6eefc }
         }
     </style>
 </head>
@@ -136,11 +257,6 @@
             </div>
 
             <p class="note">Mang mã QR này đến trạm và quét khi đến để bắt đầu phiên sạc. Nếu bạn cần thay đổi, vui lòng truy cập trang quản lý booking.</p>
-
-            <div class="cta">
-                <a th:href="@{|/bookings/${bookingId}|}" class="btn-view">Xem chi tiết đặt chỗ</a>
-                <a th:href="@{|mailto:support@example.com?subject=Yêu cầu hỗ trợ Booking ${bookingId}|}" style="color:var(--accent);font-weight:600;text-decoration:none">Liên hệ hỗ trợ</a>
-            </div>
 
             <div class="meta">Lưu ý: Vui lòng đến đúng khung giờ. Booking sẽ bị hủy nếu quá thời gian bắt đầu quá lâu.</div>
         </div>

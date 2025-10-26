@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 public class TariffCreateRequest {
     @NotNull(message = "ConnectorTypeId không được để trống")
-    private int connectorTypeId;
+    private Long connectorTypeId;
 
     @NotNull(message = "Giá tiền không được để trống")
     @Positive(message = "Giá tiền phải lớn hơn 0")

@@ -8,5 +8,5 @@ import java.util.List;
 @Data
 public class SlotAvailabilityCreateRequest {
     private List<Long> templateIds;       // cho phép tạo theo nhiều template
-    private List<Integer> connectorTypeIds; // danh sách connector types muốn tạo availability
+    private List<Long> connectorTypeIds; // danh sách connector types muốn tạo availability
 }

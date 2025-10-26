@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ConnectorTypeServiceImpl implements ConnectorTypeService {
+
     private final ConnectorTypeRepository connectorTypeRepository;
 
     @Override
@@ -26,7 +27,7 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
     }
 
     @Override
-    public ConnectorTypeResponse getConnectorTypeById(int connectorTypeId) {
+    public ConnectorTypeResponse getConnectorTypeById(Long connectorTypeId) {
         ConnectorType connectorType = connectorTypeRepository.findById(connectorTypeId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy connector type với ID: " + connectorTypeId));
         return toResponse(connectorType);
@@ -54,7 +55,7 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
 
     @Override
     @Transactional
-    public ConnectorTypeResponse updateConnectorType(int connectorTypeId, ConnectorTypeUpdateRequest request) {
+    public ConnectorTypeResponse updateConnectorType(Long connectorTypeId, ConnectorTypeUpdateRequest request) {
         ConnectorType connectorType = connectorTypeRepository.findById(connectorTypeId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy connector type với ID: " + connectorTypeId));
 

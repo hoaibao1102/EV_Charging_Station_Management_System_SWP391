@@ -24,25 +24,12 @@ import java.util.Map;
 @Tag(name = "Admin", description = "APIs for admin operations")
 @RequiredArgsConstructor
 public class AdminController {
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private TokenService tokenService;
-
-    @Autowired
-    private DriverService driverService;
-
-    @Autowired
-    private StaffService staffService;
-
-    @Autowired
-    private StaffStationService staffStationService;
-
-    @Autowired
+    private final UserService userService;
+    private final TokenService tokenService;
+    private final DriverService driverService;
+    private final StaffService staffService;
+    private final StaffStationService staffStationService;
     private final ChargingSessionService chargingSessionService;
-
-    @Autowired
     private final NotificationsService notificationsService;
 
     // ----------------------ADMIN: Quản lý USERS----------------------------- //

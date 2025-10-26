@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.response.SlotAvailabilityResponse;
+import com.swp391.gr3.ev_management.DTO.response.SlotConfigResponse;
 import com.swp391.gr3.ev_management.DTO.response.SlotTemplateResponse;
 import com.swp391.gr3.ev_management.service.SlotTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,21 +24,11 @@ public class SlotTemplateController {
 
     private final SlotTemplateService slotTemplateService;
 
-    // Tạo template cho HÔM NAY theo khung giờ activeFrom–activeExpire trong SlotConfig
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/generate/daily")
-    @Operation(summary = "Generate slot templates for today based on the given configuration ID")
-    public ResponseEntity<List<SlotTemplateResponse>> generateDaily(@RequestParam Long configId) {
-        LocalDateTime today = LocalDateTime.now();
-        return ResponseEntity.ok(slotTemplateService.generateDailyTemplates(configId, today));
-    }
-
-    // Tạo template cho NHIỀU ngày liên tiếp (reset sau 23:59 mỗi ngày)
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/generate/range")
-    @Operation(summary = "Generate slot templates using date range defined in config")
-    public ResponseEntity<List<SlotTemplateResponse>> generateFromConfig(@RequestParam Long configId) {
-        return ResponseEntity.ok(slotTemplateService.generateTemplatesFromConfig(configId));
+    @GetMapping
+    @Operation(summary = "Get all slot configurations")
+    public ResponseEntity<List<SlotTemplateResponse>> getAll() {
+        return ResponseEntity.ok(slotTemplateService.getAll());
     }
 
     @GetMapping("{templateId}")

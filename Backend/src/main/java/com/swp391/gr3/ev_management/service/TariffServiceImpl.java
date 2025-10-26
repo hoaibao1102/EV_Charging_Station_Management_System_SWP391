@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TariffServiceImpl implements TariffService {
+
     private final TariffRepository tariffRepository;
     private final ConnectorTypeRepository connectorTypeRepository;
 

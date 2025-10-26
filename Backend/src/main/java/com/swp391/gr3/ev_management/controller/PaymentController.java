@@ -25,11 +25,9 @@ import java.util.List;
 @Tag(name = "Staff Payment", description = "APIs for staff to manage payment confirmations")
 public class PaymentController {
 
-    @Autowired
     private final StaffPaymentService paymentService;
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
     @PostMapping("/confirm")

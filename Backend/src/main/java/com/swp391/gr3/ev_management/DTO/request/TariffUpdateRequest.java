@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class TariffUpdateRequest {
-    private int connectorTypeId;
+    private Long connectorTypeId;
 
     @Positive(message = "Giá tiền phải lớn hơn 0")
     private double pricePerKWh;

@@ -12,5 +12,5 @@ public interface ChargingPointService {
     ChargingPointResponse getPointStatus(Long pointId, Long staffId);
     List<ChargingPointResponse> getPointsByStation(Long stationId, Long staffId);
 
-    BookingResponse createChargingPoint(CreateChargingPointRequest request);
+    ChargingPointResponse createChargingPoint(CreateChargingPointRequest request);
 }

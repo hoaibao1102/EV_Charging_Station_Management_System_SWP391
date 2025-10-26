@@ -19,19 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Bookings", description = "APIs for managing bookings")
 public class BookingController {
-    @Autowired
     private final BookingService bookingService;
-
-    @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Create a new booking", description = "Endpoint to create a new booking")
-    public ResponseEntity<BookingResponse> createBooking(@RequestBody CreateBookingRequest request) {
-        try {
-            BookingResponse response = bookingService.createBooking(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
 
     @PutMapping(value = "/{bookingId}/confirm", produces = MediaType.IMAGE_PNG_VALUE)
     @Operation(summary = "Confirm a booking and generate QR code", description = "Endpoint to confirm a booking and generate its QR code")
@@ -48,6 +36,19 @@ public class BookingController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Create a new booking", description = "Endpoint to create a new booking")
+    public ResponseEntity<BookingResponse> createBooking(@RequestBody CreateBookingRequest request) {
+        try {
+            BookingResponse response = bookingService.createBooking(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @PostMapping("/qr/decode")

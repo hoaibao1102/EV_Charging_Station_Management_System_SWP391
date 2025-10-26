@@ -10,6 +10,5 @@ import java.util.List;
 public class CreateBookingRequest {
   private Long vehicleId;
   private List<Long> slotIds;
-  private Long connectorTypeId;
   private LocalDateTime bookingTime;
 }

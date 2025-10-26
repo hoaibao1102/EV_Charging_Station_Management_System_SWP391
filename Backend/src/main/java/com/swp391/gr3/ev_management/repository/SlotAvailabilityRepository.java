@@ -19,7 +19,11 @@ public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailabili
             LocalDateTime endExclusive
     );
 
-    boolean existsByTemplate_TemplateIdAndConnectorType_ConnectorTypeIdAndDate(
+    boolean existsByTemplate_TemplateIdAndChargingPoint_ConnectorType_ConnectorTypeIdAndDate(
             Long templateId, Integer connectorTypeId, LocalDateTime date
     );
+
+    boolean existsByTemplate_TemplateIdAndChargingPoint_PointIdAndDate(Long templateId, Long pointId, LocalDateTime date);
+    void deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
+
 }

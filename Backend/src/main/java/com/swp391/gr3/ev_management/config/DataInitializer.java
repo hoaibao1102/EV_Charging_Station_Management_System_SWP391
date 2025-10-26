@@ -10,6 +10,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +35,8 @@ public class DataInitializer implements CommandLineRunner {
     private final SlotConfigRepository slotConfigRepository;
     private final SlotTemplateRepository slotTemplateRepository;
     private final SlotAvailabilityRepository slotAvailabilityRepository;
+    private final TransactionTemplate transactionTemplate;
+    private final TariffRepository tariffRepository;
 
     @Value("${app.data.init.enabled:true}")
     private boolean enabled;
@@ -54,6 +58,7 @@ public class DataInitializer implements CommandLineRunner {
             initChargingStations();   // seed trạm sạc theo Seed_Data
             initChargingPoints();     // seed điểm sạc theo Seed_Data
             initSlotAvailability();   // seed mẫu slot theo Seed_Data
+            initTariffs();            // seed bảng Tariff
 
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
@@ -197,56 +202,87 @@ public class DataInitializer implements CommandLineRunner {
                 var cfg = SlotConfig.builder()
                         .station(station)
                         .slotDurationMin(60)
-                        .activeFrom(java.time.LocalDate.now().atStartOfDay())
-                        .activeExpire(java.time.LocalDate.now().plusYears(1).atStartOfDay())
+                        .activeFrom(LocalDate.now().atStartOfDay())
+                        .activeExpire(LocalDate.now().plusYears(1).atStartOfDay())
                         .isActive(SlotConfigStatus.ACTIVE)
                         .build();
                 existingConfig = slotConfigRepository.save(cfg);
                 log.info("Created SlotConfig for station {}", station.getStationName());
             }
 
-            // Recreate 24 templates for a base day (today)
-            var baseStart = java.time.LocalDate.now().atStartOfDay();
-            var baseEnd = baseStart.plusDays(1);
-            slotTemplateRepository.deleteByConfig_ConfigIdAndStartTimeBetween(existingConfig.getConfigId(), baseStart, baseEnd);
+            final var config = existingConfig;
+            final var baseStart = LocalDate.now().atStartOfDay();
+            final var baseEnd   = baseStart.plusDays(1);
+            final var targetDate = LocalDate.parse("2025-10-24").atStartOfDay();
 
-            var templates = new java.util.ArrayList<SlotTemplate>();
-            for (int i = 0; i < 24; i++) {
-                var st = SlotTemplate.builder()
-                        .config(existingConfig)
-                        .slotIndex(i + 1)
-                        .startTime(baseStart.plusHours(i))
-                        .endTime(baseStart.plusHours(i + 1))
-                        .build();
-                templates.add(slotTemplateRepository.save(st));
-            }
-            log.info("Created {} SlotTemplates for config {}", templates.size(), existingConfig.getConfigId());
+            // Bọc transaction RIÊNG cho reset + seed
+            transactionTemplate.executeWithoutResult(status -> {
+                // 1) XÓA AVAILABILITY TRONG NGÀY (con trước)
+                slotAvailabilityRepository.deleteByTemplate_Config_ConfigIdAndDateBetween(
+                        config.getConfigId(), baseStart, baseEnd);
+                slotAvailabilityRepository.flush(); // ép DB thực thi
 
-            // Seed availability for a specific date from Seed_Data: 2025-10-24
-            var targetDate = java.time.LocalDate.parse("2025-10-24").atStartOfDay();
-            var connector = connectorTypeRepository.findByCode("TYPE2");
-            if (connector == null) connector = connectorTypeRepository.findByCode("CCS2");
+                // 2) XÓA TEMPLATE TRONG NGÀY (KHÔNG bulk delete)
+                var oldTemplates = slotTemplateRepository
+                        .findByConfig_ConfigIdAndStartTimeBetween(config.getConfigId(), baseStart, baseEnd);
+                if (!oldTemplates.isEmpty()) {
+                    // Nếu muốn Hibernate tự xóa availability còn sót: cần có mapping
+                    // @OneToMany(mappedBy="template", cascade=ALL, orphanRemoval=true) trong SlotTemplate
+                    slotTemplateRepository.deleteAll(oldTemplates);
+                    slotTemplateRepository.flush();
+                }
 
-            for (var t : templates) {
-                boolean exists = slotAvailabilityRepository
-                        .existsByTemplate_TemplateIdAndConnectorType_ConnectorTypeIdAndDate(
-                                t.getTemplateId(),
-                                connector != null ? connector.getConnectorTypeId() : null,
-                                targetDate
-                        );
-                if (exists) continue;
+                // 3) TẠO LẠI 24 TEMPLATE
+                var templates = new java.util.ArrayList<SlotTemplate>(24);
+                for (int i = 0; i < 24; i++) {
+                    var st = SlotTemplate.builder()
+                            .config(config)
+                            .slotIndex(i + 1)
+                            .startTime(baseStart.plusHours(i))
+                            .endTime(baseStart.plusHours(i + 1))
+                            .build();
+                    templates.add(slotTemplateRepository.save(st));
+                }
+                log.info("Created {} SlotTemplates for config {}", templates.size(), config.getConfigId());
 
-                var sa = SlotAvailability.builder()
-                        .template(t)
-                        .connectorType(connector)
-                        .status(SlotStatus.AVAILABLE)
-                        .date(targetDate)
-                        .build();
-                slotAvailabilityRepository.save(sa);
-            }
-            log.info("Seeded slot availability for {} templates on date {}", templates.size(), targetDate.toLocalDate());
+                // 4) CHỌN CONNECTOR (optional) → LẤY POINTS
+                var connector = connectorTypeRepository.findByCode("TYPE2");
+                if (connector == null) connector = connectorTypeRepository.findByCode("CCS2");
+
+                java.util.List<ChargingPoint> points;
+                if (connector != null) {
+                    points = chargingPointRepository.findByStation_StationIdAndConnectorType_ConnectorTypeId(
+                            station.getStationId(), connector.getConnectorTypeId()
+                    );
+                } else {
+                    points = chargingPointRepository.findByStation_StationId(station.getStationId());
+                }
+
+                if (points.isEmpty()) {
+                    log.warn("No charging points found for station {} (connector filter: {})",
+                            station.getStationName(), connector != null ? connector.getCode() : "NONE");
+                    return;
+                }
+
+                // 5) SEED AVAILABILITY (đã reset trong ngày nên không cần existsBy...)
+                var toSave = new java.util.ArrayList<SlotAvailability>(templates.size() * points.size());
+                for (var t : templates) {
+                    for (var p : points) {
+                        toSave.add(SlotAvailability.builder()
+                                .template(t)
+                                .chargingPoint(p)
+                                .status(SlotStatus.AVAILABLE)
+                                .date(targetDate)    // hoặc t.getStartTime().toLocalDate().atStartOfDay()
+                                .build());
+                    }
+                }
+                slotAvailabilityRepository.saveAll(toSave);
+                log.info("Seeded {} slot availability rows for {} templates on date {}",
+                        toSave.size(), templates.size(), targetDate.toLocalDate());
+            });
+
         } catch (Exception e) {
-            log.warn("Failed to seed slot availability: {}", e.getMessage());
+            log.warn("Failed to seed slot availability: {}", e.getMessage(), e);
         }
     }
 
@@ -282,16 +318,16 @@ public class DataInitializer implements CommandLineRunner {
 
     // ================== VEHICLE MODELS (tùy chọn) ==================
     private void initVehicleModels() {
-        createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "CCS2");
-        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "CCS2");
-        createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "CCS2");
-        createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "CCS2");
-        createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "CCS2");
-        createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "CHADEMO");
-        createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "TYPE1");
+        createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "CCS2",75);
+        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "CCS2",80);
+        createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "CCS2", 64);
+        createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "CCS2", 77);
+        createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "CCS2",42);
+        createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "CHADEMO",40);
+        createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "TYPE1",23.8);
     }
 
-    private void createModelIfNotExists(String brand, String model, int year, String img, String connectorCode) {
+    private void createModelIfNotExists(String brand, String model, int year, String img, String connectorCode, double batteryCapacityKWh) {
         try {
             boolean exists = vehicleModelRepository
                     .existsByBrandIgnoreCaseAndModelIgnoreCaseAndYear(brand, model, year);
@@ -312,6 +348,7 @@ public class DataInitializer implements CommandLineRunner {
                     .year(year)
                     .imageUrl((img != null && !img.isEmpty()) ? img : "default-vehicle.png")
                     .connectorType(connector)
+                    .batteryCapacityKWh(batteryCapacityKWh)
                     .build();
 
             vehicleModelRepository.save(vm);
@@ -515,6 +552,81 @@ public class DataInitializer implements CommandLineRunner {
                     savedUser.getName(), savedUser.getPhoneNumber(), driver.getStatus());
         } catch (Exception e) {
             log.error("Failed to create default driver (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
+        }
+    }
+
+    // ================== TARIFFS ==================
+    private void initTariffs() {
+        try {
+            // Khung thời gian áp dụng mẫu (cả năm nay)
+            var from = LocalDate.now().withDayOfYear(1).atStartOfDay();
+            var to   = LocalDate.now().withMonth(12).withDayOfMonth(31).atTime(23,59,59);
+
+            // Ví dụ giá tham khảo theo loại đầu sạc
+            createTariffIfNotExists("TYPE1",   3200.0, "VND", from, to);   // AC 7.4kW
+            createTariffIfNotExists("TYPE2",   3800.0, "VND", from, to);   // AC 22kW
+            createTariffIfNotExists("CHADEMO", 5200.0, "VND", from, to);   // DC 50kW
+            createTariffIfNotExists("CCS2",    6500.0, "VND", from, to);   // DC 150kW
+
+            log.info("Created default tariffs if missing.");
+        } catch (Exception e) {
+            log.warn("Failed to seed tariffs: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Tạo tariff cho 1 connector nếu chưa có bản ghi trùng (cùng connector + khoảng thời gian + giá + tiền tệ).
+     * Nếu đã có, bỏ qua để tránh trùng lặp khi khởi động nhiều lần.
+     */
+    private void createTariffIfNotExists(String connectorCode,
+                                         double pricePerKWh,
+                                         String currency,
+                                         LocalDateTime effectiveFrom,
+                                         LocalDateTime effectiveTo) {
+        try {
+            ConnectorType connector = connectorTypeRepository.findByCode(connectorCode);
+            if (connector == null) {
+                log.warn("ConnectorType {} not found. Skip tariff seeding.", connectorCode);
+                return;
+            }
+
+            // Kiểm tra xem đã có bản ghi giống hệt chưa (đơn giản, tránh duplicate khi restart)
+            boolean existsSame = tariffRepository.findAll().stream().anyMatch(t ->
+                    t.getConnectorType().getConnectorTypeId().equals(connector.getConnectorTypeId())
+                            && t.getCurrency().equalsIgnoreCase(currency)
+                            && t.getPricePerKWh() == pricePerKWh
+                            && t.getEffectiveFrom().equals(effectiveFrom)
+                            && t.getEffectiveTo().equals(effectiveTo)
+            );
+            if (existsSame) {
+                log.info("Tariff already exists for {} ({} {} VND from {} to {})",
+                        connectorCode, pricePerKWh, currency, effectiveFrom, effectiveTo);
+                return;
+            }
+
+            // (Option) Kiểm tra overlap khoảng thời gian để cảnh báo (không chặn cứng)
+            boolean overlaps = tariffRepository.findAll().stream().anyMatch(t ->
+                    t.getConnectorType().getConnectorTypeId().equals(connector.getConnectorTypeId())
+                            && !t.getEffectiveTo().isBefore(effectiveFrom)
+                            && !t.getEffectiveFrom().isAfter(effectiveTo)
+            );
+            if (overlaps) {
+                log.warn("Tariff time range overlaps existing tariffs for {}. Consider splitting ranges.", connectorCode);
+            }
+
+            Tariff tariff = Tariff.builder()
+                    .connectorType(connector)
+                    .pricePerKWh(pricePerKWh)
+                    .currency(currency)
+                    .effectiveFrom(effectiveFrom)
+                    .effectiveTo(effectiveTo)
+                    .build();
+
+            tariffRepository.save(tariff);
+            log.info("Created Tariff: code={}, price={} {}, from={} to={}",
+                    connectorCode, pricePerKWh, currency, effectiveFrom, effectiveTo);
+        } catch (Exception e) {
+            log.warn("Failed to create tariff for {}: {}", connectorCode, e.getMessage());
         }
     }
 }

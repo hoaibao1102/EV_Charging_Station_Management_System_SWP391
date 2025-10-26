@@ -28,17 +28,14 @@ public class ConnectorTypeController {
 
     private final ConnectorTypeService connectorTypeService;
 
-    @GetMapping
-    @Operation(summary = "Get all connector types", description = "Public endpoint to retrieve all connector types")
-    public ResponseEntity<List<ConnectorTypeResponse>> getAllConnectorTypes() {
-        List<ConnectorTypeResponse> list = connectorTypeService.getAllConnectorTypes();
-        return ResponseEntity.ok(list);
-    }
-
-    @GetMapping("/{connectorTypeId}")
-    @Operation(summary = "Get connector type by ID", description = "Public endpoint to retrieve a specific connector type")
-    public ResponseEntity<ConnectorTypeResponse> getConnectorTypeById(@PathVariable int connectorTypeId) {
-        ConnectorTypeResponse response = connectorTypeService.getConnectorTypeById(connectorTypeId);
+    @PutMapping("/{connectorTypeId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Update connector type", description = "Admin only - Update an existing connector type")
+    public ResponseEntity<ConnectorTypeResponse> updateConnectorType(
+            @PathVariable Long connectorTypeId,
+            @Valid @RequestBody ConnectorTypeUpdateRequest request) {
+        ConnectorTypeResponse response = connectorTypeService.updateConnectorType(connectorTypeId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -52,14 +49,17 @@ public class ConnectorTypeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PutMapping("/{connectorTypeId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Update connector type", description = "Admin only - Update an existing connector type")
-    public ResponseEntity<ConnectorTypeResponse> updateConnectorType(
-            @PathVariable int connectorTypeId,
-            @Valid @RequestBody ConnectorTypeUpdateRequest request) {
-        ConnectorTypeResponse response = connectorTypeService.updateConnectorType(connectorTypeId, request);
+    @GetMapping
+    @Operation(summary = "Get all connector types", description = "Public endpoint to retrieve all connector types")
+    public ResponseEntity<List<ConnectorTypeResponse>> getAllConnectorTypes() {
+        List<ConnectorTypeResponse> list = connectorTypeService.getAllConnectorTypes();
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/{connectorTypeId}")
+    @Operation(summary = "Get connector type by ID", description = "Public endpoint to retrieve a specific connector type")
+    public ResponseEntity<ConnectorTypeResponse> getConnectorTypeById(@PathVariable Long connectorTypeId) {
+        ConnectorTypeResponse response = connectorTypeService.getConnectorTypeById(connectorTypeId);
         return ResponseEntity.ok(response);
     }
 

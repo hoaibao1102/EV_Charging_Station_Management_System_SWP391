@@ -2,10 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.SlotAvailabilityCreateRequest;
 import com.swp391.gr3.ev_management.DTO.response.SlotAvailabilityResponse;
-import com.swp391.gr3.ev_management.entity.ConnectorType;
-import com.swp391.gr3.ev_management.entity.SlotAvailability;
-import com.swp391.gr3.ev_management.entity.SlotConfig;
-import com.swp391.gr3.ev_management.entity.SlotTemplate;
+import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 import com.swp391.gr3.ev_management.mapper.SlotAvailabilityMapper;
 import com.swp391.gr3.ev_management.repository.*;
@@ -15,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,7 +22,8 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     private final SlotAvailabilityRepository slotAvailabilityRepository;
     private final SlotTemplateRepository slotTemplateRepository;
     private final SlotConfigRepository slotConfigRepository;
-    private final ConnectorTypeRepository connectorTypeRepository; // bạn cần repo này
+    private final ConnectorTypeRepository connectorTypeRepository;
+    private final ChargingPointRepository chargingPointRepository;   // ✅ thêm
     private final SlotAvailabilityMapper mapper;
 
     @Override
@@ -44,25 +41,43 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
 
         // load connector types
         List<ConnectorType> connectorTypes = connectorTypeRepository.findAllById(req.getConnectorTypeIds());
+        if (connectorTypes.isEmpty()) return Collections.emptyList();
 
         List<SlotAvailability> toSave = new ArrayList<>();
+
         for (SlotTemplate template : templates) {
-            // date = ngày của template (lưu ý: cột DB là DATE => có thể đổi sang LocalDate cho chuẩn)
-            LocalDateTime date = template.getStartTime().withHour(0).withMinute(0).withSecond(0).withNano(0);
+            // Lấy station từ template -> config -> station (giả định các field tồn tại)
+            Long stationId = Optional.ofNullable(template.getConfig())
+                    .map(SlotConfig::getStation)
+                    .map(ChargingStation::getStationId)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Template " + template.getTemplateId() + " không có liên kết Station qua Config"));
+
+            // Chuẩn hóa ngày về 00:00:00 cùng ngày của template.startTime
+            LocalDateTime date = template.getStartTime()
+                    .withHour(0).withMinute(0).withSecond(0).withNano(0);
 
             for (ConnectorType ct : connectorTypes) {
-                boolean exists = slotAvailabilityRepository
-                        .existsByTemplate_TemplateIdAndConnectorType_ConnectorTypeIdAndDate(
-                                template.getTemplateId(), ct.getConnectorTypeId(), date);
+                // Lấy tất cả charging points của station với connector type ct
+                List<ChargingPoint> points =
+                        chargingPointRepository.findByStation_StationIdAndConnectorType_ConnectorTypeId(
+                                stationId, ct.getConnectorTypeId()
+                        );
 
-                if (!exists) {
-                    SlotAvailability sa = SlotAvailability.builder()
-                            .template(template)
-                            .connectorType(ct)
-                            .status(SlotStatus.AVAILABLE)
-                            .date(date)
-                            .build();
-                    toSave.add(sa);
+                for (ChargingPoint point : points) {
+                    boolean exists = slotAvailabilityRepository
+                            .existsByTemplate_TemplateIdAndChargingPoint_PointIdAndDate(
+                                    template.getTemplateId(), point.getPointId(), date);
+
+                    if (!exists) {
+                        SlotAvailability sa = SlotAvailability.builder()
+                                .template(template)
+                                .chargingPoint(point)             // ✅ gán chargingPoint
+                                .status(SlotStatus.AVAILABLE)
+                                .date(date)
+                                .build();
+                        toSave.add(sa);
+                    }
                 }
             }
         }
@@ -79,7 +94,7 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
         SlotConfig config = slotConfigRepository.findByConfigId(configId);
         if (config == null) throw new IllegalArgumentException("Không tìm thấy SlotConfig id=" + configId);
 
-        // Lấy tất cả template của config trong ngày (đã có khi bạn generate templates)
+        // Lấy các template thuộc config trong khoảng ngày [start, end)
         LocalDateTime start = date.atStartOfDay();
         LocalDateTime end   = start.plusDays(1);
 
@@ -88,21 +103,17 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
 
         if (templates.isEmpty()) return Collections.emptyList();
 
-        // Lấy tất cả ConnectorType thuộc station của config
+        // Lấy danh sách connector types có mặt ở station của config
         Long stationId = config.getStation().getStationId();
-
-        // ⚠️ tuỳ entity của bạn. Ví dụ nếu ConnectorType có field "point" → "point.station.stationId"
         List<ConnectorType> connectorTypes =
                 connectorTypeRepository.findDistinctByChargingPoints_Station_StationId(stationId);
 
-        // Nếu repo của bạn khác tên field, đổi sang method phù hợp (vd: findByChargingPoint_Station_StationId)
+        if (connectorTypes.isEmpty()) return Collections.emptyList();
 
-        List<Integer> connectorTypeIds = connectorTypes.stream()
-                .map(ConnectorType::getConnectorTypeId).toList();
-
+        // Gọi lại createForTemplates để tái sử dụng logic (repo đã dùng chargingPoint)
         SlotAvailabilityCreateRequest req = new SlotAvailabilityCreateRequest();
         req.setTemplateIds(templates.stream().map(SlotTemplate::getTemplateId).toList());
-        req.setConnectorTypeIds(connectorTypeIds);
+        req.setConnectorTypeIds(connectorTypes.stream().map(ConnectorType::getConnectorTypeId).toList());
 
         return createForTemplates(req);
     }
@@ -122,6 +133,13 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
                 slotAvailabilityRepository.findById(slotAvailabilityId)
                         .orElseThrow(() -> new NoSuchElementException("Không tìm thấy SlotAvailability id=" + slotAvailabilityId))
         );
+    }
 
+    @Override
+    public List<SlotAvailabilityResponse> findAll() {
+        return slotAvailabilityRepository.findAll()
+                .stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
     }
 }

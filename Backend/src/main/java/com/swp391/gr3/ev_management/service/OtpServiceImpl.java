@@ -19,11 +19,9 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class OtpServiceImpl implements  OtpService{
-    @Autowired
+
     private final OtpRepository otpRepository;
-    @Autowired
     private final JavaMailSender mailSender;
-    @Autowired
     private final TemplateEngine templateEngine; // ✨ inject thymeleaf engine
 
     @Override
