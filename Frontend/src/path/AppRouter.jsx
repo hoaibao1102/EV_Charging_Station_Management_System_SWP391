@@ -4,7 +4,6 @@ import paths from './paths.jsx';
 
 // Import Layouts
 import AdminLayout from '../layouts/AdminLayout';
-import StaffLayout from '../layouts/StaffLayout';
 import DriverLayout from '../layouts/DriverLayout';
  
 // Public Pages =====================================
@@ -32,8 +31,19 @@ import Vehicles from "../pages/profileDriver/Vehicles.jsx";
 import AdminDashboard  from "../pages/admin/AdminDashboard.jsx";
 import ManagementStation  from "../pages/admin/ManagementStation.jsx";
 import ManagementUser  from "../pages/admin/ManagementUser.jsx";
+import BusinessStatistics from "../pages/admin/BusinessStatistics.jsx";
+import ManagementAccident from "../pages/admin/ManagementAccident.jsx";
+import ManagementCharger from "../pages/admin/ManagementCharger.jsx";
+import ManagementChargingPoint from "../pages/admin/ManagementChargingPoint.jsx";
+import PriceConfiguration from '../pages/admin/PriceConfiguration.jsx';
+import ManagementModel from '../pages/admin/ManagementModel.jsx';
 
 // Staff Pages ====================================
+import ReportAccidents from '../pages/staff/ReportAccidents.jsx';
+import ManagementTransaction from '../pages/staff/ManagementTransaction.jsx';
+import SessionCharging from '../pages/staff/SessionCharging.jsx';
+import StaffDashboard from '../pages/staff/StaffDashboard.jsx';
+
 
 
 const AppRouter = () => {
@@ -76,14 +86,23 @@ const AppRouter = () => {
           <Route path={paths.adminDashboard} element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path={paths.userManagement} element={<ManagementUser />} />
+            <Route path={paths.stationManagement} element={<ManagementStation />} />
+            <Route path={paths.modelManagement} element={<ManagementModel />} />
+            <Route path={paths.chargerManagement} element={<ManagementCharger />} />
+            <Route path={paths.businessStatistics} element={<BusinessStatistics />} />
+            <Route path={paths.accidentReports} element={<ManagementAccident />} />
+            <Route path={paths.chargingPriceConfiguration} element={<PriceConfiguration />} />
+            <Route path={paths.chargingPointManagement} element={<ManagementChargingPoint />} />
           </Route>
         </Route>
 
         {/* 3. STAFF Routes - Chỉ STAFF mới truy cập được */}
         <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
-          <Route path="/staff" element={<StaffLayout />}>
-            <Route index element={<div>Staff Dashboard</div>} />
-            <Route path="orders" element={<div>Order Processing</div>} />
+          <Route path={paths.staffDashboard} element={<AdminLayout />}>
+            <Route index element={<StaffDashboard />} />
+            <Route path={paths.manageSessionCharging} element={<SessionCharging />} />
+            <Route path={paths.manageTransaction} element={<ManagementTransaction />} />
+            <Route path={paths.reportAccidents} element={<ReportAccidents />} />
           </Route>
         </Route>
 

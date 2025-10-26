@@ -16,7 +16,8 @@ export const paths = {
   information: "/profile/information",
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
-  stationDetail: "/stations/:id",
+  stationDetail: "/stations/:id", 
+
 
   //admin
   adminDashboard: "/admin",
@@ -26,12 +27,14 @@ export const paths = {
   chargerManagement: "/admin/manage-chargers",
   businessStatistics: "/admin/business-statistics",
   accidentReports: "/admin/accident-reports",
+  chargingPriceConfiguration: "/admin/charging-price-configuration",
+  chargingPointManagement: "/admin/manage-charging-points",
 
   //staff
   staffDashboard: "/staff",
-  manageSessionCharging: "/manage-session-charging",
-  transactionManagement: "/transaction-management",
-  reportAccidents: "/report-accidents",
+  manageSessionCharging: "/staff/manage-session-charging",
+  manageTransaction: "/staff/manage-transaction",
+  reportAccidents: "/staff/report-accidents",
 };
 
 export default paths;

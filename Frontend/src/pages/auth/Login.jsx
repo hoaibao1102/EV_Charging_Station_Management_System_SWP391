@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogin } from "../../hooks/useAuth";
+
 const Login = () => {
   const [form, setForm] = useState({
     phone: "",
@@ -14,44 +15,65 @@ const Login = () => {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockEndTime, setLockEndTime] = useState(null);
+  const [countdown, setCountdown] = useState("");
 
   const { login, loading } = useLogin();
   const navigate = useNavigate();
 
-  // Khôi phục trạng thái khóa từ localStorage khi component mount
+  // Khôi phục trạng thái khóa và số lần thất bại từ localStorage
   useEffect(() => {
-    const savedLockEndTime = localStorage.getItem('loginLockEndTime');
-    const savedFailedAttempts = localStorage.getItem('loginFailedAttempts');
-    
+    const savedLockEndTime = localStorage.getItem("loginLockEndTime");
+    const savedFailedAttempts = localStorage.getItem("loginFailedAttempts");
+
     if (savedLockEndTime) {
       const lockEnd = parseInt(savedLockEndTime, 10);
       const now = Date.now();
-      
+
       if (lockEnd > now) {
-        // Vẫn còn trong thời gian khóa
         setIsLocked(true);
         setLockEndTime(lockEnd);
-        setFailedAttempts(parseInt(savedFailedAttempts || '3', 10));
+        setFailedAttempts(parseInt(savedFailedAttempts || "3", 10));
+      } else {
+        localStorage.removeItem("loginLockEndTime");
+        localStorage.removeItem("loginFailedAttempts");
+      }
+    } else if (savedFailedAttempts) {
+      setFailedAttempts(parseInt(savedFailedAttempts, 10));
+    }
+  }, []);
+
+  // Effect xử lý đồng hồ đếm ngược
+  useEffect(() => {
+    let intervalId = null;
+
+    if (isLocked && lockEndTime) {
+      const updateTimer = () => {
+        const now = Date.now();
+        const remainingMs = Math.max(0, lockEndTime - now);
         
-        // Tự động mở khóa sau thời gian còn lại
-        const remainingTime = lockEnd - now;
-        const unlockTimer = setTimeout(() => {
+        const minutes = Math.floor(remainingMs / 60000);
+        const seconds = Math.floor((remainingMs % 60000) / 1000);
+        
+        setCountdown(`${minutes}:${seconds.toString().padStart(2, "0")}`);
+
+        if (remainingMs === 0) {
+          clearInterval(intervalId);
           setFailedAttempts(0);
           setIsLocked(false);
           setLockEndTime(null);
-          localStorage.removeItem('loginLockEndTime');
-          localStorage.removeItem('loginFailedAttempts');
-        }, remainingTime);
-        
-        // Cleanup timer khi component unmount
-        return () => clearTimeout(unlockTimer);
-      } else {
-        // Đã hết thời gian khóa
-        localStorage.removeItem('loginLockEndTime');
-        localStorage.removeItem('loginFailedAttempts');
-      }
+          setCountdown("");
+          localStorage.removeItem("loginLockEndTime");
+          localStorage.removeItem("loginFailedAttempts");
+          toast.info("Tài khoản đã được mở khóa. Bạn có thể đăng nhập lại.");
+        }
+      };
+
+      updateTimer(); 
+      intervalId = setInterval(updateTimer, 1000);
     }
-  }, []);
+
+    return () => clearInterval(intervalId);
+  }, [isLocked, lockEndTime]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -67,59 +89,46 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Kiểm tra nếu đang bị khóa
+
     if (isLocked) {
-      const remainingTime = Math.ceil((lockEndTime - Date.now()) / 1000);
-      const minutes = Math.floor(remainingTime / 60);
-      const seconds = remainingTime % 60;
-      toast.error(`Tài khoản bị khóa! Vui lòng thử lại sau ${minutes}:${seconds.toString().padStart(2, '0')}`);
+      toast.error(`Tài khoản bị khóa! Vui lòng thử lại sau ${countdown}`);
       return;
     }
 
     const { success, message } = await login(form.phone, form.password);
 
     if (success) {
-      // Reset failed attempts khi đăng nhập thành công
       setFailedAttempts(0);
       setIsLocked(false);
       setLockEndTime(null);
-      localStorage.removeItem('loginLockEndTime');
-      localStorage.removeItem('loginFailedAttempts');
-  
+      localStorage.removeItem("loginLockEndTime");
+      localStorage.removeItem("loginFailedAttempts");
     } else {
-      // Tăng số lần thất bại
       const newFailedAttempts = failedAttempts + 1;
-      setFailedAttempts(newFailedAttempts);
-      localStorage.setItem('loginFailedAttempts', newFailedAttempts.toString());
+
+      toast.error(
+        `${message || "Đăng nhập thất bại!"} (${newFailedAttempts}/3)`
+      );
+
       
+      setFailedAttempts(newFailedAttempts);
+      localStorage.setItem("loginFailedAttempts", newFailedAttempts.toString());
+
       if (newFailedAttempts >= 3) {
-        // Khóa tài khoản trong 3 phút
         setIsLocked(true);
-        const lockEnd = Date.now() + 3 * 60 * 1000; // 3 phút
-        setLockEndTime(lockEnd);
-        localStorage.setItem('loginLockEndTime', lockEnd.toString());
+        const lockEnd = Date.now() + 3 * 60 * 1000; 
+        setLockEndTime(lockEnd); 
+        localStorage.setItem("loginLockEndTime", lockEnd.toString());
 
-        toast.error("Đăng nhập sai 3 lần! Tài khoản bị khóa trong 3 phút.");
-
-        // Tự động mở khóa sau 3 phút
         setTimeout(() => {
-          setFailedAttempts(0);
-          setIsLocked(false);
-          setLockEndTime(null);
-          localStorage.removeItem('loginLockEndTime');
-          localStorage.removeItem('loginFailedAttempts');
-          toast.info("Tài khoản đã được mở khóa. Bạn có thể đăng nhập lại.");
-        }, 3 * 60 * 1000);
-      } else {
-        toast.error(`${message || "Đăng nhập thất bại!"} (${newFailedAttempts}/3)`);
-      }
+          toast.warn("Tài khoản bị khóa trong 3 phút.");
+        }, 2000);
+      } 
     }
   };
 
   return (
     <div className="auth-page">
-      {/* Desktop Welcome Section (Hidden on Mobile) */}
       <div className="auth-welcome-section">
         <div className="auth-welcome-content">
           <h1 className="auth-welcome-title">
@@ -159,7 +168,6 @@ const Login = () => {
       </div>
 
       <div className="auth-container">
-        {/* Logo Section */}
         <div className="auth-logo">
           <div className="auth-logo-icon auth-logo-car">
             <svg
@@ -167,7 +175,6 @@ const Login = () => {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* Car body */}
               <rect
                 x="20"
                 y="45"
@@ -177,7 +184,6 @@ const Login = () => {
                 fill="white"
                 fillOpacity="0.9"
               />
-              {/* Windows */}
               <rect
                 x="30"
                 y="35"
@@ -196,10 +202,8 @@ const Login = () => {
                 fill="white"
                 fillOpacity="0.7"
               />
-              {/* Wheels */}
               <circle cx="32" cy="72" r="8" fill="white" />
               <circle cx="68" cy="72" r="8" fill="white" />
-              {/* Lightning bolt */}
               <path
                 d="M50 50 L45 60 L52 60 L47 70 L55 58 L50 58 Z"
                 fill="#FFD700"
@@ -213,9 +217,7 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className="auth-form">
-          {/* Phone Input */}
           <div className="auth-input-group">
             <div className="auth-input-wrapper">
               <span className="auth-input-icon">👤</span>
@@ -228,11 +230,9 @@ const Login = () => {
                 required
                 autoComplete="off"
                 value={form.phone}
-              />  
+              />
             </div>
           </div>
-
-          {/* Password Input */}
           <div className="auth-input-group">
             <div className="auth-input-wrapper">
               <span className="auth-input-icon">🔒</span>
@@ -256,8 +256,6 @@ const Login = () => {
               </span>
             </div>
           </div>
-
-          {/* Options Row */}
           <div className="auth-options">
             <label className="auth-checkbox-label">
               <input
@@ -273,29 +271,33 @@ const Login = () => {
             </a>
           </div>
 
-          {/* Submit Button */}
-          <button 
-            type="submit" 
-            className="auth-button" 
+          <button
+            type="submit"
+            className="auth-button"
             disabled={loading || isLocked}
-            style={isLocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            style={isLocked ? { opacity: 0.5, cursor: "not-allowed" } : {}}
           >
-            {loading ? "Đang đăng nhập..." : isLocked ? "Tài khoản bị khóa" : "Đăng nhập"}
+            {loading
+              ? "Đang đăng nhập..."
+              : isLocked
+              ? `Bị khóa (${countdown})`
+              : "Đăng nhập"}
           </button>
 
           {isLocked && (
-            <p style={{ 
-              color: 'red', 
-              fontSize: '14px', 
-              textAlign: 'center', 
-              marginTop: '10px',
-              fontWeight: '600'
-            }}>
-              ⚠️ Tài khoản bị khóa trong 3 phút tới do đăng nhập sai 3 lần
+            <p
+              style={{
+                color: "red",
+                fontSize: "14px",
+                textAlign: "center",
+                marginTop: "10px",
+                fontWeight: "600",
+              }}
+            >
+              ⚠️ Tài khoản bị khóa. Mở lại sau: {countdown}
             </p>
           )}
 
-          {/* Social Login */}
           <div className="auth-social-section">
             <div className="auth-divider">
               <span>hoặc</span>
@@ -304,14 +306,15 @@ const Login = () => {
               <button
                 type="button"
                 className="auth-social-btn google"
-                onClick={() => (window.location.href = "http://localhost:8080/oauth2/authorization/google")}
+                onClick={() =>
+                  (window.location.href =
+                    "http://localhost:8080/oauth2/authorization/google")
+                }
               >
                 G
               </button>
             </div>
           </div>
-
-          {/* Footer Link */}
           <div className="auth-footer">
             <span>Chưa có tài khoản? </span>
             <span

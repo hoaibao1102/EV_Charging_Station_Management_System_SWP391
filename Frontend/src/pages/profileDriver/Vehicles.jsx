@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { getMyVehiclesApi } from "../../api/driverApi.js";
-import VehicleCard from "../../components/VehicleCard.jsx";
+import VehicleCard from "../../components/driver/VehicleCard.jsx";
 import { toast } from "react-toastify";
 import { deleteVehicleApi } from "../../api/driverApi.js";
 import "./Vehicles.css";
