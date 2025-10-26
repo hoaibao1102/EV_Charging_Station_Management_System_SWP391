@@ -1,0 +1,119 @@
+/* AddStaffForm.css */
+
+/* * THAY ĐỔI QUAN TRỌNG NHẤT:
+ * Thêm max-width để form không bị bành trướng ra.
+ * Thêm margin để căn giữa form.
+ */
+.add-staff-form {
+  max-width: 900px; 
+  margin: 1.5rem auto; /* Tự động căn giữa form */
+  
+  background-color: #ffffff;
+  padding: 1rem; /* Tăng đệm cho thoáng hơn */
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Shadow đẹp hơn */
+
+  /* Căn giữa icon */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Style cho ảnh icon */
+.add-staff-form .staff-icon {
+  width: 90px;
+  height: 90px;
+  margin-bottom: 20px; /* Tăng khoảng cách */
+  border: 4px solid #20b2aa;
+  border-radius: 50%;
+  padding: 5px;
+}
+
+/* Style cho nhãn (Tên nhân viên, SĐT, v.v.) */
+.add-staff-form .form-label {
+  color: #20b2aa;
+  font-weight: 600;
+  margin-bottom: 0.5rem; /* Đảm bảo khoảng cách nhất quán */
+  text-align: left; /* Căn trái label */
+  display: block; /* Đảm bảo label chiếm 1 hàng */
+  width: 100%;
+}
+
+/* Style cho các ô input và select */
+.add-staff-form .form-control,
+.add-staff-form .form-select {
+  border-radius: 0.375rem; /* Bo tròn góc chuẩn Bootstrap */
+}
+
+.form-button-group {
+  display: flex;         /* Xếp các nút con trên 1 hàng */
+  gap: 10px;
+}
+
+.me-2{
+  width: 20rem !important;
+}
+
+/* Style khi focus (click vào) */
+.add-staff-form .form-control:focus,
+.add-staff-form .form-select:focus {
+  border-color: #20b2aa;
+  box-shadow: 0 0 0 0.25rem rgba(32, 178, 170, 0.25);
+}
+
+/* * Sửa lỗi hiển thị icon (!) của React-Bootstrap 
+ * (Cái icon (!) màu đỏ trong hình của cậu đang bị lệch)
+ */
+.add-staff-form .form-control.is-invalid,
+.add-staff-form .form-select.is-invalid {
+  /* Căn lại vị trí icon validation */
+  background-position: right calc(0.375em + 0.1875rem) center;
+  padding-right: calc(1.5em + 0.75rem);
+}
+
+/* Căn lại text báo lỗi (Vui lòng nhập...) */
+.add-staff-form .invalid-feedback {
+  text-align: left;
+  width: 100%;
+}
+
+/* Căn lại text phụ (Chúng tôi sẽ không...) */
+.add-staff-form .form-text {
+  text-align: left;
+  width: 100%;
+}
+
+/* Style cho nút Submit */
+.add-staff-form .btn-primary {
+  background-color: #20b2aa;
+  border-color: #20b2aa;
+  font-weight: bold;
+  width: 100%; /* Giữ nguyên full-width */
+  padding: 12px; /* Nút to, rõ ràng hơn */
+  margin-top: 1rem; /* Khoảng cách với field cuối */
+  font-size: 1rem;
+  border-radius: 0.375rem;
+}
+
+.add-staff-form .btn-primary:hover {
+  background-color: #1a8f87; /* Màu đậm hơn khi hover */
+  border-color: #1a8f87;
+}
+
+.add-staff-form .btn-primary:focus,
+.add-staff-form .btn-primary:active {
+  background-color: #1a8f87;
+  border-color: #1a8f87;
+  box-shadow: 0 0 0 0.25rem rgba(32, 178, 170, 0.5);
+}
+
+/* Style cho khu vực báo lỗi API (nếu có) */
+.add-staff-form .alert-danger {
+  width: 100%;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.add-staff-form .mb-3 {
+  margin-bottom: 0.5rem !important; 
+}

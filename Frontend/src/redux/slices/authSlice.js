@@ -5,7 +5,7 @@ import { getAuthData, isAuthenticated } from '../../utils/authUtils.js';
 const initialData = getAuthData();
 
 const initialState = {
-  isLoggedIn: isAuthenticated(), // Kiểm tra trạng thái đăng nhập
+  isLoggedIn: isAuthenticated(), 
   user: null, 
   role: initialData.role || null, // Vai trò (ADMIN, STAFF, DRIVER)
   accessToken: initialData.accessToken || null,

@@ -2,7 +2,7 @@ import { getAllVehicleBrandsApi, getModelsByBrandApi } from '../../api/driverApi
 import { useEffect, useState } from 'react';
 import { addVehicleApi } from '../../api/driverApi.js';
 // import {toast} from 'react-toastify';
-import ModelVehicle from '../../components/ModelVehicle.jsx';
+import ModelVehicle from '../../components/driver/ModelVehicle.jsx';
 import './AddVehicle.css';
 // 🚗 Import các icons
 import { FaCar, FaChevronLeft, FaPlus, FaTachometerAlt, FaWarehouse, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
