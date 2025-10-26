@@ -10,10 +10,10 @@ public interface ConnectorTypeService {
 
     List<ConnectorTypeResponse> getAllConnectorTypes();
 
-    ConnectorTypeResponse getConnectorTypeById(int connectorTypeId);
+    ConnectorTypeResponse getConnectorTypeById(Long connectorTypeId);
 
     ConnectorTypeResponse createConnectorType(ConnectorTypeCreateRequest request);
 
-    ConnectorTypeResponse updateConnectorType(int connectorTypeId, ConnectorTypeUpdateRequest request);
+    ConnectorTypeResponse updateConnectorType(Long connectorTypeId, ConnectorTypeUpdateRequest request);
 
 }

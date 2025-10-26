@@ -20,19 +20,7 @@ import java.util.List;
 @Tag(name = "Staff Incident", description = "APIs for staff to manage incident reports")
 public class IncidentController {
 
-    @Autowired
     private final IncidentService incidentService;
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    @Operation(
-            summary = "Get all incidents",
-            description = "Get list of all incidents (admin/staff tool)"
-    )
-    public ResponseEntity<List<IncidentResponse>> getIncidents() {
-        List<IncidentResponse> incidents = incidentService.findAll();
-        return ResponseEntity.ok(incidents);
-    }
 
     @PreAuthorize("hasRole('STAFF')")
     @PostMapping("/create")
@@ -59,6 +47,17 @@ public class IncidentController {
     ) {
         incidentService.updateIncidentStatus(incidentId, status);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    @Operation(
+            summary = "Get all incidents",
+            description = "Get list of all incidents (admin/staff tool)"
+    )
+    public ResponseEntity<List<IncidentResponse>> getIncidents() {
+        List<IncidentResponse> incidents = incidentService.findAll();
+        return ResponseEntity.ok(incidents);
     }
 
 }

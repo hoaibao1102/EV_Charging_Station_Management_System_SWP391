@@ -9,7 +9,10 @@ import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +23,11 @@ public class SlotConfigServiceImpl implements SlotConfigService {
     private final SlotConfigRepository slotConfigRepository;
     private final ChargingStationRepository chargingStationRepository;
     private final SlotConfigMapper mapper;
+
+    // ✅ Thêm các service đúng nơi để generate
+    private final SlotTemplateService slotTemplateService;
+    // Optional: nếu muốn tạo Availability ngay sau khi tạo Template
+    private final SlotAvailabilityService slotAvailabilityService;
 
     @Override
     public SlotConfigResponse findByConfigId(Long slotConfigId) {
@@ -42,6 +50,7 @@ public class SlotConfigServiceImpl implements SlotConfigService {
     }
 
     @Override
+    @Transactional
     public SlotConfigResponse addSlotConfig(SlotConfigRequest req) {
         ChargingStation station = chargingStationRepository.findByStationId(req.getStationId());
         if (station == null) {
@@ -49,10 +58,16 @@ public class SlotConfigServiceImpl implements SlotConfigService {
         }
         SlotConfig entity = mapper.toEntity(req, station);
         SlotConfig saved = slotConfigRepository.save(entity);
+
+        // ❌ BỎ: slotConfigRepository.generateDailyTemplates(...)
+        // ✅ ĐÚNG:
+        generateDailyTemplates(saved.getConfigId(), LocalDateTime.now());
+
         return mapper.toResponse(saved);
     }
 
     @Override
+    @Transactional
     public SlotConfigResponse updateSlotConfig(Long configId, SlotConfigRequest req) {
         SlotConfig existing = slotConfigRepository.findByConfigId(configId);
         if (existing == null) return null;
@@ -64,6 +79,23 @@ public class SlotConfigServiceImpl implements SlotConfigService {
 
         mapper.updateEntity(existing, req, station);
         SlotConfig updated = slotConfigRepository.save(existing);
+
+        // Tuỳ nhu cầu: có thể regenerate template cho hôm nay nếu activeFrom/activeExpire thay đổi
+        // generateDailyTemplates(updated.getConfigId(), LocalDateTime.now());
+
         return mapper.toResponse(updated);
+    }
+
+    @Override
+    @Transactional
+    public void generateDailyTemplates(Long configId, LocalDateTime now) {
+        // 1) Generate SlotTemplates cho hôm nay (service chuyên trách)
+        slotTemplateService.generateDailyTemplates(configId, now);
+
+        // 2) (Tuỳ chọn) Tạo luôn SlotAvailability cho hôm nay
+        //    Nếu muốn tự động upsert availability dựa trên connector/charging points hiện có:
+        if (slotAvailabilityService != null) {
+            slotAvailabilityService.createForConfigInDate(configId, now.toLocalDate());
+        }
     }
 }

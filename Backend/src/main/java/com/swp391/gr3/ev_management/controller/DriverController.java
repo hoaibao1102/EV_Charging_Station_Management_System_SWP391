@@ -25,21 +25,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DriverController {
 
-    @Autowired
-    private DriverService driverService;
+    private final DriverService driverService;
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
-    // =================== UC-03: PROFILE MANAGEMENT ===================
-    
-    // ✅ Driver xem hồ sơ chính mình (qua token)
-    @GetMapping("/profile")
-    @Operation(summary = "Get own driver profile", description = "Driver retrieves their own profile information")
-    public ResponseEntity<DriverResponse> getOwnProfile(HttpServletRequest request) {
+    @DeleteMapping("/vehicles/{vehicleId}")
+    @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
+    public ResponseEntity<Void> removeVehicle(
+            HttpServletRequest request,
+            @PathVariable Long vehicleId) {
         Long userId = tokenService.extractUserIdFromRequest(request);
-        DriverResponse driver = driverService.getByUserId(userId);
-        return ResponseEntity.ok(driver);
+        driverService.removeVehicle(userId, vehicleId);
+        return ResponseEntity.noContent().build();
     }
 
     // ✅ Driver cập nhật hồ sơ
@@ -52,8 +49,6 @@ public class DriverController {
         DriverResponse updated = driverService.updateDriverProfile(userId, updateRequest);
         return ResponseEntity.ok(updated);
     }
-
-    // =================== UC-04: VEHICLE MANAGEMENT ===================
     
     /**
      * UC-04: Driver thêm xe vào hồ sơ
@@ -68,6 +63,15 @@ public class DriverController {
         Long userId = tokenService.extractUserIdFromRequest(request);
         VehicleResponse vehicle = driverService.addVehicle(userId, addRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(vehicle);
+    }
+
+    // ✅ Driver xem hồ sơ chính mình (qua token)
+    @GetMapping("/profile")
+    @Operation(summary = "Get own driver profile", description = "Driver retrieves their own profile information")
+    public ResponseEntity<DriverResponse> getOwnProfile(HttpServletRequest request) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        DriverResponse driver = driverService.getByUserId(userId);
+        return ResponseEntity.ok(driver);
     }
     
     /**
@@ -84,14 +88,6 @@ public class DriverController {
     /**
      * UC-04: Xóa xe khỏi hồ sơ
      */
-    @DeleteMapping("/vehicles/{vehicleId}")
-    @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
-    public ResponseEntity<Void> removeVehicle(
-            HttpServletRequest request,
-            @PathVariable Long vehicleId) {
-        Long userId = tokenService.extractUserIdFromRequest(request);
-        driverService.removeVehicle(userId, vehicleId);
-        return ResponseEntity.noContent().build();
-    }
+
 
 }

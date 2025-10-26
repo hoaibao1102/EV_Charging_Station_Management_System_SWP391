@@ -24,20 +24,6 @@ public class TariffController {
 
     private final TariffService tariffService;
 
-    @GetMapping
-    @Operation(summary = "Get all tariffs", description = "Public endpoint to retrieve all tariffs")
-    public ResponseEntity<List<TariffResponse>> getAllTariffs() {
-        List<TariffResponse> list = tariffService.getAllTariffs();
-        return ResponseEntity.ok(list);
-    }
-
-    @GetMapping("/{tariffId}")
-    @Operation(summary = "Get tariff by ID", description = "Public endpoint to retrieve a specific tariff")
-    public ResponseEntity<TariffResponse> getTariffById(@PathVariable long tariffId) {
-        TariffResponse response = tariffService.getTariffById(tariffId);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
@@ -59,4 +45,17 @@ public class TariffController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping
+    @Operation(summary = "Get all tariffs", description = "Public endpoint to retrieve all tariffs")
+    public ResponseEntity<List<TariffResponse>> getAllTariffs() {
+        List<TariffResponse> list = tariffService.getAllTariffs();
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/{tariffId}")
+    @Operation(summary = "Get tariff by ID", description = "Public endpoint to retrieve a specific tariff")
+    public ResponseEntity<TariffResponse> getTariffById(@PathVariable long tariffId) {
+        TariffResponse response = tariffService.getTariffById(tariffId);
+        return ResponseEntity.ok(response);
+    }
 }

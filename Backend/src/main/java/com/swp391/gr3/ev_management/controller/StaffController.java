@@ -20,11 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class StaffController {
 
-    @Autowired
-    private StaffStationService staffStationService;
+    private final StaffStationService staffStationService;
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
     @PreAuthorize("hasRole('STAFF')")
     @GetMapping("/own-profile-staff")

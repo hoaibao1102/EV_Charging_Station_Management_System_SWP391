@@ -15,7 +15,7 @@ public class VehicleModelResponse {
     private String model;
     private int year;
     private String imageUrl;
-    private Integer connectorTypeId;
+    private Long connectorTypeId;
     private String connectorTypeCode;
     private String connectorTypeDisplayName;
     private double connectorDefaultMaxPowerKW;

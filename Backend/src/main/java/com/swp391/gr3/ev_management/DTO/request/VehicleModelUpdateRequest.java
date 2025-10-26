@@ -16,6 +16,6 @@ public class VehicleModelUpdateRequest {
     @Min(value = 1886, message = "Year must be realistic")
     private Integer year; // optional
     private String imageUrl; // optional
-    private Integer connectorTypeId; // optional
+    private Long connectorTypeId; // optional
 }
 

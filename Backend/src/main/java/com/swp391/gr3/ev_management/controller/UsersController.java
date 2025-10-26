@@ -66,12 +66,14 @@ public class UsersController {
         if (!otpService.verifyOtp(req.getEmail(), otp)) {
             return ResponseEntity
                     .badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of("message","Invalid or expired OTP"));
         }
 
         User created = userService.register(req);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("message","Đăng ký thành công","data",created));
     }
 
@@ -136,14 +138,6 @@ public class UsersController {
         // Trả message chung chung để không lộ thông tin người dùng
         return ResponseEntity.ok().body("Nếu email tồn tại, OTP đã được gửi.");
     }
-
-//    @PostMapping("/verify-otp")
-//    @Operation(summary = "Verify OTP", description = "Xác thực mã OTP đã gửi qua email")
-//    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest req) {
-//        boolean ok = authService.verifyResetOtp(req.getEmail(), req.getOtp());
-//        return ok ? ResponseEntity.ok("OTP hợp lệ.")
-//                : ResponseEntity.badRequest().body("OTP không hợp lệ hoặc đã hết hạn.");
-//    }
 
     @PostMapping("/reset-password")
     @Operation(summary = "Reset password", description = "Đặt lại mật khẩu bằng OTP còn hạn")
