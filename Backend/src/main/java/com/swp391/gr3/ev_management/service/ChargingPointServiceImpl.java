@@ -54,27 +54,18 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     }
 
     @Override
-    public ChargingPointResponse getPointStatus(Long pointId, Long staffId) {
+    public ChargingPointResponse getPointStatus(Long pointId) {
         ChargingPoint point = pointRepository.findById(pointId)
                 .orElseThrow(() -> new RuntimeException("Point not found"));
-        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
-                .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
-        if (!staff.getStation().getStationId().equals(point.getStation().getStationId())) {
-            throw new RuntimeException("Staff has no permission for this point");
-        }
-
         return chargingPointMapper.toResponse(point);
     }
 
     @Override
-    public List<ChargingPointResponse> getPointsByStation(Long stationId, Long staffId) {
-        StationStaff staff = staffRepository.findActiveByStationStaffId(staffId)
-                .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
-        if (!staff.getStation().getStationId().equals(stationId)) {
-            throw new RuntimeException("Staff has no permission for this station");
-        }
-
-        return chargingPointMapper.toResponses(pointRepository.findByStation_StationId(stationId));
+    public List<ChargingPointResponse> getAllPoints() {
+        return pointRepository.findAll()
+                .stream()
+                .map(chargingPointMapper::toResponse)
+                .toList();
     }
 
     @Override

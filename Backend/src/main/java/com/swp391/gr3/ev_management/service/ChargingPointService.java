@@ -9,8 +9,8 @@ import java.util.List;
 
 public interface ChargingPointService {
     ChargingPointResponse stopChargingPoint(StopChargingPointRequest request);
-    ChargingPointResponse getPointStatus(Long pointId, Long staffId);
-    List<ChargingPointResponse> getPointsByStation(Long stationId, Long staffId);
+    ChargingPointResponse getPointStatus(Long pointId);
+    List<ChargingPointResponse> getAllPoints();
 
     ChargingPointResponse createChargingPoint(CreateChargingPointRequest request);
 }
