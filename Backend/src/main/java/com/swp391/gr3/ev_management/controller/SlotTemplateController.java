@@ -25,6 +25,17 @@ public class SlotTemplateController {
     private final SlotTemplateService slotTemplateService;
 
     @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/generate")
+    @Operation(summary = "Generate slot templates for a given configuration and date range")
+    public ResponseEntity<Void> generateTemplates(
+            @RequestParam Long configId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime endDate) {
+        slotTemplateService.generateDailyTemplates(configId, startDate, endDate);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     @Operation(summary = "Get all slot configurations")
     public ResponseEntity<List<SlotTemplateResponse>> getAll() {

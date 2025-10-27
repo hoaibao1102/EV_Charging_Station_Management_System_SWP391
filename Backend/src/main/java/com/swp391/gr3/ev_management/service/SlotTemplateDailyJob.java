@@ -32,7 +32,7 @@ public class SlotTemplateDailyJob {
             // Ở code hiện tại bạn dùng activeFrom/activeExpire như GIỜ TRONG NGÀY, nên có thể bỏ điều kiện này.
 
             // ✅ Xóa + tạo mới cho hôm nay
-            slotTemplateService.generateDailyTemplates(cfg.getConfigId(), now);
+            slotTemplateService.generateDailyTemplates(cfg.getConfigId(), now, now.plusDays(1));
         }
     }
 }
