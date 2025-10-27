@@ -56,6 +56,4 @@ public interface InvoiceRepository extends JpaRepository<Invoice,Long> {
             @Param("endDate") LocalDateTime endDate
     );
 
-    // Đếm invoice chưa thanh toán
-    Long countBySession_Booking_Station_StationIdAndStatus(Long stationId, String status);
 }
