@@ -16,4 +16,5 @@ public interface SlotConfigService {
     SlotConfigResponse addSlotConfig(SlotConfigRequest slotConfigRequest);
     SlotConfigResponse updateSlotConfig(Long configId, SlotConfigRequest slotConfigRequest);
     void generateDailyTemplates(Long configId, LocalDateTime now);
+    SlotConfigResponse deactivateConfig(Long configId);
 }

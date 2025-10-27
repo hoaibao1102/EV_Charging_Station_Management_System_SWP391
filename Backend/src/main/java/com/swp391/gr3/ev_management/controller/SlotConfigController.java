@@ -31,6 +31,27 @@ public class SlotConfigController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{configId}/deactivate")
+    public ResponseEntity<SlotConfigResponse> deactivateSlotConfig(@PathVariable Long configId) {
+        try {
+            SlotConfigResponse response = slotConfigService.deactivateConfig(configId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping()
+    @Operation(summary = "Add a new slot configuration")
+    public ResponseEntity<SlotConfigResponse> add(@RequestBody SlotConfigRequest req) {
+        SlotConfigResponse created = slotConfigService.addSlotConfig(req);
+        return ResponseEntity.ok(created);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     @Operation(summary = "Get all slot configurations")
     public ResponseEntity<List<SlotConfigResponse>> getAll() {

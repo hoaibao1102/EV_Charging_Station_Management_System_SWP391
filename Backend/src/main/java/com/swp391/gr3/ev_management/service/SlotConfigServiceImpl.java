@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.DTO.request.SlotConfigRequest;
 import com.swp391.gr3.ev_management.DTO.response.SlotConfigResponse;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.SlotConfig;
+import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
 import com.swp391.gr3.ev_management.mapper.SlotConfigMapper;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
@@ -11,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,12 +56,19 @@ public class SlotConfigServiceImpl implements SlotConfigService {
         if (station == null) {
             throw new IllegalArgumentException("Không tìm thấy trạm sạc có ID = " + req.getStationId());
         }
+
+        // 🚀 Set activeFrom = thời điểm tạo, activeExpire = null (sẽ set khi chuyển INACTIVE)
+        LocalDateTime now = LocalDateTime.now();
+        req.setActiveFrom(now);
+        req.setActiveExpire(null);
+        req.setIsActive(SlotConfigStatus.ACTIVE); // Mặc định kích hoạt khi tạo mới
+
+        // Map sang entity & lưu
         SlotConfig entity = mapper.toEntity(req, station);
         SlotConfig saved = slotConfigRepository.save(entity);
 
-        // ❌ BỎ: slotConfigRepository.generateDailyTemplates(...)
-        // ✅ ĐÚNG:
-        generateDailyTemplates(saved.getConfigId(), LocalDateTime.now());
+        // ✅ Tạo slot templates cho ngày hôm nay
+        generateDailyTemplates(saved.getConfigId(), now);
 
         return mapper.toResponse(saved);
     }
@@ -90,12 +97,27 @@ public class SlotConfigServiceImpl implements SlotConfigService {
     @Transactional
     public void generateDailyTemplates(Long configId, LocalDateTime now) {
         // 1) Generate SlotTemplates cho hôm nay (service chuyên trách)
-        slotTemplateService.generateDailyTemplates(configId, now);
+        slotTemplateService.generateDailyTemplates(configId, now, now.plusDays(1));
 
         // 2) (Tuỳ chọn) Tạo luôn SlotAvailability cho hôm nay
-        //    Nếu muốn tự động upsert availability dựa trên connector/charging points hiện có:
         if (slotAvailabilityService != null) {
             slotAvailabilityService.createForConfigInDate(configId, now.toLocalDate());
         }
+    }
+
+    @Transactional
+    public SlotConfigResponse deactivateConfig(Long configId) {
+        SlotConfig config = slotConfigRepository.findById(configId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy SlotConfig: " + configId));
+
+        if (config.getIsActive() == SlotConfigStatus.INACTIVE) {
+            throw new IllegalArgumentException("SlotConfig này đã INACTIVE rồi.");
+        }
+
+        config.setIsActive(SlotConfigStatus.INACTIVE);
+        config.setActiveExpire(LocalDateTime.now());
+
+        SlotConfig saved = slotConfigRepository.save(config);
+        return mapper.toResponse(saved);
     }
 }
