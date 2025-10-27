@@ -10,6 +10,7 @@ import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -50,24 +51,30 @@ public class SlotConfigServiceImpl implements SlotConfigService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public SlotConfigResponse addSlotConfig(SlotConfigRequest req) {
         ChargingStation station = chargingStationRepository.findByStationId(req.getStationId());
         if (station == null) {
             throw new IllegalArgumentException("Không tìm thấy trạm sạc có ID = " + req.getStationId());
         }
 
-        // 🚀 Set activeFrom = thời điểm tạo, activeExpire = null (sẽ set khi chuyển INACTIVE)
         LocalDateTime now = LocalDateTime.now();
+
+        // 1) Nếu đang có ACTIVE → deactivate hết (set activeExpire = now)
+        boolean existedActive = slotConfigRepository.existsActiveConfig(req.getStationId(), SlotConfigStatus.ACTIVE);
+        if (existedActive) {
+            slotConfigRepository.deactivateActiveByStation(req.getStationId(), now);
+        }
+
+        // 2) Tạo SlotConfig mới (ACTIVE)
         req.setActiveFrom(now);
         req.setActiveExpire(null);
-        req.setIsActive(SlotConfigStatus.ACTIVE); // Mặc định kích hoạt khi tạo mới
+        req.setIsActive(SlotConfigStatus.ACTIVE);
 
-        // Map sang entity & lưu
         SlotConfig entity = mapper.toEntity(req, station);
         SlotConfig saved = slotConfigRepository.save(entity);
 
-        // ✅ Tạo slot templates cho ngày hôm nay
+        // 3) Sinh slot templates cho hôm nay
         generateDailyTemplates(saved.getConfigId(), now);
 
         return mapper.toResponse(saved);
