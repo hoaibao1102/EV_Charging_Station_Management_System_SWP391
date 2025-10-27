@@ -48,22 +48,17 @@ public class ChargingPointController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get all charging points", description = "Get list of all charging points at a station")
-    public ResponseEntity<List<ChargingPointResponse>> getPointsByStation(
-            @Parameter(description = "Station ID") @RequestParam Long stationId,
-            @Parameter(description = "Staff ID") @RequestParam Long staffId
-    ) {
-        List<ChargingPointResponse> points = pointService.getPointsByStation(stationId, staffId);
-        return ResponseEntity.ok(points);
+    public ResponseEntity<List<ChargingPointResponse>> getAllPoints(){
+        return ResponseEntity.ok(pointService.getAllPoints());
     }
 
     @GetMapping("/{pointId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get charging point status", description = "Get detailed status of a charging point")
     public ResponseEntity<ChargingPointResponse> getPointStatus(
-            @Parameter(description = "Charging Point ID") @PathVariable Long pointId,
-            @Parameter(description = "Staff ID") @RequestParam Long staffId
+            @Parameter(description = "Charging Point ID") @PathVariable Long pointId
     ) {
-        ChargingPointResponse response = pointService.getPointStatus(pointId, staffId);
+        ChargingPointResponse response = pointService.getPointStatus(pointId);
         return ResponseEntity.ok(response);
     }
 
