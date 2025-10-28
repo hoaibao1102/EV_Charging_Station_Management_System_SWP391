@@ -27,37 +27,6 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     """)
     Optional<StationStaff> findActiveByUserId(@Param("userId") Long userId);
 
-    // Tìm tất cả staff của trạm
-    List<StationStaff> findByStation_StationId(Long stationId);
-
-    List<StationStaff> findByStation_StationIdAndStaff_Status(Long stationId, StaffStatus status);
-
-    // Kiểm tra staff có active tại trạm không (so sánh enum)
-    @Query("""
-        select case when count(ss) > 0 then true else false end
-        from StationStaff ss
-        where ss.staff.user.userId = :userId
-          and ss.station.stationId = :stationId
-          and ss.staff.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
-    """)
-    boolean isStaffActiveAtStation(@Param("userId") Long userId,
-                                   @Param("stationId") Long stationId);
-
-    // Lịch sử làm việc của staff theo userId
-    @Query("""
-        select ss from StationStaff ss
-        where ss.staff.user.userId = :userId
-        order by ss.assignedAt desc
-    """)
-    List<StationStaff> findWorkHistoryByUserId(@Param("userId") Long userId);
-
-    // ❌ Sai: findByUser_UserId... — StationStaff không có field user
-    // ✅ Đúng: đi qua staff.user
-    Optional<StationStaff> findByStaff_User_UserIdAndStation_StationId(Long userId, Long stationId);
-
-    // Đếm số staff theo status (nằm ở Staffs)
-    Long countByStation_StationIdAndStaff_Status(Long stationId, StaffStatus status);
-
     // Tìm assignment theo id (active)
     @Query("""
         select ss from StationStaff ss
@@ -93,4 +62,11 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     Optional<StationStaff> findById(Long id);
 
     boolean existsByStaff_StaffIdAndUnassignedAtIsNull(Long staffId);
+
+    // Tìm assignment đang active (unassignedAt IS NULL) cho 1 staff
+    @Query("""
+           SELECT ss FROM StationStaff ss
+           WHERE ss.staff.staffId = :staffId AND ss.unassignedAt IS NULL
+           """)
+    Optional<StationStaff> findActiveByStaffId(Long staffId);
 }

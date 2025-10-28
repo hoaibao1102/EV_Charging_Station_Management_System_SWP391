@@ -19,6 +19,9 @@ public class TariffUpdateRequest {
     @Positive(message = "Giá tiền phải lớn hơn 0")
     private double pricePerKWh;
 
+    @Positive(message = "Giá tiền phải lớn hơn 0")
+    private double pricePerMin;
+
     @Size(max = 10, message = "Currency không được quá 10 ký tự")
     private String currency;
 
