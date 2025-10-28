@@ -52,14 +52,13 @@ public class ChargingPointController {
         return ResponseEntity.ok(pointService.getAllPoints());
     }
 
-    @GetMapping("/{pointId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
-    @Operation(summary = "Get charging point status", description = "Get detailed status of a charging point")
-    public ResponseEntity<ChargingPointResponse> getPointStatus(
-            @Parameter(description = "Charging Point ID") @PathVariable Long pointId
+    @GetMapping("station/{stationId}")
+    @Operation(summary = "Get charging points by station", description = "Get all charging points for a specific station")
+    public ResponseEntity<List<ChargingPointResponse>> getPointsByStation(
+            @Parameter(description = "Charging Station ID") @PathVariable Long stationId
     ) {
-        ChargingPointResponse response = pointService.getPointStatus(pointId);
-        return ResponseEntity.ok(response);
+        List<ChargingPointResponse> responses = pointService.getPointsByStationId(stationId);
+        return ResponseEntity.ok(responses);
     }
 
 }

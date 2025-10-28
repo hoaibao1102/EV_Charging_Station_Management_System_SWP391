@@ -8,11 +8,13 @@ import com.swp391.gr3.ev_management.service.SlotAvailabilityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -42,10 +44,18 @@ public class SlotAvailabilityController {
     }
 
     @GetMapping("/{pointId}")
-    @Operation(summary = "Get slot availability by pointId", description = "Retrieve slot availability details by its pointId")
-    public ResponseEntity<SlotAvailabilityResponse> getById(@PathVariable Long pointId) {
-        SlotAvailabilityResponse response = slotAvailabilityService.findByPointId(pointId);
-        if (response == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(response);
+    @Operation(
+            summary = "Get slot availability by pointId",
+            description = "Retrieve all slot availability records for a specific charging point"
+    )
+    public ResponseEntity<List<SlotAvailabilityResponse>> getById(@PathVariable Long pointId) {
+        List<SlotAvailabilityResponse> responses = slotAvailabilityService.findByPointId(pointId);
+
+        if (responses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.emptyList());
+        }
+
+        return ResponseEntity.ok(responses);
     }
 }
