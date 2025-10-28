@@ -20,7 +20,6 @@ public class SlotAvailabilitySchedulerService {
     private final SlotTemplateRepository slotTemplateRepository;
     private final SlotAvailabilityRepository slotAvailabilityRepository;
     private final ChargingPointRepository chargingPointRepository;
-    private final ConnectorTypeRepository connectorTypeRepository; // vẫn giữ nếu cần lọc theo type
 
     /**
      * Reset toàn bộ SlotAvailability của 1 config trong NGÀY (xóa rồi tạo lại theo templates & points hiện có).

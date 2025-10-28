@@ -36,21 +36,10 @@ public class UserServiceImpl implements UserService{
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
-    private final StationStaffRepository staffRepo;
-    private final ChargingStationRepository stationRepo;
     private final ApplicationEventPublisher publisher;
     private final StaffsRepository  staffsRepo;
     private final StationStaffRepository stationStaffRepository;
     private final ChargingStationRepository chargingStationRepository;
-
-    @Override
-    public User findUsersByPhone(String phoneNumber) {
-        return userRepository.findUsersByPhoneNumber(phoneNumber);
-    }
-
-    public User findUsersById(Long userId) {
-        return userRepository.findUserByUserId(userId);
-    }
 
     @Override
     public User getUser(String phoneNumber, String password) {

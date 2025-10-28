@@ -20,10 +20,6 @@ public interface DriverService {
     List<DriverResponse> getAllDrivers();
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
-    // Filter
-    List<DriverResponse> getDriversByStatus(DriverStatus status);
-    List<DriverResponse> getDriversByName(String name);
-    List<DriverResponse> getDriversByPhoneNumber(String phoneNumber);
     
     // UC-04: Vehicle Management
     VehicleResponse addVehicle(Long userId, @Valid AddVehicleRequest request);

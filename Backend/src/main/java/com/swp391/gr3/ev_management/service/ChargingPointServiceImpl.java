@@ -2,16 +2,13 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.CreateChargingPointRequest;
 import com.swp391.gr3.ev_management.DTO.request.StopChargingPointRequest;
-import com.swp391.gr3.ev_management.DTO.response.BookingResponse;
 import com.swp391.gr3.ev_management.DTO.response.ChargingPointResponse;
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
 import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
 import com.swp391.gr3.ev_management.mapper.ChargingPointMapper;
-import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.repository.ChargingPointRepository;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
-import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +23,6 @@ import java.util.List;
 public class ChargingPointServiceImpl implements ChargingPointService {
 
         private final ChargingPointRepository pointRepository;
-        private final StationStaffRepository staffRepository;
         private final ChargingPointMapper chargingPointMapper;
         private final ChargingStationRepository chargingStationRepository;
         private final ConnectorTypeRepository connectorTypeRepository;
@@ -47,13 +43,6 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         pointRepository.save(point);
 
                 return chargingPointMapper.toResponse(point);
-    }
-
-    @Override
-    public ChargingPointResponse getPointStatus(Long pointId) {
-        ChargingPoint point = pointRepository.findById(pointId)
-                .orElseThrow(() -> new RuntimeException("Point not found"));
-        return chargingPointMapper.toResponse(point);
     }
 
     @Override

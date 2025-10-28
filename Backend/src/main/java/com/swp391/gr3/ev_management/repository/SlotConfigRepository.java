@@ -17,9 +17,6 @@ public interface SlotConfigRepository extends JpaRepository<SlotConfig, Long> {
     SlotConfig findByStation_StationId(Long stationId);
     List<SlotConfig> findByIsActive(SlotConfigStatus isActive);
 
-
-    List<SlotConfig> findAllByStation_StationIdAndIsActive(Long stationId, SlotConfigStatus slotConfigStatus);
-
     // Chỉ kiểm tra tồn tại ACTIVE
     @Query("SELECT COUNT(c) > 0 FROM SlotConfig c WHERE c.station.stationId = :stationId AND c.isActive = :status")
     boolean existsActiveConfig(@Param("stationId") Long stationId, @Param("status") SlotConfigStatus status);

@@ -44,7 +44,4 @@ public class Driver {
 
     @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
     private List<Invoice> invoices = new ArrayList<>();
-
-    @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL)
-    private List<PaymentMethod> paymentMethods = new ArrayList<>();
 }

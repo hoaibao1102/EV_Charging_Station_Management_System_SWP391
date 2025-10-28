@@ -1,4 +1,3 @@
-// File: Backend/src/main/java/com/swp391/gr3/ev_management/events/NotificationEmailListener.java
 package com.swp391.gr3.ev_management.events;
 
 import com.swp391.gr3.ev_management.enums.NotificationTypes;

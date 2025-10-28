@@ -2,7 +2,6 @@ package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.entity.StationStaff;
-import com.swp391.gr3.ev_management.enums.StaffStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
