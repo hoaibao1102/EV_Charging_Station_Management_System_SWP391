@@ -11,6 +11,7 @@ public interface ChargingPointService {
     ChargingPointResponse stopChargingPoint(StopChargingPointRequest request);
     ChargingPointResponse getPointStatus(Long pointId);
     List<ChargingPointResponse> getAllPoints();
+    List<ChargingPointResponse> getPointsByStationId(Long stationId);
 
     ChargingPointResponse createChargingPoint(CreateChargingPointRequest request);
 }

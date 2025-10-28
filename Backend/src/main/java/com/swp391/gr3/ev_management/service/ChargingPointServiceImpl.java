@@ -14,6 +14,7 @@ import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChargingPointServiceImpl implements ChargingPointService {
 
         private final ChargingPointRepository pointRepository;
@@ -66,6 +68,22 @@ public class ChargingPointServiceImpl implements ChargingPointService {
                 .stream()
                 .map(chargingPointMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    public List<ChargingPointResponse> getPointsByStationId(Long stationId) {
+        log.info("Fetching charging points for stationId={}", stationId);
+
+        // 1) Lấy danh sách các charging point theo stationId
+        List<ChargingPoint> points = pointRepository.findByStation_StationId(stationId);
+
+        if (points.isEmpty()) {
+            log.warn("No charging points found for stationId={}", stationId);
+            return List.of();
+        }
+
+        // 2) Map sang DTO bằng mapper sẵn có
+        return chargingPointMapper.toResponses(points);
     }
 
     @Override

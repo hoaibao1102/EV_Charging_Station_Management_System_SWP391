@@ -22,4 +22,6 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     List<ChargingSession> findActiveSessionsByStation(@Param("stationId") Long stationId);
 
     Optional<ChargingSession> findByBooking_BookingId(Long bookingId);
+
+
 }

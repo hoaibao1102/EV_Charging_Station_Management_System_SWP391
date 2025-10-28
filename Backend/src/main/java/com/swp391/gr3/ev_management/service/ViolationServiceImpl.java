@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
 import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
 import com.swp391.gr3.ev_management.entity.*;
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.ViolationStatus;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +33,7 @@ public class ViolationServiceImpl implements ViolationService {
     private final NotificationsRepository notificationsRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final BookingsRepository bookingsRepository;
+    private final ChargingSessionRepository chargingSessionRepository;
 
     // NEW: để tính tiền phạt theo phút dựa vào Tariff
     private final TariffRepository tariffRepository;
@@ -51,29 +54,52 @@ public class ViolationServiceImpl implements ViolationService {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
 
-        // 2) Booking (JOIN FETCH đủ chain connector + vehicle.model.connectorType để fallback)
+        // 2) Booking (JOIN đủ chain connectorType qua repo findByIdWithConnectorType)
         var booking = bookingsRepository.findByIdWithConnectorType(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking not found with id " + bookingId));
 
-        // 3) Tính quá hạn: FLOOR theo phút (+ optional GRACE)
-        final int GRACE_SECONDS = 0; // đổi 60 nếu muốn miễn phạt 60s đầu
-        LocalDateTime slotEnd = booking.getScheduledEndTime();
-        LocalDateTime now = LocalDateTime.now();
+        // 3) Rule NO-SHOW:
+        //    - Phạt toàn bộ thời lượng slot nếu không có charging session hợp lệ
+        //    - Chỉ xử lý khi đã qua slotEnd
+        final LocalDateTime slotStart = booking.getScheduledStartTime();
+        final LocalDateTime slotEnd   = booking.getScheduledEndTime();
+        final LocalDateTime now       = LocalDateTime.now();
 
-        long overdueSec = Math.max(0, java.time.Duration.between(slotEnd, now).getSeconds());
-        if (overdueSec <= GRACE_SECONDS) {
-            log.debug("[createViolation] Skip within grace/not overdue (bookingId={}, slotEnd={}, now={}, overdueSec={}, grace={})",
-                    bookingId, slotEnd, now, overdueSec, GRACE_SECONDS);
-            return null;
-        }
-        long overdueMinutes = (overdueSec - GRACE_SECONDS) / 60; // FLOOR
-        if (overdueMinutes <= 0) {
-            log.debug("[createViolation] Skip: not enough whole minutes (bookingId={}, overdueSec={}, grace={})",
-                    bookingId, overdueSec, GRACE_SECONDS);
+        // Chưa tới giờ bắt đầu -> bỏ qua
+        if (!now.isAfter(slotStart)) {
+            log.debug("[createViolation][NO_SHOW] Skip: before slot start (bookingId={}, slotStart={}, now={})",
+                    bookingId, slotStart, now);
             return null;
         }
 
-        // 4) ConnectorTypeId: ưu tiên qua BookingSlot -> Slot -> ChargingPoint -> ConnectorType
+        // Có session hợp lệ -> không phải no-show (tùy rule của bạn nếu muốn đổi)
+        boolean hasValidSession = chargingSessionRepository.findByBooking_BookingId(bookingId)
+                .filter(cs -> cs.getStatus() == ChargingSessionStatus.COMPLETED
+                        || cs.getStatus() == ChargingSessionStatus.PENDING
+                        || cs.getStatus() == ChargingSessionStatus.IN_PROGRESS)
+                .isPresent();
+        if (hasValidSession) {
+            log.debug("[createViolation][NO_SHOW] Skip: has valid charging session (bookingId={})", bookingId);
+            return null;
+        }
+
+        // Chưa kết thúc slot -> đợi tới khi qua slotEnd mới kết luận no-show
+        if (!now.isAfter(slotEnd)) {
+            log.debug("[createViolation][NO_SHOW] Skip: slot not finished yet (bookingId={}, slotEnd={}, now={})",
+                    bookingId, slotEnd, now);
+            return null;
+        }
+
+        // Tính toàn bộ thời lượng giữ chỗ (ceil theo phút, tối thiểu 1)
+        long reservedSeconds = Math.max(0, java.time.Duration.between(slotStart, slotEnd).getSeconds());
+        if (reservedSeconds <= 0) {
+            log.warn("[createViolation][NO_SHOW] Skip: invalid slot duration (bookingId={}, slotStart={}, slotEnd={})",
+                    bookingId, slotStart, slotEnd);
+            return null;
+        }
+        long penaltyMinutes = Math.max(1, (reservedSeconds + 59) / 60); // CEIL
+
+        // 4) connectorTypeId: ưu tiên Slot -> ChargingPoint -> ConnectorType; fallback vehicle.model.connectorType
         Long connectorTypeId = null;
         try {
             connectorTypeId = booking.getBookingSlots().stream()
@@ -86,44 +112,46 @@ public class ViolationServiceImpl implements ViolationService {
                             .getConnectorType()
                             .getConnectorTypeId())
                     .orElse(null);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // fallback bên dưới
+        }
 
-        // Fallback: vehicle.model.connectorType
         if (connectorTypeId == null) {
             try {
                 connectorTypeId = booking.getVehicle()
                         .getModel()
                         .getConnectorType()
                         .getConnectorTypeId();
-                log.warn("[createViolation] Fallback connectorTypeId via vehicle.model for bookingId={}: {}",
+                log.warn("[createViolation][NO_SHOW] Fallback connectorTypeId via vehicle.model for bookingId={}: {}",
                         bookingId, connectorTypeId);
             } catch (Exception ex) {
                 throw new NotFoundException("Không xác định được ConnectorType cho bookingId " + bookingId);
             }
         }
 
-        // 5) Tariff active & tiền phạt
+        // 5) Tariff & tiền phạt theo toàn bộ thời lượng slot
         Tariff activeTariff = resolveActiveTariff(connectorTypeId);
         double pricePerMin = activeTariff.getPricePerMin();
-        double penaltyAmount = pricePerMin * overdueMinutes;
+        double penaltyAmount = pricePerMin * penaltyMinutes;
 
-        log.info("[createViolation] Calc(FLOOR): bookingId={}, slotEnd={}, now={}, overdueSec={}, grace={}, overdueMin={}, connectorTypeId={}, pricePerMin={}, penalty={}",
-                bookingId, slotEnd, now, overdueSec, GRACE_SECONDS, overdueMinutes, connectorTypeId, pricePerMin, penaltyAmount);
+        log.info("[createViolation][NO_SHOW] bookingId={}, slotStart={}, slotEnd={}, minutes={}, connectorTypeId={}, pricePerMin={}, penalty={}",
+                bookingId, slotStart, slotEnd, penaltyMinutes, connectorTypeId, pricePerMin, penaltyAmount);
 
-        // 6) Lưu violation (flush ngay) — kèm liên kết booking nếu schema có cột BookingID
-        DriverViolation.DriverViolationBuilder builder = DriverViolation.builder()
-                .driver(driver)
-                .status(ViolationStatus.ACTIVE)
-                .description(request.getDescription())
-                .occurredAt(now)
-                .penaltyAmount(penaltyAmount);
-        try {
-        } catch (Throwable ignore) {}
+        // 6) Lưu violation (flush ngay) — occurredAt đặt tại thời điểm kết thúc slot để phản ánh no-show
+        DriverViolation savedViolation = violationRepository.saveAndFlush(
+                DriverViolation.builder()
+                        .driver(driver)
+                        .status(ViolationStatus.ACTIVE)
+                        .description(
+                                Optional.ofNullable(request.getDescription())
+                                        .orElse("No-show: reserved slot not used"))
+                        .occurredAt(slotEnd)
+                        .penaltyAmount(penaltyAmount)
+                        .build()
+        );
+        log.info("[createViolation][NO_SHOW] Saved violationId={} for bookingId={}", savedViolation.getViolationId(), bookingId);
 
-        DriverViolation savedViolation = violationRepository.saveAndFlush(builder.build());
-        log.info("[createViolation] Saved violationId={} for bookingId={}", savedViolation.getViolationId(), bookingId);
-
-        // 7) Auto-ban
+        // 7) Auto-ban nếu cần
         boolean wasAutoBanned = autoCheckAndBanDriver(driver);
         return buildViolationResponse(savedViolation, wasAutoBanned);
     }
