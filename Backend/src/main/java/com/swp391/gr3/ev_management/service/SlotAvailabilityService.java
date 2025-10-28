@@ -19,7 +19,7 @@ public interface SlotAvailabilityService {
     /** Cập nhật trạng thái 1 slot availability */
     SlotAvailabilityResponse updateStatus(Long slotAvailabilityId, SlotStatus status);
 
-    SlotAvailabilityResponse findByPointId(Long pointId);
+    List<SlotAvailabilityResponse>  findByPointId(Long pointId);
 
     List<SlotAvailabilityResponse> findAll();
 }
