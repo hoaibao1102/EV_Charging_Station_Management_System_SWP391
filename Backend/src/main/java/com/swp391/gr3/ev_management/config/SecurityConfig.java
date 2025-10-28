@@ -1,11 +1,13 @@
 package com.swp391.gr3.ev_management.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +26,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -113,7 +116,8 @@ public class SecurityConfig {
                                                    AuthenticationProvider provider,
                                                    JwtAuthFilter jwtAuthFilter,
                                                    OAuth2SuccessHandler oAuth2SuccessHandler,
-                                                   OidcUserService oidcUserService) throws Exception {
+                                                   OidcUserService oidcUserService,
+                                                   AccessDeniedHandler accessDeniedHandler) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
@@ -143,9 +147,11 @@ public class SecurityConfig {
 
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
                     res.setStatus(401);
-                    res.setContentType("application/json");
+                    res.setContentType("application/json;charset=UTF-8"); // 👈
                     res.getWriter().write("{\"message\":\"Unauthorized\"}");
-                }))
+                })
+                    .accessDeniedHandler(accessDeniedHandler)
+                )
                 .logout(AbstractHttpConfigurer::disable)
 
                 // 👇 Bật oauth2Login, gắn successHandler để phát JWT & redirect về FE
@@ -169,5 +175,17 @@ public class SecurityConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")));
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, ex) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+            response.setContentType("application/json;charset=UTF-8");
+            response.getOutputStream().write(
+                    "{\"message\":\"Bạn không có quyền thực hiện hành động này\"}"
+                            .getBytes(StandardCharsets.UTF_8)
+            );
+        };
     }
 }
