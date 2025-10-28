@@ -232,30 +232,6 @@ public class UserServiceImpl implements UserService{
                 .build();
         staff = staffsRepo.save(staff);
 
-        // 3) Gán vào Station_Staff (nếu có stationId)
-        if (stationId != null) {
-            var station = stationRepo.findById(stationId)
-                    .orElseThrow(() -> new IllegalArgumentException("Station không tồn tại: " + stationId));
-
-            // (khuyến nghị) chặn 1 staff có hơn 1 assignment active
-            boolean hasActive = staffRepo.existsByStaff_StaffIdAndUnassignedAtIsNull(staff.getStaffId());
-            if (hasActive) {
-                throw new IllegalStateException("Staff đã được gán station khác và chưa unassign.");
-            }
-
-            var link = StationStaff.builder()
-                    .staff(staff)
-                    .station(station)
-                    .assignedAt(LocalDateTime.now())
-                    .build();
-
-            link = staffRepo.save(link);
-
-            // Nếu muốn cập nhật quan hệ 2 chiều trong bộ nhớ (không bắt buộc):
-            // staff.getStationStaffs().add(link);
-        }
-
-
         return user;
     }
 

@@ -1,6 +1,10 @@
 package com.swp391.gr3.ev_management.controller;
 
+import com.swp391.gr3.ev_management.DTO.request.UpdatePasswordRequest;
+import com.swp391.gr3.ev_management.DTO.request.UpdateStaffProfileRequest;
+import com.swp391.gr3.ev_management.DTO.response.StaffResponse;
 import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.service.StaffService;
 import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,9 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/staff")
@@ -22,7 +24,30 @@ public class StaffController {
 
     private final StaffStationService staffStationService;
 
+    private final StaffService staffService;
+
     private final TokenService tokenService;
+
+    @PreAuthorize("hasRole('STAFF')")
+    @PutMapping("/profile")
+    public ResponseEntity<StaffResponse> updateProfile(
+            HttpServletRequest request,
+            @RequestBody UpdateStaffProfileRequest profileRequest
+    ) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        return ResponseEntity.ok(staffService.updateProfile(userId, profileRequest));
+    }
+
+    @PreAuthorize("hasRole('STAFF')")
+    @PutMapping("/password")
+    public ResponseEntity<String> updatePassword(
+            HttpServletRequest request,
+            @RequestBody UpdatePasswordRequest passwordRequest
+    ) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        staffService.updatePassword(userId, passwordRequest);
+        return ResponseEntity.ok("Password updated successfully");
+    }
 
     @PreAuthorize("hasRole('STAFF')")
     @GetMapping("/own-profile-staff")
