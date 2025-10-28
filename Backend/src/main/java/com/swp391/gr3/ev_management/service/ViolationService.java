@@ -19,6 +19,4 @@ public interface ViolationService {
 
     //Đếm số vi phạm ACTIVE của driver
     int countActiveViolations(Long userId);
-
-//    ViolationResponse createViolation(Long userId, Long bookingId, String description);
 }

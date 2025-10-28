@@ -22,14 +22,12 @@ public class VnPayController {
             @RequestParam Long driverId,
             @RequestParam Long sessionId,
             @RequestParam Long paymentMethodId,
-            @RequestParam String currency,      // "VND"
-            @RequestParam double amount,
             HttpServletRequest request) throws Exception {
 
         String clientIp = getClientIp(request);
 
         String payUrl = paymentService.createVnPayPaymentUrl(
-                driverId, sessionId, paymentMethodId, currency, amount, clientIp
+                driverId, sessionId, paymentMethodId, clientIp
         );
 
         return ResponseEntity.ok(Collections.singletonMap("paymentUrl", payUrl));

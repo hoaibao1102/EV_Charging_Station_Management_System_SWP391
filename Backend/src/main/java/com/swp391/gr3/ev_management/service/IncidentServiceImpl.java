@@ -25,7 +25,6 @@ import java.util.Optional;
 public class IncidentServiceImpl implements IncidentService {
 
     private final IncidentRepository incidentRepository;
-    private final StationStaffRepository staffRepository;
     private final IncidentMapper mapper;
     private final StaffsRepository staffsRepository;
 

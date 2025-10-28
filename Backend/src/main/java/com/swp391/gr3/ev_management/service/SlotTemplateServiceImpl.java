@@ -12,10 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,25 +88,6 @@ public class SlotTemplateServiceImpl implements SlotTemplateService {
             all.addAll(generateDailyTemplates(configId, d, endDate)); // sau 23:59 sẽ reset tự nhiên cho ngày kế tiếp
         }
         return all;
-    }
-
-    @Override
-    @Transactional
-    public List<SlotTemplateResponse> generateTemplatesFromConfig(Long configId) {
-        SlotTemplate cfg = slotTemplateRepository.findById(configId)
-                .orElseThrow(() -> new IllegalArgumentException("Config not found: " + configId));
-
-        // Đổi tên field cho đúng model của bạn
-        LocalDateTime start = Optional.ofNullable(cfg.getStartTime())
-                .orElseThrow(() -> new IllegalArgumentException("Config.fromDate is required"));
-        LocalDateTime end = Optional.ofNullable(cfg.getEndTime()).orElse(start);
-
-        if (end.isBefore(start)) {
-            throw new IllegalArgumentException("Config.toDate must be >= fromDate");
-        }
-
-        // Tận dụng hàm sẵn có
-        return generateTemplatesForRange(configId, start, end);
     }
 
     @Override

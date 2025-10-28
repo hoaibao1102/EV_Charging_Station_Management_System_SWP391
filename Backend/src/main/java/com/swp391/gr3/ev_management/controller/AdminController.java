@@ -1,6 +1,8 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.CreateStationStaffRequest;
+import com.swp391.gr3.ev_management.DTO.request.UpdateAdminProfileRequest;
+import com.swp391.gr3.ev_management.DTO.request.UpdatePasswordRequest;
 import com.swp391.gr3.ev_management.DTO.response.*;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
@@ -8,9 +10,9 @@ import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +33,7 @@ public class AdminController {
     private final StaffStationService staffStationService;
     private final ChargingSessionService chargingSessionService;
     private final NotificationsService notificationsService;
+    private final AdminService adminService;
 
     // ----------------------ADMIN: Quản lý USERS----------------------------- //
 
@@ -114,8 +117,41 @@ public class AdminController {
         return ResponseEntity.ok(driverService.updateStatus(userId, status));
     }
 
-    // ----------------------ADMIN: Quản lý PRODUCT----------------------------- //
+    // ----------------------ADMIN: Quản lý PROFILE----------------------------- //
 
+    @PutMapping("/profile")
+    public ResponseEntity<Map<String, String>> updateProfile(
+            HttpServletRequest request,
+            @RequestBody UpdateAdminProfileRequest updateRequest) {
+        try {
+            Long userId = tokenService.extractUserIdFromRequest(request);
+            adminService.updateProfile(userId, updateRequest);
+            return ResponseEntity.ok(Map.of("message", "Cập nhật thông tin thành công"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "Cập nhật thất bại: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<Map<String, String>> updatePassword(
+            HttpServletRequest request,
+            @RequestBody UpdatePasswordRequest updateRequest) {
+        try {
+            Long userId = tokenService.extractUserIdFromRequest(request);
+            adminService.updatePassword(userId, updateRequest);
+            return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .internalServerError()
+                    .body(Map.of("message", "Lỗi hệ thống: " + e.getMessage()));
+        }
+    }
 
 
 
