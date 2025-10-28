@@ -44,7 +44,7 @@ public class SlotAvailabilityController {
     @GetMapping("/{pointId}")
     @Operation(summary = "Get slot availability by pointId", description = "Retrieve slot availability details by its pointId")
     public ResponseEntity<SlotAvailabilityResponse> getById(@PathVariable Long pointId) {
-        SlotAvailabilityResponse response = slotAvailabilityService.findById(pointId);
+        SlotAvailabilityResponse response = slotAvailabilityService.findByPointId(pointId);
         if (response == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(response);
     }
