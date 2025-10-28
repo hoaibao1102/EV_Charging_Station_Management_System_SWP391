@@ -2,13 +2,10 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
 import com.swp391.gr3.ev_management.entity.Notification;
-import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.mapper.NotificationMapper;
 import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import com.swp391.gr3.ev_management.DTO.response.CreateNotificationResponse;
 
@@ -23,55 +20,6 @@ public class NotificationsServiceImpl implements NotificationsService{
     private final NotificationsRepository notificationsRepository;
     private final NotificationMapper notificationMapper;
     private final NotificationMapper mapper;
-    private final ApplicationEventPublisher eventPublisher;  // để publish event
-
-    @Override
-    public List<Notification> findNotificationsByUserId(Long userId) {
-        return notificationsRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId);
-    }
-
-    // === Tạo noti & PHÁT SỰ KIỆN SAU KHI COMMIT ===
-    @Override
-    @Transactional
-    public Notification createNotification(Notification notification) {
-        // đảm bảo status mặc định nếu quên set
-        if (notification.getStatus() == null || notification.getStatus().isBlank()) {
-            notification.setStatus(Notification.STATUS_UNREAD);
-        }
-        Notification saved = notificationsRepository.save(notification);
-
-        // phát event - listener sẽ chạy AFTER_COMMIT (bạn viết ở NotificationEmailListener/NotificationEventHandler)
-        eventPublisher.publishEvent(new NotificationCreatedEvent(saved.getNotiId()));
-
-        return saved;
-    }
-
-    @Override
-    public Notification updateNotification(Notification notification) {
-        return notificationsRepository.save(notification);
-    }
-
-    @Override
-    public void deleteNotification(Long notificationId) {
-        notificationsRepository.deleteById(notificationId);
-    }
-
-    @Override
-    public Long getNotificationIdByUserId(Long userId) {
-        // nếu cần ID gần nhất:
-        return notificationsRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId)
-                .stream().findFirst().map(Notification::getNotiId).orElse(null);
-    }
-
-    @Override
-    public List<CreateNotificationResponse> findByUserUserIdOrderByCreatedAtDesc(Long userId) {
-        List<Notification> notifications = notificationsRepository.findByUserUserIdOrderByCreatedAtDesc(userId);
-
-        // Dùng mapper để convert sang DTO
-        return notifications.stream()
-                .map(notificationMapper::mapToResponse)
-                .toList();
-    }
 
     @Override
     public List<CreateNotificationResponse> getNotificationsByUser(Long userId) {

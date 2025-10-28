@@ -2,7 +2,6 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.CreateIncidentRequest;
 import com.swp391.gr3.ev_management.DTO.response.IncidentResponse;
-import com.swp391.gr3.ev_management.entity.Incident;
 
 import java.util.List;
 

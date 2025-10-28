@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,14 +28,15 @@ public class PaymentMethod {
     @Column(name = "MethodType", columnDefinition = "NVARCHAR(50)", nullable = false)
     private PaymentType methodType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "ProviderName", columnDefinition = "NVARCHAR(100)", nullable = false)
-    private String provider;
+    private PaymentProvider provider;
 
     @Column(name = "AccountNo", columnDefinition = "NVARCHAR(100)" , nullable = false)
     private String accountNo;
 
     @Column(name = "ExpiryDate")
-    private LocalDateTime expiryDate;
+    private LocalDate expiryDate;
 
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
@@ -46,7 +49,4 @@ public class PaymentMethod {
     @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactions;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DriverId", nullable = false)
-    private Driver driver;
 }
