@@ -40,7 +40,32 @@ const StationDetail = () => {
         // console.log("🔌 Connector Types:", connectorsRes.data);
 
         setChargingPoints(pointsRes.data);
-        setConnectorTypes(connectorsRes.data);
+
+        // Normalize connector types to a consistent shape so lookups are reliable
+        const normalizedConnectors = (connectorsRes.data || []).map((c) => ({
+          // prefer explicit connectorTypeId fields, fallback to id or code when necessary
+          connectorTypeId:
+            c.connectorTypeId ?? c.id ?? c.ConnectorTypeID ?? c.code ?? null,
+          code:
+            c.code ??
+            c.Code ??
+            (c.connectorTypeId ? String(c.connectorTypeId) : null),
+          displayName:
+            c.displayName ?? c.DisplayName ?? c.name ?? c.TypeName ?? "",
+          mode: c.mode ?? c.Mode ?? "",
+          defaultMaxPowerKW:
+            c.defaultMaxPowerKW ??
+            c.defaultPower ??
+            c.default_max_power ??
+            null,
+          raw: c,
+        }));
+
+        console.log(
+          "🔌 Normalized connector types:",
+          normalizedConnectors.slice(0, 10)
+        );
+        setConnectorTypes(normalizedConnectors);
 
         // Lấy danh sách xe của tài xế
         const myVehiclesRes = await getMyVehiclesApi();
@@ -64,18 +89,70 @@ const StationDetail = () => {
 
   // ====== Tìm thông tin connector theo connectorTypeId ======
   const getConnectorDetail = (connectorTypeId) => {
-    const result = connectorTypes.find(
-      (c) => String(c.connectorTypeId) === String(connectorTypeId)
-    );
+    // Flexible lookup since API field names / formats can vary (id vs code vs displayName)
+    if (!connectorTypes || connectorTypes.length === 0) return null;
 
-    if (!result) {
-      // console.log(`⚠️ Connector not found for ID: ${connectorTypeId}`, {
-      //   searchId: connectorTypeId,
-      //   availableIds: connectorTypes.map((c) => c.connectorTypeId),
-      // });
+    const searchRaw = connectorTypeId;
+    const search = String(connectorTypeId ?? "")
+      .toLowerCase()
+      .trim();
+
+    // 1) Try strict id match (connectorTypeId or ConnectorTypeID)
+    let result = connectorTypes.find(
+      (c) =>
+        String(c.connectorTypeId) === String(searchRaw) ||
+        String(c.ConnectorTypeID) === String(searchRaw) ||
+        String(c.id) === String(searchRaw)
+    );
+    if (result) return result;
+
+    // 2) Try matching by code / displayName (case-insensitive, includes)
+    result = connectorTypes.find((c) => {
+      const code = String(c.code ?? c.Code ?? "")
+        .toLowerCase()
+        .trim();
+      const display = String(c.displayName ?? c.DisplayName ?? "")
+        .toLowerCase()
+        .trim();
+      return (
+        (code && code === search) ||
+        (display && display === search) ||
+        (display && display.includes(search)) ||
+        (code && code.includes(search))
+      );
+    });
+    if (result) {
+      console.log("ℹ️ Matched connector by code/displayName fallback:", {
+        search: connectorTypeId,
+        matched: result,
+      });
+      return result;
     }
 
-    return result;
+    // 3) As a last resort try partial numeric/string coercion matches (helpful when API mixes types)
+    result = connectorTypes.find((c) => {
+      try {
+        return (
+          String(c.connectorTypeId) === search ||
+          String(c.ConnectorTypeID) === search
+        );
+      } catch {
+        return false;
+      }
+    });
+    if (result) return result;
+
+    // Not found — provide helpful debug info in console
+    console.log(`⚠️ Connector not found for ID/Code: ${connectorTypeId}`, {
+      searchRaw: connectorTypeId,
+      available: connectorTypes.map((c) => ({
+        id: c.connectorTypeId ?? c.id ?? c.ConnectorTypeID,
+        code: c.code,
+        displayName: c.displayName,
+      })),
+    });
+
+    return null;
   };
 
   // ====== Kiểm tra trụ có tương thích với xe được chọn không ======
@@ -86,8 +163,9 @@ const StationDetail = () => {
     }
 
     // Lấy thông tin connector của trụ này
+    // Points may return a connectorType string (e.g. "CCS Combo 2") or an id field.
     const connector = getConnectorDetail(
-      point.connectorTypeId || point.ConnectorTypeID
+      point.connectorType || point.connectorTypeId || point.ConnectorTypeID
     );
     if (!connector) {
       console.log(
@@ -182,8 +260,45 @@ const StationDetail = () => {
       return;
     }
 
+    // Lấy thông tin chi tiết của point và connector
+    const point = chargingPoints.find(
+      (p) => (p.pointId || p.PointID) === pointId
+    );
+    const connector = getConnectorDetail(connectorId);
+
     console.log(`📅 Booking Point: ${pointId}, Connector: ${connectorId}`);
-    navigate(`/bookings`);
+
+    // Gửi thông tin sang trang Booking
+    navigate(`/bookings`, {
+      state: {
+        station: {
+          id: station?.StationID || station?.stationID,
+          name: station?.StationName || station?.stationName,
+          address: station?.Address || station?.address,
+        },
+        chargingPoint: {
+          pointId: point?.pointId || point?.PointID,
+          pointNumber: point?.pointNumber || point?.PointNumber,
+          maxPowerKW: point?.maxPowerKW || point?.MaxPowerKW,
+          status: point?.status || point?.Status,
+        },
+        connector: {
+          connectorTypeId: connector?.connectorTypeId,
+          displayName: connector?.displayName,
+          code: connector?.code,
+          mode: connector?.mode,
+          defaultMaxPowerKW: connector?.defaultMaxPowerKW,
+        },
+        vehicle: {
+          vehicleId: selectedVehicle?.vehicleId,
+          vehicleName: selectedVehicle?.vehicleName,
+          brand: selectedVehicle?.brand,
+          model: selectedVehicle?.model,
+          connectorTypeName: selectedVehicle?.connectorTypeName,
+          licensePlate: selectedVehicle?.licensePlate,
+        },
+      },
+    });
   };
 
   const handleVehicleChange = (e) => {
@@ -339,7 +454,9 @@ const StationDetail = () => {
           const lastMaintenanceDate =
             point.lastMaintenanceDate || point.LastMaintenanceDate;
           const connectorTypeId =
-            point.connectorTypeId || point.ConnectorTypeID;
+            point.connectorType ||
+            point.connectorTypeId ||
+            point.ConnectorTypeID;
 
           const expanded = expandedPoint === pointId;
           const connector = getConnectorDetail(connectorTypeId);
@@ -430,7 +547,9 @@ const StationDetail = () => {
           const lastMaintenanceDate =
             point.lastMaintenanceDate || point.LastMaintenanceDate;
           const connectorTypeId =
-            point.connectorTypeId || point.ConnectorTypeID;
+            point.connectorType ||
+            point.connectorTypeId ||
+            point.ConnectorTypeID;
 
           const expanded = expandedPoint === pointId;
           const connector = getConnectorDetail(connectorTypeId);

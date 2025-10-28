@@ -1,0 +1,83 @@
+/* BookingDetail page styles - consistent with StationDetail theme */
+
+:root {
+  --primary: #00bfa6;
+  --primary-dark: #00897b;
+  --muted: #6b7280;
+  --card-bg: #ffffff;
+  --surface: #f8fafb;
+}
+
+.booking-container {
+  font-family: "Inter", "Manrope", system-ui, -apple-system, sans-serif;
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--surface) 0%, #e9f0f2 100%);
+  min-height: calc(100vh - 40px);
+}
+
+.booking-card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.booking-header {
+  color: var(--primary);
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  font-weight: 800;
+}
+
+.booking-field {
+  margin: 8px 0;
+  font-size: 0.98rem;
+  color: var(--muted);
+}
+
+.booking-field strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.booking-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.btn-primary {
+  padding: 12px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 12px 20px;
+  background: transparent;
+  color: #111827;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .booking-container {
+    padding: 30px;
+  }
+  .booking-header {
+    font-size: 2rem;
+  }
+}
