@@ -47,13 +47,13 @@ export default function Stations() {
       const data = response.data;
 
       const normalized = data.map((item) => ({
-        id: item.id || item.StationID, // ✅ Ưu tiên id (MockAPI) rồi fallback sang StationID
-        StationID: item.StationID,
-        name: item.StationName || item.name || "Trạm sạc chưa đặt tên",
-        address: item.Address || item.address || "Chưa có địa chỉ",
-        status: item.Status || item.status || "unknown",
-        lat: parseFloat(item.Latitude || item.lat || 0),
-        lng: parseFloat(item.Longitude || item.lng || 0),
+        id: item.id || item.stationId, // ✅ Ưu tiên id (MockAPI) rồi fallback sang StationID
+        StationID: item.stationId,
+        name: item.stationName || item.name || "Trạm sạc chưa đặt tên",
+        address: item.address || item.address || "Chưa có địa chỉ",
+        status: item.status || item.status || "unknown",
+        lat: parseFloat(item.latitude || item.lat || 0),
+        lng: parseFloat(item.longitude || item.lng || 0),
         distance: null,
       }));
 
