@@ -24,6 +24,7 @@ public class ChargingPointController {
 
     private final ChargingPointService pointService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/create")
     @Operation(summary = "Create a new point", description = "Endpoint to create a new charging point")
     public ResponseEntity<ChargingPointResponse> createPoint(@RequestBody CreateChargingPointRequest request) {

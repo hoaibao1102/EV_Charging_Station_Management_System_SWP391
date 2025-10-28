@@ -20,7 +20,6 @@ public interface DriverService {
     List<DriverResponse> getAllDrivers();
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
-
     // Filter
     List<DriverResponse> getDriversByStatus(DriverStatus status);
     List<DriverResponse> getDriversByName(String name);
@@ -30,5 +29,7 @@ public interface DriverService {
     VehicleResponse addVehicle(Long userId, @Valid AddVehicleRequest request);
     List<VehicleResponse> getMyVehicles(Long userId);
     void removeVehicle(Long userId, Long vehicleId);
+
+    DriverResponse updateDriverPassword(Long userId, String oldPassword, String newPassword, String confirmNewPassword);
 }
 

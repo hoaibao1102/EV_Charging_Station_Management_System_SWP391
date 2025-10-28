@@ -19,10 +19,12 @@ import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+// import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.swp391.gr3.ev_management.mapper.DriverMapper;
@@ -37,6 +39,10 @@ public class DriverServiceImpl implements DriverService {
     private final UserVehicleRepository userVehicleRepository;
     private final VehicleModelRepository vehicleModelRepository;
     private final DriverMapper driverMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    // private static final Pattern PASSWORD_COMPLEXITY =
+    //     Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{6,}$");
 
     /**
      * Tạo driver profile cho 1 user (nâng cấp thành Driver)
@@ -117,10 +123,38 @@ public class DriverServiceImpl implements DriverService {
         if (req.getEmail() != null)       user.setEmail(req.getEmail());
         if (req.getAddress() != null)     user.setAddress(req.getAddress());
         if (req.getPhoneNumber() != null) user.setPhoneNumber(req.getPhoneNumber());
+        if (req.getDateOfBirth() != null) user.setDateOfBirth(req.getDateOfBirth());
+        if (req.getGender() != null)        user.setGender(req.getGender());
         driver.setStatus(DriverStatus.ACTIVE);
 
     Driver updated = driverRepository.save(driver);
     return driverMapper.toDriverResponse(updated);
+    }
+
+    @Override
+    @Transactional
+    public DriverResponse updateDriverPassword(Long userId, String oldPassword, String newPassword, String confirmNewPassword) {
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+        User user = driver.getUser();
+        String currentHash = user.getPasswordHash();
+        if (!passwordEncoder.matches(oldPassword, currentHash)) {
+            throw new ConflictException("Old password is incorrect");
+        }
+        if (!newPassword.equals(confirmNewPassword)) {
+            throw new ConflictException("New password and confirm password do not match");
+        }
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new ConflictException("New password must be at least 6 characters");
+        }
+        // Optional: disallow using the same password
+        if (passwordEncoder.matches(newPassword, currentHash)) {
+            throw new ConflictException("New password must be different from old password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    return driverMapper.toDriverResponse(driver);
     }
 
     /**
@@ -149,28 +183,28 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public List<DriverResponse> getDriversByStatus(DriverStatus status) {
-    return driverRepository.findByStatus(status)
-        .stream()
-        .map(driverMapper::toDriverResponse)
-        .toList();
+        return driverRepository.findByStatus(status)
+                .stream()
+                .map(driverMapper::toDriverResponse)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DriverResponse> getDriversByName(String name) {
-    return driverRepository.findByUser_NameContainingIgnoreCase(name)
-        .stream()
-        .map(driverMapper::toDriverResponse)
-        .toList();
+        return driverRepository.findByUser_NameContainingIgnoreCase(name)
+                .stream()
+                .map(driverMapper::toDriverResponse)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DriverResponse> getDriversByPhoneNumber(String phoneNumber) {
-    return driverRepository.findByUser_PhoneNumberContaining(phoneNumber)
-        .stream()
-        .map(driverMapper::toDriverResponse)
-        .toList();
+        return driverRepository.findByUser_PhoneNumberContaining(phoneNumber)
+                .stream()
+                .map(driverMapper::toDriverResponse)
+                .toList();
     }
 
     // =================== UC-04: VEHICLE MANAGEMENT ===================
@@ -217,7 +251,7 @@ public class DriverServiceImpl implements DriverService {
         UserVehicle saved = userVehicleRepository.save(vehicle);
         log.info("Vehicle added successfully: {}", saved.getVehicleId());
 
-    return driverMapper.toVehicleResponse(saved);
+        return driverMapper.toVehicleResponse(saved);
     }
 
     // Chuẩn hoá: trim -> upper-case -> loại bỏ khoảng trắng, dấu '-' và '.' để so sánh uniqueness
@@ -285,9 +319,9 @@ public class DriverServiceImpl implements DriverService {
         // Lấy danh sách xe với thông tin chi tiết
         List<UserVehicle> vehicles = userVehicleRepository.findByDriverIdWithDetails(driver.getDriverId());
 
-    return vehicles.stream()
-        .map(driverMapper::toVehicleResponse)
-        .collect(Collectors.toList());
+        return vehicles.stream()
+                .map(driverMapper::toVehicleResponse)
+                .collect(Collectors.toList());
     }
 
     /**
