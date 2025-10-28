@@ -19,5 +19,6 @@ public class VehicleModelResponse {
     private String connectorTypeCode;
     private String connectorTypeDisplayName;
     private double connectorDefaultMaxPowerKW;
+    private double batteryCapacityKWh;
 }
 

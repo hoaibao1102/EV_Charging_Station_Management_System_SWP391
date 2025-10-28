@@ -43,6 +43,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
                 .year(request.getYear())
                 .imageUrl(request.getImageUrl())
                 .connectorType(connectorType)
+                .batteryCapacityKWh(request.getBatteryCapacityKWh())
                 .build();
 
         VehicleModel saved = vehicleModelRepository.save(entity);
@@ -94,6 +95,10 @@ public class VehicleModelServiceImpl implements VehicleModelService {
             ConnectorType ct = connectorTypeRepository.findById(request.getConnectorTypeId())
                     .orElseThrow(() -> new NotFoundException("ConnectorType not found with id " + request.getConnectorTypeId()));
             vm.setConnectorType(ct);
+        }
+
+        if (request.getBatteryCapacityKWh() != null) {
+            vm.setBatteryCapacityKWh(request.getBatteryCapacityKWh());
         }
 
         VehicleModel saved = vehicleModelRepository.save(vm);
