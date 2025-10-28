@@ -29,6 +29,7 @@ public class DriverController {
 
     private final TokenService tokenService;
 
+    @PreAuthorize("hasRole('DRIVER') or hasRole('ADMIN')")
     @DeleteMapping("/vehicles/{vehicleId}")
     @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
     public ResponseEntity<Void> removeVehicle(
@@ -40,6 +41,7 @@ public class DriverController {
     }
 
     // ✅ Driver cập nhật hồ sơ
+    @PreAuthorize("hasRole('DRIVER') or hasRole('ADMIN')")
     @PutMapping("/profile")
     @Operation(summary = "Update own driver profile", description = "Driver updates their own profile information")
     public ResponseEntity<DriverResponse> updateOwnProfile(
@@ -65,6 +67,7 @@ public class DriverController {
         return ResponseEntity.status(HttpStatus.CREATED).body(vehicle);
     }
 
+    @PreAuthorize("hasRole('DRIVER')")
     // ✅ Driver xem hồ sơ chính mình (qua token)
     @GetMapping("/profile")
     @Operation(summary = "Get own driver profile", description = "Driver retrieves their own profile information")
@@ -77,6 +80,7 @@ public class DriverController {
     /**
      * UC-04: Xem danh sách xe của driver
      */
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/vehicles")
     @Operation(summary = "Get my vehicles", description = "Driver retrieves list of their vehicles")
     public ResponseEntity<List<VehicleResponse>> getMyVehicles(HttpServletRequest request) {
@@ -84,10 +88,4 @@ public class DriverController {
         List<VehicleResponse> vehicles = driverService.getMyVehicles(userId);
         return ResponseEntity.ok(vehicles);
     }
-    
-    /**
-     * UC-04: Xóa xe khỏi hồ sơ
-     */
-
-
 }

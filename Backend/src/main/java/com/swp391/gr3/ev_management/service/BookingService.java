@@ -18,4 +18,6 @@ public interface BookingService {
     BookingRequest decodePayload(String base64);
 
     BookingResponse getBookingById(Long bookingId);
+
+    BookingResponse cancelBooking(Long bookingId);
 }
