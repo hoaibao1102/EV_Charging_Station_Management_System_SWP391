@@ -51,6 +51,7 @@ public class TariffServiceImpl implements TariffService {
         Tariff tariff = Tariff.builder()
                 .connectorType(connectorType)
                 .pricePerKWh(request.getPricePerKWh())
+                .pricePerMin(request.getPricePerMin())
                 .currency(request.getCurrency())
                 .effectiveFrom(request.getEffectiveFrom())
                 .effectiveTo(request.getEffectiveTo())
@@ -76,6 +77,9 @@ public class TariffServiceImpl implements TariffService {
         // Update các field nếu không null/0
         if (request.getPricePerKWh() != 0) {
             tariff.setPricePerKWh(request.getPricePerKWh());
+        }
+        if (request.getPricePerMin() != 0) {
+            tariff.setPricePerKWh(request.getPricePerMin());
         }
         if (request.getCurrency() != null) {
             tariff.setCurrency(request.getCurrency());
@@ -104,6 +108,7 @@ public class TariffServiceImpl implements TariffService {
                 .connectorTypeCode(tariff.getConnectorType().getCode())
                 .connectorTypeName(tariff.getConnectorType().getDisplayName())
                 .pricePerKWh(tariff.getPricePerKWh())
+                .pricePerMin(tariff.getPricePerMin())
                 .currency(tariff.getCurrency())
                 .effectiveFrom(tariff.getEffectiveFrom())
                 .effectiveTo(tariff.getEffectiveTo())

@@ -33,7 +33,7 @@ public class DriverViolation {
     @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     private String description;
 
-//    @Column(name = "penalty_amount", precision = 19, scale = 2)
-//    private BigDecimal penaltyAmount;
+    @Column(name = "penaltyAmount", nullable = false)
+    private double penaltyAmount;
 
 }

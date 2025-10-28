@@ -23,6 +23,10 @@ public class TariffCreateRequest {
     @Positive(message = "Giá tiền phải lớn hơn 0")
     private double pricePerKWh;
 
+    @NotNull(message = "Giá tiền không được để trống")
+    @Positive(message = "Giá tiền phải lớn hơn 0")
+    private double pricePerMin;
+
     @NotBlank(message = "Currency không được để trống")
     @Size(max = 10, message = "Currency không được quá 10 ký tự")
     private String currency;
