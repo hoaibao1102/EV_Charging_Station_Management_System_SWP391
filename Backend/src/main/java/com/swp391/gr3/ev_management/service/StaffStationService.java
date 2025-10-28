@@ -7,4 +7,5 @@ import org.springframework.stereotype.Service;
 @Service
 public interface StaffStationService {
     StationStaffResponse getStaffByUserId(Long userId);
+    StationStaffResponse updateStation(Long staffId, Long stationId);
 }

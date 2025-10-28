@@ -29,7 +29,7 @@ public class DriverController {
 
     private final TokenService tokenService;
 
-    @PreAuthorize("hasRole('DRIVER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('DRIVER')")
     @DeleteMapping("/vehicles/{vehicleId}")
     @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
     public ResponseEntity<Void> removeVehicle(
@@ -41,7 +41,7 @@ public class DriverController {
     }
 
     // ✅ Driver cập nhật hồ sơ
-    @PreAuthorize("hasRole('DRIVER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/profile")
     @Operation(summary = "Update own driver profile", description = "Driver updates their own profile information")
     public ResponseEntity<DriverResponse> updateOwnProfile(
