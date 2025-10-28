@@ -34,15 +34,9 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     @Override
     @Transactional
     public ChargingPointResponse stopChargingPoint(StopChargingPointRequest request) {
-        StationStaff staff = staffRepository.findActiveByStationStaffId(request.getStaffId())
-                .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
 
         ChargingPoint point = pointRepository.findById(request.getPointId())
                 .orElseThrow(() -> new RuntimeException("Charging point not found"));
-
-        if (!staff.getStation().getStationId().equals(point.getStation().getStationId())) {
-            throw new RuntimeException("No permission to manage this charging point");
-        }
 
                 if (point.getStatus() == ChargingPointStatus.OCCUPIED) {
             throw new RuntimeException("Cannot stop point while in use");

@@ -47,20 +47,34 @@ public class ChargingPointMapper {
     public ChargingPoint toEntity(CreateChargingPointRequest request,
                                   ChargingStation station,
                                   ConnectorType connectorType) {
+
+        LocalDateTime now = LocalDateTime.now();
+
         ChargingPoint point = new ChargingPoint();
         point.setStation(station);
         point.setConnectorType(connectorType);
         point.setPointNumber(request.getPointNumber());
         point.setSerialNumber(request.getSerialNumber());
-        point.setInstallationDate(request.getInstallationDate() != null
-                ? request.getInstallationDate()
-                : LocalDateTime.now());
-        point.setLastMaintenanceDate(request.getLastMaintenanceDate());
-        point.setMaxPowerKW(request.getMaxPowerKW() > 0 ? request.getMaxPowerKW() : 22.0);
-        point.setStatus(request.getStatus());
-        point.setCreatedAt(LocalDateTime.now());
-        point.setUpdatedAt(LocalDateTime.now());
+
+        // ✅ default = thời điểm tạo nếu client không gửi
+        point.setInstallationDate(
+                request.getInstallationDate() != null ? request.getInstallationDate() : now
+        );
+        point.setLastMaintenanceDate(
+                request.getLastMaintenanceDate() != null ? request.getLastMaintenanceDate() : now
+        );
+
+        // ✅ maxPowerKW tối thiểu 22.0 nếu không hợp lệ
+        Double reqPower = request.getMaxPowerKW();
+        point.setMaxPowerKW(reqPower != null && reqPower > 0 ? reqPower : 22.0);
+
+        // ✅ status mặc định AVAILABLE nếu null
+        point.setStatus(
+                request.getStatus() != null ? request.getStatus() : ChargingPointStatus.AVAILABLE
+        );
+
+        point.setCreatedAt(now);
+        point.setUpdatedAt(now);
         return point;
     }
-
 }

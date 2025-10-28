@@ -6,6 +6,5 @@ import lombok.Data;
 @Data
 public class StopChargingPointRequest {
     private Long pointId;
-    private Long staffId;
     private ChargingPointStatus newStatus;
 }
