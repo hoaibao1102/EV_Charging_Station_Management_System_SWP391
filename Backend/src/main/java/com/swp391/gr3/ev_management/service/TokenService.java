@@ -1,19 +1,25 @@
 package com.swp391.gr3.ev_management.service;
 
+import java.time.Instant;
+import java.util.Date;
+import java.util.function.Function;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.UserRepository;
-import io.jsonwebtoken.*;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import javax.crypto.SecretKey;
-import java.time.Instant;
-import java.util.Date;
-import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
