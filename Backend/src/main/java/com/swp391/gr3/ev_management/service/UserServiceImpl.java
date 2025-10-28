@@ -40,6 +40,8 @@ public class UserServiceImpl implements UserService{
     private final ChargingStationRepository stationRepo;
     private final ApplicationEventPublisher publisher;
     private final StaffsRepository  staffsRepo;
+    private final StationStaffRepository stationStaffRepository;
+    private final ChargingStationRepository chargingStationRepository;
 
     @Override
     public User findUsersByPhone(String phoneNumber) {
@@ -259,26 +261,43 @@ public class UserServiceImpl implements UserService{
 
     @Transactional
     public Map<String, Object> registerStaffAndAssignStation(RegisterRequest req, Long stationId) {
-        // Gọi lại logic cũ
+        // 1) Gọi lại logic cũ để tạo User + Staff (giữ nguyên)
         User user = registerAsStaff(req, stationId);
 
-        // Lấy staff
+        // 2) Lấy Staff theo user
         Staffs staff = staffsRepo.findByUser_UserId(user.getUserId())
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy staff cho user " + user.getUserId()));
 
-        // Lấy StationStaff active (vừa gán trong registerAsStaff)
         Long stationStaffId = null;
+
+        // 3) Nếu có stationId thì gán vào Station_Staff
         if (stationId != null) {
-            var assigned = staffRepo.findAll().stream()
-                    .filter(s -> s.getStaff().getStaffId().equals(staff.getStaffId()) && s.getUnassignedAt() == null)
-                    .findFirst()
-                    .orElse(null);
-            stationStaffId = assigned != null ? assigned.getStationStaffId() : null;
+            // 3.1) Kiểm tra station tồn tại
+            ChargingStation station = chargingStationRepository.findById(stationId)
+                    .orElseThrow(() -> new IllegalArgumentException("Station không tồn tại với id=" + stationId));
+
+            // 3.2) Đóng assignment cũ (nếu có)
+            stationStaffRepository.findActiveByStaffId(staff.getStaffId())
+                    .ifPresent(active -> {
+                        active.setUnassignedAt(LocalDateTime.now());
+                        stationStaffRepository.save(active);
+                    });
+
+            // 3.3) Tạo assignment mới
+            StationStaff newAssign = StationStaff.builder()
+                    .staff(staff)
+                    .station(station)
+                    .assignedAt(LocalDateTime.now())
+                    .unassignedAt(null)
+                    .build();
+            StationStaff saved = stationStaffRepository.save(newAssign);
+            stationStaffId = saved.getStationStaffId();
         }
 
-        // Thông báo cho staff mới
+        // 4) Thông báo cho staff mới (giữ nguyên)
         publisher.publishEvent(new UserRegisteredEvent(user.getUserId(), user.getEmail(), user.getName()));
 
+        // 5) Trả về kết quả (giữ nguyên keys cũ)
         return Map.of(
                 "message", "Đăng ký staff thành công",
                 "userId", user.getUserId(),

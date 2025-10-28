@@ -18,6 +18,7 @@ public class TariffResponse {
     private String connectorTypeCode;
     private String connectorTypeName;
     private double pricePerKWh;
+    private double pricePerMin;
     private String currency;
     private LocalDateTime effectiveFrom;
     private LocalDateTime effectiveTo;
