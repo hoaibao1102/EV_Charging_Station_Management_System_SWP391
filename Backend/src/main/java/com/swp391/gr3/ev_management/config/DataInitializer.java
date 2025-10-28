@@ -37,6 +37,8 @@ public class DataInitializer implements CommandLineRunner {
     private final SlotAvailabilityRepository slotAvailabilityRepository;
     private final TransactionTemplate transactionTemplate;
     private final TariffRepository tariffRepository;
+    private final StationStaffRepository stationStaffRepository;
+
 
     @Value("${app.data.init.enabled:true}")
     private boolean enabled;
@@ -452,9 +454,10 @@ public class DataInitializer implements CommandLineRunner {
         );
     }
 
-    private void createStaffIfNotExists(String phoneNumber, String email, String rawPassword,
-                                        String name, String gender, LocalDate dateOfBirth, String address,
-                                        String roleAtStation) {
+    @Transactional
+    protected void createStaffIfNotExists(String phoneNumber, String email, String rawPassword,
+                                          String name, String gender, LocalDate dateOfBirth, String address,
+                                          String roleAtStation) {
         try {
             boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
             boolean emailExists = email != null && userRepository.existsByEmail(email);
@@ -484,22 +487,58 @@ public class DataInitializer implements CommandLineRunner {
             }
 
             // Tạo bản ghi Staffs nếu chưa có
-            if (staffUser.getStaffs() == null) {
-                Staffs staffs = Staffs.builder()
+            Staffs staff = staffUser.getStaffs();
+            if (staff == null) {
+                staff = Staffs.builder()
                         .user(staffUser)
                         .status(StaffStatus.ACTIVE)
                         .roleAtStation(roleAtStation)
                         .build();
-                staffsRepository.save(staffs);
+                staff = staffsRepository.save(staff);
                 log.info("Mapped USER {} to STAFFS table (status={}, roleAtStation={})",
                         staffUser.getUserId(), StaffStatus.ACTIVE, roleAtStation);
             } else {
                 log.info("Staffs mapping already exists for userId={}", staffUser.getUserId());
             }
+
+            // ✅ Thêm: Gán luôn station cho staff này
+            var stationOpt = chargingStationRepository.findByStationName("VinFast SmartCharge - Quận 1");
+            if (stationOpt.isPresent()) {
+                var station = stationOpt.get();
+                final Staffs currentStaff = staff;
+
+                boolean alreadyAssigned = stationStaffRepository
+                        .existsByStaff_StaffIdAndStation_StationIdAndUnassignedAtIsNull(
+                                currentStaff.getStaffId(), station.getStationId());
+
+                if (!alreadyAssigned) {
+                    StationStaff link = StationStaff.builder()
+                            .staff(currentStaff)
+                            .station(station)
+                            .assignedAt(LocalDateTime.now())
+                            .unassignedAt(null)
+                            .build();
+
+//                    // set 2 chiều (tùy thích, để bộ nhớ đồng bộ)
+//                    station.getStationStaffs().add(link);
+//                    currentStaff.getStationStaffs().add(link);
+
+                    // ✅ Lưu TRỰC TIẾP vào bảng station_staff
+                    stationStaffRepository.save(link);
+
+                    log.info("Linked staff {} to default station '{}'", staffUser.getName(), station.getStationName());
+                } else {
+                    log.info("Staff {} already assigned to station '{}'", staffUser.getName(), station.getStationName());
+                }
+            } else {
+                log.warn("Default station not found, skipping station assignment for staff {}", staffUser.getName());
+            }
+
         } catch (Exception e) {
             log.error("Failed to create default staff (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
         }
     }
+
 
     // ================== DEFAULT DRIVER (tùy chọn) ==================
     private void initDrivers() {
