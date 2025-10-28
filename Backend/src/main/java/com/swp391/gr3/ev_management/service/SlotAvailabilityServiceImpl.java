@@ -128,11 +128,16 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     }
 
     @Override
-    public SlotAvailabilityResponse findByPointId(Long pointId) {
-        return mapper.toResponse(
-                slotAvailabilityRepository.findByChargingPoint_PointId(pointId)
-                        .orElseThrow(() -> new NoSuchElementException("Không tìm thấy PointId id=" + pointId))
-        );
+    public List<SlotAvailabilityResponse> findByPointId(Long pointId) {
+        List<SlotAvailability> slots = slotAvailabilityRepository.findAllByChargingPoint_PointId(pointId);
+
+        if (slots.isEmpty()) {
+            throw new NoSuchElementException("Không tìm thấy SlotAvailability cho PointId = " + pointId);
+        }
+
+        return slots.stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 
     @Override

@@ -25,5 +25,5 @@ public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailabili
     void deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
 
 
-    Optional<SlotAvailability> findByChargingPoint_PointId(Long pointId);
+    List<SlotAvailability> findAllByChargingPoint_PointId(Long pointId);
 }
