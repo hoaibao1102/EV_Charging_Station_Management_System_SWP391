@@ -37,6 +37,12 @@ public class BookingController {
         }
     }
 
+    @PutMapping("/{id}/cancel")
+    @Operation(summary = "Cancel Booking", description = "Cancel a pending or confirmed booking")
+    public ResponseEntity<BookingResponse> cancelBooking(@PathVariable("id") Long bookingId) {
+        return ResponseEntity.ok(bookingService.cancelBooking(bookingId));
+    }
+
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Create a new booking", description = "Endpoint to create a new booking")
     public ResponseEntity<BookingResponse> createBooking(@RequestBody CreateBookingRequest request) {

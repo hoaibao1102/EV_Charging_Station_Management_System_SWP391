@@ -96,11 +96,12 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 5️⃣ Lấy giá và tính tổng (tuỳ bạn muốn theo giờ hay cộng gộp)
-        double totalPrice = slots.stream()
-                .mapToDouble(slot -> tariffRepository.findByConnectorType(slot.getChargingPoint().getConnectorType())
-                        .map(Tariff::getPricePerKWh)
-                        .orElse(0.0))
-                .sum();
+        double price = slots.stream()
+                .findFirst() // lấy slot đầu tiên
+                .flatMap(slot -> tariffRepository.findByConnectorType(
+                        slot.getChargingPoint().getConnectorType()
+                ).map(Tariff::getPricePerKWh))
+                .orElse(0.0);
 
         // 6️⃣ Build response
         String timeRanges = slots.stream()
@@ -117,7 +118,7 @@ public class BookingServiceImpl implements BookingService {
                 .connectorType(slots.get(0).getChargingPoint().getConnectorType().getDisplayName())
                 .timeRange(timeRanges)
                 .bookingDate(slots.get(0).getDate())
-                .price(totalPrice)
+                .price(price)
                 .status(booking.getStatus())
                 .build();
     }
@@ -365,5 +366,91 @@ public class BookingServiceImpl implements BookingService {
                         .orElseThrow(() -> new RuntimeException("Booking not found")),
                 BookingResponse.class
         );
+    }
+
+    @Override
+    @Transactional
+    public BookingResponse cancelBooking(Long bookingId) {
+        Booking booking = bookingsRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (booking.getStatus() == BookingStatus.CANCELED) {
+            throw new RuntimeException("Booking đã bị hủy trước đó");
+        }
+        if (booking.getStatus() == BookingStatus.COMPLETED) {
+            throw new RuntimeException("Không thể hủy booking đã hoàn thành");
+        }
+
+        // ✅ Lấy slot sớm nhất trong booking
+        if (booking.getBookingSlots() == null || booking.getBookingSlots().isEmpty()) {
+            throw new RuntimeException("Booking không có slot nào để xác định thời gian bắt đầu");
+        }
+
+        SlotAvailability firstSlot = booking.getBookingSlots().stream()
+                .sorted((a, b) -> {
+                    var sa = a.getSlot();
+                    var sb = b.getSlot();
+                    var startA = sa.getDate().with(sa.getTemplate().getStartTime());
+                    var startB = sb.getDate().with(sb.getTemplate().getStartTime());
+                    return startA.compareTo(startB);
+                })
+                .findFirst()
+                .get()
+                .getSlot();
+
+        LocalDateTime slotStart = firstSlot.getDate().with(firstSlot.getTemplate().getStartTime());
+        LocalDateTime now = LocalDateTime.now();
+
+        // ✅ Không cho hủy nếu còn dưới 30 phút
+        if (!now.isBefore(slotStart.minusMinutes(30))) {
+            throw new RuntimeException("Không thể hủy đặt chỗ khi còn dưới 30 phút trước thời gian bắt đầu.");
+        }
+
+        // ✅ Cập nhật trạng thái booking
+        booking.setStatus(BookingStatus.CANCELED);
+        booking.setUpdatedAt(LocalDateTime.now());
+        bookingsRepository.save(booking);
+
+        // ✅ Giải phóng lại các slot
+        for (BookingSlot bs : booking.getBookingSlots()) {
+            SlotAvailability slot = bs.getSlot();
+            slot.setStatus(SlotStatus.AVAILABLE);
+            slotAvailabilityRepository.save(slot);
+        }
+
+        // ✅ Gửi Notification cho user (optional)
+        try {
+            Notification noti = new Notification();
+            noti.setUser(booking.getVehicle().getDriver().getUser());
+            noti.setTitle("Hủy đặt chỗ #" + booking.getBookingId());
+            noti.setContentNoti("Đặt chỗ của bạn tại trạm "
+                    + booking.getStation().getStationName()
+                    + " đã được hủy thành công.");
+            noti.setType(NotificationTypes.BOOKING_CANCELED);
+            noti.setStatus("UNREAD");
+            noti.setBooking(booking);
+            notificationsRepository.save(noti);
+
+            eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+        } catch (Exception e) {
+            log.warn("[cancelBooking] Notification failed: {}", e.getMessage());
+        }
+
+        double price = tariffRepository.findByConnectorType(firstSlot.getChargingPoint().getConnectorType())
+                .map(Tariff::getPricePerKWh)
+                .orElse(0.0);
+
+        return BookingResponse.builder()
+                .bookingId(booking.getBookingId())
+                .vehicleName(booking.getVehicle().getModel().getModel())
+                .stationName(booking.getStation().getStationName())
+                .slotName("Slots: " + booking.getBookingSlots().stream()
+                        .map(bs -> bs.getSlot().getSlotId().toString())
+                        .collect(Collectors.joining(", ")))
+                .connectorType(firstSlot.getChargingPoint().getConnectorType().getDisplayName())
+                .bookingDate(firstSlot.getDate())
+                .price(price)
+                .status(booking.getStatus())
+                .build();
     }
 }
