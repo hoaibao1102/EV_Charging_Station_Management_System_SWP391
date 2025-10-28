@@ -79,6 +79,7 @@ public class DriverController {
         return ResponseEntity.status(HttpStatus.CREATED).body(vehicle);
     }
 
+   
     // ✅ Driver xem hồ sơ chính mình (qua token)
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/profile")
@@ -100,10 +101,4 @@ public class DriverController {
         List<VehicleResponse> vehicles = driverService.getMyVehicles(userId);
         return ResponseEntity.ok(vehicles);
     }
-    
-    /**
-     * UC-04: Xóa xe khỏi hồ sơ
-     */
-
-
 }

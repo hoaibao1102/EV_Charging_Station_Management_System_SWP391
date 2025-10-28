@@ -37,8 +37,8 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
     @Transactional
     public ConnectorTypeResponse createConnectorType(ConnectorTypeCreateRequest request) {
         // Kiểm tra code đã tồn tại
-        if (connectorTypeRepository.existsByCode(request.getCode())) {
-            throw new IllegalArgumentException("Code đã tồn tại: " + request.getCode());
+        if (connectorTypeRepository.existsByCodeAndMode(request.getCode(), request.getMode())) {
+            throw new IllegalArgumentException("Code and Mode không được trùng: " + request.getCode() + "And" + request.getMode());
         }
 
         ConnectorType connectorType = ConnectorType.builder()
@@ -61,8 +61,8 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
 
         // Kiểm tra code nếu muốn update và code khác với code hiện tại
         if (request.getCode() != null && !request.getCode().equals(connectorType.getCode())) {
-            if (connectorTypeRepository.existsByCode(request.getCode())) {
-                throw new IllegalArgumentException("Code đã tồn tại: " + request.getCode());
+            if (connectorTypeRepository.existsByCodeAndMode(request.getCode(), request.getMode())) {
+                throw new IllegalArgumentException("Code and Mode không được trùng: " + request.getCode() + "And" + request.getMode());
             }
             connectorType.setCode(request.getCode());
         }
