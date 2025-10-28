@@ -20,6 +20,7 @@ public class VehicleModelMapper {
                 .connectorTypeCode(ct != null ? ct.getCode() : null)
                 .connectorTypeDisplayName(ct != null ? ct.getDisplayName() : null)
                 .connectorDefaultMaxPowerKW(ct != null ? ct.getDefaultMaxPowerKW() : 0)
+                .batteryCapacityKWh(vm.getBatteryCapacityKWh())
                 .build();
     }
 }
