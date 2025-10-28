@@ -5,21 +5,19 @@ import com.swp391.gr3.ev_management.DTO.request.StopCharSessionRequest;
 import com.swp391.gr3.ev_management.DTO.response.StartCharSessionResponse;
 import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
 import com.swp391.gr3.ev_management.DTO.response.ViewCharSessionResponse;
-import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.entity.*;
-import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
-import com.swp391.gr3.ev_management.enums.InvoiceStatus;
-import com.swp391.gr3.ev_management.enums.NotificationTypes;
+import com.swp391.gr3.ev_management.enums.*;
+import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.mapper.ChargingSessionMapper;
 import com.swp391.gr3.ev_management.repository.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -30,15 +28,14 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ChargingSessionServiceImpl implements ChargingSessionService {
 
     private final ChargingSessionRepository sessionRepository;
-    private final ChargingPointRepository pointRepository;
     private final BookingsRepository bookingsRepository;
-    private final InvoiceRepository invoiceRepository;
-    private final StaffsRepository staffRepository;
     private final ChargingSessionMapper mapper;
     private final NotificationsRepository notificationsRepository;
     private final SessionSocCache sessionSocCache;
-    private final TariffRepository tariffRepository;
     private final TaskScheduler taskScheduler;
+
+    private final ChargingSessionTxHandler txHandler;              // ✅ bean TX
+    private final ApplicationEventPublisher eventPublisher;        // ✅ publish mail event
 
     @Override
     @Transactional
@@ -47,12 +44,9 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .findByBookingIdAndStatus(request.getBookingId(), BookingStatus.CONFIRMED)
                 .orElseThrow(() -> new RuntimeException("Booking not found or not confirmed"));
 
-        // (Tuỳ bạn mở lại kiểm tra staff thuộc station)
-
         sessionRepository.findByBooking_BookingId(booking.getBookingId())
                 .ifPresent(s -> { throw new IllegalStateException("Session already exists for this booking"); });
 
-        // === RÀNG BUỘC THỜI GIAN ===
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime windowStart = getBookingStart(booking);
         LocalDateTime windowEnd   = getBookingEnd(booking);
@@ -64,7 +58,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
             throw new IllegalStateException("Đã quá giờ đặt (đến: " + windowEnd + "). Không thể bắt đầu.");
         }
 
-        int initialSoc = ThreadLocalRandom.current().nextInt(20, 81);
+        int initialSoc = ThreadLocalRandom.current().nextInt(5, 25);
 
         ChargingSession session = new ChargingSession();
         session.setBooking(booking);
@@ -75,22 +69,16 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
 
         sessionSocCache.put(session.getSessionId(), initialSoc);
 
-        // Trạng thái booking nên là IN_PROGRESS (thay vì BOOKED)
+        // (tuỳ bạn) chuyển sang IN_PROGRESS hoặc BOOKED; để nguyên như bạn đang dùng:
         booking.setStatus(BookingStatus.BOOKED);
         bookingsRepository.save(booking);
 
-        // === HẸN GIỜ AUTO-STOP LÚC HẾT GIỜ ===
+        // schedule auto-stop — GỌI QUA BEAN TX HANDLER để có TX khi chạy
         Date triggerAt = Date.from(windowEnd.atZone(ZoneId.systemDefault()).toInstant());
-        taskScheduler.schedule(() -> autoStopIfStillRunning(session.getSessionId(), windowEnd), triggerAt);
+        Long sid = session.getSessionId();
+        taskScheduler.schedule(() -> txHandler.autoStopIfStillRunningTx(sid, windowEnd), triggerAt);
 
-        BookingSlot firstSlot = booking.getBookingSlots().stream()
-                .findFirst()
-                .orElse(null);
-        String pointNumber = (firstSlot != null && firstSlot.getSlot() != null
-                && firstSlot.getSlot().getChargingPoint() != null)
-                ? firstSlot.getSlot().getChargingPoint().getPointNumber()
-                : "Unknown";
-
+        // Notification + publish event
         Notification noti = new Notification();
         noti.setUser(booking.getVehicle().getDriver().getUser());
         noti.setBooking(booking);
@@ -98,9 +86,10 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         noti.setTitle("Bắt đầu sạc #" + booking.getBookingId());
         noti.setContentNoti("Pin hiện tại: " + initialSoc + "%");
         noti.setType(NotificationTypes.CHARGING_STARTED);
-        noti.setStatus("UNREAD");
+        noti.setStatus(Notification.STATUS_UNREAD);
         noti.setCreatedAt(LocalDateTime.now());
         notificationsRepository.save(noti);
+        eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId())); // ✅ để listener gửi mail
 
         return StartCharSessionResponse.builder()
                 .sessionId(session.getSessionId())
@@ -113,117 +102,6 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .build();
     }
 
-    @Transactional
-    protected StopCharSessionResponse stopSessionInternal(ChargingSession session,
-                                                          int finalSoc,
-                                                          LocalDateTime endTime) {
-        if (session.getStatus() != ChargingSessionStatus.IN_PROGRESS) {
-            throw new RuntimeException("Session is not currently active");
-        }
-
-        Integer initialSoc = Optional.ofNullable(session.getInitialSoc())
-                .orElseThrow(() -> new IllegalStateException("Initial SoC not recorded"));
-        if (finalSoc < 0 || finalSoc > 100) {
-            throw new IllegalArgumentException("Final SoC must be between 0 and 100");
-        }
-        if (finalSoc < initialSoc) {
-            throw new IllegalStateException("Final SoC is lower than initial SoC");
-        }
-
-        Booking booking = session.getBooking();
-        double batteryCapacityKWh = booking.getVehicle().getModel().getBatteryCapacityKWh();
-
-        double deltaSoc = finalSoc - initialSoc;
-        double energyKWh = (deltaSoc / 100.0) * batteryCapacityKWh;
-
-        long minutes = ChronoUnit.MINUTES.between(session.getStartTime(), endTime);
-
-        // 🔌 Lấy ConnectorType và PointNumber
-        BookingSlot firstSlot = booking.getBookingSlots().stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No slot found for booking"));
-
-        ChargingPoint point = firstSlot.getSlot().getChargingPoint();
-        String pointNumber = point != null ? point.getPointNumber() : "Unknown";
-
-        ConnectorType connectorType = booking.getBookingSlots().stream()
-                .findFirst()
-                .map(bs -> bs.getSlot().getChargingPoint().getConnectorType())
-                .orElseGet(() -> booking.getVehicle().getModel().getConnectorType());
-
-        LocalDateTime pricingTime = endTime;
-        Tariff tariff = tariffRepository
-                .findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(
-                        connectorType.getConnectorTypeId(), pricingTime, pricingTime)
-                .orElseThrow(() -> new RuntimeException("No active tariff for connector type"));
-
-        double pricePerKWh = tariff.getPricePerKWh();
-        double cost = round2(pricePerKWh * energyKWh);
-
-        session.setEndTime(endTime);
-        session.setDurationMinutes((int) minutes);
-        session.setFinalSoc(finalSoc);
-        session.setEnergyKWh(energyKWh);
-        session.setCost(cost);
-        session.setStatus(ChargingSessionStatus.COMPLETED);
-        sessionRepository.save(session);
-
-        sessionSocCache.remove(session.getSessionId());
-
-        booking.setStatus(BookingStatus.COMPLETED);
-        bookingsRepository.save(booking);
-
-        Notification done = new Notification();
-        done.setUser(booking.getVehicle().getDriver().getUser());
-        done.setBooking(booking);
-        done.setSession(session);
-        done.setTitle("Kết thúc sạc #" + booking.getBookingId());
-        done.setContentNoti(
-                "Điểm sạc: " + pointNumber +
-                        " | Thời lượng: " + minutes + " phút" +
-                        " | Tăng SOC: " + initialSoc + "% → " + finalSoc + "%" +
-                        " | Năng lượng: " + round2(energyKWh) + " kWh" +
-                        " | Chi phí: " + cost + " " + tariff.getCurrency()
-        );
-        done.setType(NotificationTypes.CHARGING_COMPLETED); // hoặc CHARGING_ENDED tùy enum của bạn
-        done.setStatus(Notification.STATUS_UNREAD);
-        done.setCreatedAt(LocalDateTime.now());
-        notificationsRepository.save(done);
-
-        invoiceRepository.findBySession_SessionId(session.getSessionId())
-                .ifPresent(i -> { throw new RuntimeException("Invoice already exists for this session"); });
-
-        Invoice invoice = new Invoice();
-        invoice.setSession(session);
-        invoice.setAmount(cost);
-        invoice.setCurrency(tariff.getCurrency());
-        invoice.setStatus(InvoiceStatus.UNPAID);
-        invoice.setIssuedAt(LocalDateTime.now());
-        invoice.setDriver(booking.getVehicle().getDriver());
-        invoiceRepository.save(invoice);
-
-        return StopCharSessionResponse.builder()
-                .sessionId(session.getSessionId())
-                .stationName(booking.getStation().getStationName())
-                .pointNumber(pointNumber)
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
-                .startTime(session.getStartTime())
-                .endTime(session.getEndTime())
-                .durationMinutes(session.getDurationMinutes())
-                .energyKWh(session.getEnergyKWh())
-                .cost(session.getCost())
-                .status(session.getStatus())
-                .initialSoc(session.getInitialSoc())
-                .finalSoc(session.getFinalSoc())
-                .pricePerKWh(tariff.getPricePerKWh())
-                .currency(tariff.getCurrency())
-                .build();
-    }
-
-    private static double round2(double v) {
-        return Math.round(v * 100.0) / 100.0;
-    }
-
     @Override
     @Transactional
     public StopCharSessionResponse stopChargingSession(StopCharSessionRequest request) {
@@ -231,63 +109,14 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .orElseThrow(() -> new RuntimeException("Session not found"));
 
         LocalDateTime endTime = LocalDateTime.now();
-
         Integer reqSoc = request.getFinalSoc();
-        int finalSoc = (reqSoc != null) ? clampSoc(reqSoc) : computeFinalSoc(session, endTime);
+        Integer latestSoc = (reqSoc != null) ? reqSoc : sessionSocCache.get(session.getSessionId()).orElse(null);
 
-        return stopSessionInternal(session, finalSoc, endTime);
+        // Delegate toàn bộ STOP qua bean TX (load lại bằng fetch-join bên trong)
+        return txHandler.stopSessionInternalTx(session.getSessionId(), latestSoc, endTime);
     }
 
-    private int clampSoc(Integer soc) {
-        if (soc == null) return 0;
-        return Math.max(0, Math.min(100, soc));
-    }
-
-    /** Ưu tiên lấy từ cache; nếu không có thì ước lượng theo thời gian sạc x công suất x hiệu suất */
-    private int computeFinalSoc(ChargingSession session, LocalDateTime endTime) {
-        // 1) lấy SoC realtime nếu có
-        Integer cached = sessionSocCache.get(session.getSessionId()).orElse(null);
-        if (cached != null) return clampSoc(cached);
-
-        // 2) ước lượng
-        int initial = Optional.ofNullable(session.getInitialSoc()).orElse(20);
-        double capKWh = session.getBooking().getVehicle().getModel().getBatteryCapacityKWh();
-        double estEnergy = estimateEnergyKWh(session.getStartTime(), endTime, session.getBooking());
-
-        int estFinal = (int) Math.round(initial + (estEnergy / capKWh) * 100.0);
-        if (estFinal < initial) estFinal = initial;        // không cho thấp hơn initial
-        return clampSoc(estFinal);
-    }
-
-    private double estimateEnergyKWh(LocalDateTime start, LocalDateTime end, Booking booking) {
-        double minutes = Math.max(0, ChronoUnit.MINUTES.between(start, end));
-        double hours = minutes / 60.0;
-
-        double ratedKW = booking.getBookingSlots().stream()
-                .findFirst()
-                .map(bs -> {
-                    Double p = bs.getSlot().getChargingPoint().getMaxPowerKW();
-                    return (p != null && p > 0) ? p : 11.0; // mặc định 11kW
-                })
-                .orElse(11.0);
-
-        double efficiency = 0.90;
-        return round2(hours * ratedKW * efficiency);
-    }
-
-    @Transactional
-    protected void autoStopIfStillRunning(Long sessionId, LocalDateTime windowEnd) {
-        Optional<ChargingSession> opt = sessionRepository.findById(sessionId);
-        if (opt.isEmpty()) return;
-        ChargingSession session = opt.get();
-        if (session.getStatus() != ChargingSessionStatus.IN_PROGRESS) return;
-
-        Integer latestSoc = sessionSocCache.get(sessionId).orElse(null);
-        int finalSoc = (latestSoc != null) ? clampSoc(latestSoc) : computeFinalSoc(session, windowEnd);
-
-        stopSessionInternal(session, finalSoc, windowEnd);
-    }
-
+    @Transactional(readOnly = true)
     @Override
     public ViewCharSessionResponse getCharSessionById(Long sessionId) {
         ChargingSession session = sessionRepository.findById(sessionId)
@@ -295,27 +124,25 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         return mapper.toResponse(session);
     }
 
-    @Override
-    public List<ViewCharSessionResponse> getCharSessionsByStation(Long stationId) {
-        List<ChargingSession> sessions = sessionRepository.findByBooking_Station_StationId(stationId);
-        return sessions.stream().map(mapper::toResponse).toList();
-    }
-
+    @Transactional(readOnly = true)
     @Override
     public List<ViewCharSessionResponse> getActiveCharSessionsByStation(Long stationId) {
-        List<ChargingSession> activeSessions = sessionRepository.findActiveSessionsByStation(stationId);
-        return activeSessions.stream().map(mapper::toResponse).toList();
+        List<ChargingSession> active = sessionRepository.findActiveSessionsByStation(stationId);
+        return active.stream().map(mapper::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ChargingSession> getAll() {
         return sessionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<ChargingSession> findById(Long sessionId) {
         return sessionRepository.findById(sessionId);
     }
 
+    // ---- helpers (read-only) ----
     private LocalDateTime getBookingStart(Booking booking) {
         return booking.getBookingSlots().stream()
                 .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getStartTime()))

@@ -45,8 +45,6 @@ public class PaymentService {
     public String createVnPayPaymentUrl(Long driverId,
                                         Long sessionId,
                                         Long paymentMethodId,
-                                        String currencyParam, // không dùng để ghi đè invoice
-                                        double amountParam,   // không dùng để ghi đè invoice
                                         String clientIp) throws Exception {
 
         Driver driver = driverRepository.findById(driverId)

@@ -1,11 +1,9 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
-import com.swp391.gr3.ev_management.service.StaffService;
 import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

@@ -38,6 +38,7 @@ public class DataInitializer implements CommandLineRunner {
     private final TransactionTemplate transactionTemplate;
     private final TariffRepository tariffRepository;
     private final StationStaffRepository stationStaffRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
 
     @Value("${app.data.init.enabled:true}")
@@ -51,16 +52,17 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         try {
-//            initConnectorTypes();     // seed các loại đầu sạc phổ biến
-//            initRoles();              // seed các role chuẩn
-//            initAdmins();             // tạo 1 admin mặc định + map bảng Admin
-//            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
-//            initVehicleModels();      // seed VehicleModel (cần connector types)
-//            initDrivers();            // seed Driver
-//            initChargingStations();   // seed trạm sạc theo Seed_Data
-//            initChargingPoints();     // seed điểm sạc theo Seed_Data
-//            initSlotAvailability();   // seed mẫu slot theo Seed_Data
-//            initTariffs();            // seed bảng Tariff
+            initConnectorTypes();     // seed các loại đầu sạc phổ biến
+            initRoles();              // seed các role chuẩn
+            initAdmins();             // tạo 1 admin mặc định + map bảng Admin
+            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
+            initVehicleModels();      // seed VehicleModel (cần connector types)
+            initDrivers();            // seed Driver
+            initChargingStations();   // seed trạm sạc theo Seed_Data
+            initChargingPoints();     // seed điểm sạc theo Seed_Data
+            initSlotAvailability();   // seed mẫu slot theo Seed_Data
+            initTariffs();            // seed bảng Tariff
+            initPaymentMethods();     // seed bảng PaymentMethod
 
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
@@ -321,7 +323,7 @@ public class DataInitializer implements CommandLineRunner {
     // ================== VEHICLE MODELS (tùy chọn) ==================
     private void initVehicleModels() {
         createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "CCS2",75);
-        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "CCS2",80);
+        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "TYPE2",80);
         createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "CCS2", 64);
         createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "CCS2", 77);
         createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "CCS2",42);
@@ -669,6 +671,40 @@ public class DataInitializer implements CommandLineRunner {
                     connectorCode, pricePerKWh, currency, effectiveFrom, effectiveTo);
         } catch (Exception e) {
             log.warn("Failed to create tariff for {}: {}", connectorCode, e.getMessage());
+        }
+    }
+
+    // ================== PAYMENT METHODS ==================
+    private void initPaymentMethods() {
+        createPaymentMethodIfNotExists(PaymentType.EWALLET, PaymentProvider.VNPAY, "411111******1111", LocalDate.of(2030,10,28));
+    }
+
+    private void createPaymentMethodIfNotExists(PaymentType methodType,
+                                                PaymentProvider provider,
+                                                String accountNo,
+                                                LocalDate expiryDate) {
+        try {
+            boolean exists = paymentMethodRepository
+                    .existsByMethodTypeAndProviderAndAccountNo(methodType, provider, accountNo);
+            if (exists) {
+                log.info("PaymentMethod already exists (type={}, provider={}, accountNo={})",
+                        methodType, provider, accountNo);
+                return;
+            }
+
+            var pm = PaymentMethod.builder()
+                    .methodType(methodType)
+                    .provider(provider)
+                    .accountNo(accountNo)
+                    .expiryDate(expiryDate)
+                    .build();
+
+            paymentMethodRepository.save(pm);
+            log.info("Created PaymentMethod (type={}, provider={}, accountNo={})",
+                    methodType, provider, accountNo);
+        } catch (Exception e) {
+            log.warn("Failed to create PaymentMethod ({} / {} / {}): {}",
+                    methodType, provider, accountNo, e.getMessage());
         }
     }
 }

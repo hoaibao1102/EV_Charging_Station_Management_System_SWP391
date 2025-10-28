@@ -170,43 +170,6 @@ public class DriverServiceImpl implements DriverService {
     return driverMapper.toDriverResponse(driver);
     }
 
-    /**
-     * Lấy driver profile theo driverId (nếu bạn cần riêng)
-     */
-    @Transactional(readOnly = true)
-    public DriverResponse getDriverProfile(Long driverId) {
-        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with driverId: " + driverId));
-    return driverMapper.toDriverResponse(driver);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DriverResponse> getDriversByStatus(DriverStatus status) {
-        return driverRepository.findByStatus(status)
-                .stream()
-                .map(driverMapper::toDriverResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DriverResponse> getDriversByName(String name) {
-        return driverRepository.findByUser_NameContainingIgnoreCase(name)
-                .stream()
-                .map(driverMapper::toDriverResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DriverResponse> getDriversByPhoneNumber(String phoneNumber) {
-        return driverRepository.findByUser_PhoneNumberContaining(phoneNumber)
-                .stream()
-                .map(driverMapper::toDriverResponse)
-                .toList();
-    }
-
     // =================== UC-04: VEHICLE MANAGEMENT ===================
 
     /**

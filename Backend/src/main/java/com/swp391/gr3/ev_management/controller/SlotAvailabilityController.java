@@ -1,8 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.SlotAvailabilityCreateRequest;
 import com.swp391.gr3.ev_management.DTO.response.SlotAvailabilityResponse;
-import com.swp391.gr3.ev_management.DTO.response.SlotTemplateResponse;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 import com.swp391.gr3.ev_management.service.SlotAvailabilityService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 

@@ -8,6 +8,7 @@ import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.Transaction;
 import com.swp391.gr3.ev_management.enums.InvoiceStatus;
+import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.mapper.UnpaidInvoiceMapper;
 import com.swp391.gr3.ev_management.repository.InvoiceRepository;
 import com.swp391.gr3.ev_management.repository.PaymentMethodRepository;
@@ -54,11 +55,11 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
         }
 
         PaymentMethod method = paymentMethodRepository
-                .findByMethodTypeAndProvider(request.getPaymentMethod(), "Cash")
+                .findByMethodTypeAndProvider(request.getPaymentMethod(), PaymentProvider.VNPAY)
                 .orElseGet(() -> {
                     PaymentMethod m = new PaymentMethod();
                     m.setMethodType(request.getPaymentMethod());
-                    m.setProvider("Cash");
+                    m.setProvider(PaymentProvider.VNPAY);
                     m.setAccountNo("N/A");
                     m.setCreatedAt(LocalDateTime.now());
                     m.setUpdatedAt(LocalDateTime.now());

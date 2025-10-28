@@ -14,9 +14,6 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     // Kiểm tra tồn tại driver theo userId (đúng property path)
     boolean existsByUser_UserId(Long userId);
 
-    // Lấy driver theo userId (không fetch join)
-    Optional<Driver> findByUser_UserId(Long userId);
-
     // JOIN FETCH theo userId (dùng khi cần chắc chắn có User đã load)
     @Query("""
            select d from Driver d 

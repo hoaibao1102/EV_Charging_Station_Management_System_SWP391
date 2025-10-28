@@ -5,7 +5,6 @@ import com.swp391.gr3.ev_management.DTO.response.SlotAvailabilityResponse;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SlotAvailabilityService {
