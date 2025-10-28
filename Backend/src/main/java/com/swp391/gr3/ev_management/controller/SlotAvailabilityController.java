@@ -41,10 +41,10 @@ public class SlotAvailabilityController {
         return ResponseEntity.ok(slotAvailabilityService.findAll());
     }
 
-    @GetMapping("/{slotAvailabilityId}")
-    @Operation(summary = "Get slot availability by ID", description = "Retrieve slot availability details by its ID")
-    public ResponseEntity<SlotAvailabilityResponse> getById(@PathVariable Long slotAvailabilityId) {
-        SlotAvailabilityResponse response = slotAvailabilityService.findById(slotAvailabilityId);
+    @GetMapping("/{pointId}")
+    @Operation(summary = "Get slot availability by pointId", description = "Retrieve slot availability details by its pointId")
+    public ResponseEntity<SlotAvailabilityResponse> getById(@PathVariable Long pointId) {
+        SlotAvailabilityResponse response = slotAvailabilityService.findById(pointId);
         if (response == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(response);
     }

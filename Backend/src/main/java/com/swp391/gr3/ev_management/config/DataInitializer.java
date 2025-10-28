@@ -563,10 +563,10 @@ public class DataInitializer implements CommandLineRunner {
             var to   = LocalDate.now().withMonth(12).withDayOfMonth(31).atTime(23,59,59);
 
             // Ví dụ giá tham khảo theo loại đầu sạc
-            createTariffIfNotExists("TYPE1",   3200.0, "VND", from, to);   // AC 7.4kW
-            createTariffIfNotExists("TYPE2",   3800.0, "VND", from, to);   // AC 22kW
-            createTariffIfNotExists("CHADEMO", 5200.0, "VND", from, to);   // DC 50kW
-            createTariffIfNotExists("CCS2",    6500.0, "VND", from, to);   // DC 150kW
+            createTariffIfNotExists("TYPE1",   3200.0, 2000, "VND", from, to);   // AC 7.4kW
+            createTariffIfNotExists("TYPE2",   3800.0, 2000, "VND", from, to);   // AC 22kW
+            createTariffIfNotExists("CHADEMO", 5200.0, 2500, "VND", from, to);   // DC 50kW
+            createTariffIfNotExists("CCS2",    6500.0, 2500, "VND", from, to);   // DC 150kW
 
             log.info("Created default tariffs if missing.");
         } catch (Exception e) {
@@ -580,6 +580,7 @@ public class DataInitializer implements CommandLineRunner {
      */
     private void createTariffIfNotExists(String connectorCode,
                                          double pricePerKWh,
+                                         double pricePerMin,
                                          String currency,
                                          LocalDateTime effectiveFrom,
                                          LocalDateTime effectiveTo) {
@@ -595,12 +596,13 @@ public class DataInitializer implements CommandLineRunner {
                     t.getConnectorType().getConnectorTypeId().equals(connector.getConnectorTypeId())
                             && t.getCurrency().equalsIgnoreCase(currency)
                             && t.getPricePerKWh() == pricePerKWh
+                            && t.getPricePerMin() == pricePerMin
                             && t.getEffectiveFrom().equals(effectiveFrom)
                             && t.getEffectiveTo().equals(effectiveTo)
             );
             if (existsSame) {
-                log.info("Tariff already exists for {} ({} {} VND from {} to {})",
-                        connectorCode, pricePerKWh, currency, effectiveFrom, effectiveTo);
+                log.info("Tariff already exists for {} ({} {} {} VND from {} to {})",
+                        connectorCode, pricePerKWh, pricePerMin, currency, effectiveFrom, effectiveTo);
                 return;
             }
 
@@ -617,6 +619,7 @@ public class DataInitializer implements CommandLineRunner {
             Tariff tariff = Tariff.builder()
                     .connectorType(connector)
                     .pricePerKWh(pricePerKWh)
+                    .pricePerMin(pricePerMin)
                     .currency(currency)
                     .effectiveFrom(effectiveFrom)
                     .effectiveTo(effectiveTo)

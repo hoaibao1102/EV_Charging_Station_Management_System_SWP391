@@ -24,7 +24,7 @@ public class PaymentMethod {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "MethodType", columnDefinition = "NVARCHAR(50)", nullable = false)
-    private PaymentType methodType ;
+    private PaymentType methodType;
 
     @Column(name = "ProviderName", columnDefinition = "NVARCHAR(100)", nullable = false)
     private String provider;
@@ -42,8 +42,6 @@ public class PaymentMethod {
     @UpdateTimestamp
     @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
-
-    //
 
     @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactions;

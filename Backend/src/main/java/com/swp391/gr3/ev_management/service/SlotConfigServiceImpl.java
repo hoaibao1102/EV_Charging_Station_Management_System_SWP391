@@ -68,7 +68,7 @@ public class SlotConfigServiceImpl implements SlotConfigService {
 
         // 2) Tạo SlotConfig mới (ACTIVE)
         req.setActiveFrom(now);
-        req.setActiveExpire(null);
+        req.setActiveExpire(now);
         req.setIsActive(SlotConfigStatus.ACTIVE);
 
         SlotConfig entity = mapper.toEntity(req, station);

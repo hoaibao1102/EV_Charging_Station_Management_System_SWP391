@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,4 +19,13 @@ public interface TariffRepository extends JpaRepository<Tariff,Long> {
     Optional<Tariff> findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(
             Long connectorTypeId, LocalDateTime from, LocalDateTime to
     );
+
+    @Query("""
+           SELECT t FROM Tariff t
+           WHERE t.connectorType.connectorTypeId = :connectorTypeId
+             AND :now BETWEEN t.effectiveFrom AND t.effectiveTo
+           ORDER BY t.effectiveFrom DESC
+           """)
+    List<Tariff> findActiveByConnectorType(@Param("connectorTypeId") Long connectorTypeId,
+                                           @Param("now") LocalDateTime now);
 }

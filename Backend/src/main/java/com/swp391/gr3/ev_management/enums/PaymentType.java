@@ -5,5 +5,6 @@ public enum PaymentType {
     ZALOPAY,
     VISA,
     BANK_TRANSFER,
-    CASH
+    CASH,
+    VNPAY
 }

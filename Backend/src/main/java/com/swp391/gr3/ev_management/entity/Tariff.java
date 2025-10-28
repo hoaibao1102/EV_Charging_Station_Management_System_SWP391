@@ -28,6 +28,9 @@ public class Tariff {
     @Column(name = "PricePerKWh", nullable = false)
     private double pricePerKWh;
 
+    @Column(name = "PricePerMin", nullable = false)
+    private double pricePerMin;
+
     @Column(name = "Currency", columnDefinition = "NVARCHAR(10)", nullable = false)
     private String currency;
 
