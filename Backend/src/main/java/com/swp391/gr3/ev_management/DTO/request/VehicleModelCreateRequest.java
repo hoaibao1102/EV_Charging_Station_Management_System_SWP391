@@ -1,5 +1,7 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +27,11 @@ public class VehicleModelCreateRequest {
 
     @NotNull(message = "connectorTypeId is required")
     private Long connectorTypeId;
+
+    @JsonAlias({"batteryCapacity", "battery-capacity"})
+    @NotNull(message = "Battery Capacity is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Battery Capacity must be greater than 0")
+    private Double batteryCapacityKWh;
 
 //    @SuppressWarnings("unused")
 //    @AssertTrue(message = "Year cannot be in the far future")
