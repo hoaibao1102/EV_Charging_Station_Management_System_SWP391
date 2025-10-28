@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoute.jsx';
-import paths from './paths.jsx';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute.jsx";
+import paths from "./paths.jsx";
 
 // Import Layouts
-import AdminLayout from '../layouts/AdminLayout';
-import DriverLayout from '../layouts/DriverLayout';
- 
+import AdminLayout from "../layouts/AdminLayout";
+import DriverLayout from "../layouts/DriverLayout";
+
 // Public Pages =====================================
 import Error404 from "../pages/auth/Error404.jsx";
 import Login from "../pages/auth/Login.jsx";
@@ -19,6 +19,8 @@ import Stations from "../pages/inNavigateDriver/Stations.jsx";
 import StationDetail from "../pages/inNavigateDriver/StationDetail.jsx";
 import BookingInfo from "../pages/inNavigateDriver/BookingInformation.jsx";
 import Booking from "../pages/inNavigateDriver/Booking.jsx";
+import BookingDetail from "../pages/inNavigateDriver/BookingDetail.jsx";
+import BookingQRCode from "../pages/inNavigateDriver/BookingQRCode.jsx";
 import Profile from "../pages/inNavigateDriver/Profile.jsx";
 import EditProfile from "../pages/profileDriver/EditProfile.jsx";
 import Information from "../pages/profileDriver/Information.jsx";
@@ -28,23 +30,21 @@ import Vehicles from "../pages/profileDriver/Vehicles.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
 
 // Admin Pages ====================================
-import AdminDashboard  from "../pages/admin/AdminDashboard.jsx";
-import ManagementStation  from "../pages/admin/ManagementStation.jsx";
-import ManagementUser  from "../pages/admin/ManagementUser.jsx";
+import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
+import ManagementStation from "../pages/admin/ManagementStation.jsx";
+import ManagementUser from "../pages/admin/ManagementUser.jsx";
 import BusinessStatistics from "../pages/admin/BusinessStatistics.jsx";
 import ManagementAccident from "../pages/admin/ManagementAccident.jsx";
 import ManagementCharger from "../pages/admin/ManagementCharger.jsx";
 import ManagementChargingPoint from "../pages/admin/ManagementChargingPoint.jsx";
-import PriceConfiguration from '../pages/admin/PriceConfiguration.jsx';
-import ManagementModel from '../pages/admin/ManagementModel.jsx';
+import PriceConfiguration from "../pages/admin/PriceConfiguration.jsx";
+import ManagementModel from "../pages/admin/ManagementModel.jsx";
 
 // Staff Pages ====================================
-import ReportAccidents from '../pages/staff/ReportAccident.jsx';
-import ManagementTransaction from '../pages/staff/ManagementTransaction.jsx';
-import SessionCharging from '../pages/staff/SessionCharging.jsx';
-import StaffDashboard from '../pages/staff/StaffDashboard.jsx';
-
-
+import ReportAccidents from "../pages/staff/ReportAccident.jsx";
+import ManagementTransaction from "../pages/staff/ManagementTransaction.jsx";
+import SessionCharging from "../pages/staff/SessionCharging.jsx";
+import StaffDashboard from "../pages/staff/StaffDashboard.jsx";
 
 const AppRouter = () => {
   return (
@@ -63,15 +63,16 @@ const AppRouter = () => {
           <Route path={paths.rules} element={<Rules />} />
           <Route path={paths.stationDetail} element={<StationDetail />} />
         </Route>
-        
-        
+
         {/* ======================= PROTECTED ROUTES (Cần đăng nhập) ======================= */}
 
         {/* 1. DRIVER Routes - Chỉ DRIVER mới truy cập được */}
-        <Route element={<ProtectedRoute allowedRoles={['DRIVER']} />}>
-          <Route path="/" element={<DriverLayout />}> 
-            <Route index element={<Home />} />           
+        <Route element={<ProtectedRoute allowedRoles={["DRIVER"]} />}>
+          <Route path="/" element={<DriverLayout />}>
+            <Route index element={<Home />} />
             <Route path={paths.booking} element={<Booking />} />
+            <Route path={paths.bookingDetail} element={<BookingDetail />} />
+            <Route path={paths.bookingQr} element={<BookingQRCode />} />
             <Route path={paths.bookingInformation} element={<BookingInfo />} />
             <Route path={paths.profile} element={<Profile />} />
             <Route path={paths.myVehicle} element={<Vehicles />} />
@@ -82,26 +83,50 @@ const AppRouter = () => {
         </Route>
 
         {/* 2. ADMIN Routes - Chỉ ADMIN mới truy cập được */}
-        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
           <Route path={paths.adminDashboard} element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path={paths.userManagement} element={<ManagementUser />} />
-            <Route path={paths.stationManagement} element={<ManagementStation />} />
+            <Route
+              path={paths.stationManagement}
+              element={<ManagementStation />}
+            />
             <Route path={paths.modelManagement} element={<ManagementModel />} />
-            <Route path={paths.chargerManagement} element={<ManagementCharger />} />
-            <Route path={paths.businessStatistics} element={<BusinessStatistics />} />
-            <Route path={paths.accidentReports} element={<ManagementAccident />} />
-            <Route path={paths.chargingPriceConfiguration} element={<PriceConfiguration />} />
-            <Route path={paths.chargingPointManagement} element={<ManagementChargingPoint />} />
+            <Route
+              path={paths.chargerManagement}
+              element={<ManagementCharger />}
+            />
+            <Route
+              path={paths.businessStatistics}
+              element={<BusinessStatistics />}
+            />
+            <Route
+              path={paths.accidentReports}
+              element={<ManagementAccident />}
+            />
+            <Route
+              path={paths.chargingPriceConfiguration}
+              element={<PriceConfiguration />}
+            />
+            <Route
+              path={paths.chargingPointManagement}
+              element={<ManagementChargingPoint />}
+            />
           </Route>
         </Route>
 
         {/* 3. STAFF Routes - Chỉ STAFF mới truy cập được */}
-        <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
+        <Route element={<ProtectedRoute allowedRoles={["STAFF"]} />}>
           <Route path={paths.staffDashboard} element={<AdminLayout />}>
             <Route index element={<StaffDashboard />} />
-            <Route path={paths.manageSessionCharging} element={<SessionCharging />} />
-            <Route path={paths.manageTransaction} element={<ManagementTransaction />} />
+            <Route
+              path={paths.manageSessionCharging}
+              element={<SessionCharging />}
+            />
+            <Route
+              path={paths.manageTransaction}
+              element={<ManagementTransaction />}
+            />
             <Route path={paths.reportAccidents} element={<ReportAccidents />} />
           </Route>
         </Route>

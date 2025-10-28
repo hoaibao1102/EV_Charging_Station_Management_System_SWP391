@@ -9,6 +9,8 @@ export const paths = {
   rules: "/rules",
   stations: "/stations",
   booking: "/bookings",
+  bookingDetail: "/bookings/:bookingId",
+  bookingQr: "/bookings/:bookingId/qr",
   profile: "/profile",
   myVehicle: "/profile/my-vehicle",
   myBookings: "/profile/my-bookings",
@@ -16,7 +18,7 @@ export const paths = {
   information: "/profile/information",
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
-  stationDetail: "/stations/:id", 
+  stationDetail: "/stations/:id",
 
   //admin
   adminDashboard: "/admin",
