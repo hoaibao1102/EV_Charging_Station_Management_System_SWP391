@@ -69,4 +69,33 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
            WHERE ss.staff.staffId = :staffId AND ss.unassignedAt IS NULL
            """)
     Optional<StationStaff> findActiveByStaffId(Long staffId);
+
+    @Query("""
+       select s from StationStaff s
+       join fetch s.staff staff
+       join fetch staff.user u
+       join fetch s.station st
+       where staff.staffId = :staffId
+       """)
+    Optional<StationStaff> findEntityByStaffId(Long staffId);
+
+    @Query("""
+    select new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
+        ss.stationStaffId,
+        s.stationId,
+        u.name,
+        u.email,
+        u.phoneNumber,
+        stf.status,
+        ss.assignedAt
+    )
+    from StationStaff ss
+    join ss.staff stf
+    join stf.user u
+    join ss.station s
+    where stf.staffId = :staffId
+    """)
+    Optional<StationStaffResponse> findByStaffId(@Param("staffId") Long staffId);
+
+    boolean existsByStaff_StaffIdAndStation_StationIdAndUnassignedAtIsNull(Long staffId, Long stationId);
 }
