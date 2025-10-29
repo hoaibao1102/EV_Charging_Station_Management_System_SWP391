@@ -8,6 +8,7 @@ import com.swp391.gr3.ev_management.DTO.response.ViewCharSessionResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingSessionMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     public StartCharSessionResponse startChargingSession(StartCharSessionRequest request) {
         Booking booking = bookingsRepository
                 .findByBookingIdAndStatus(request.getBookingId(), BookingStatus.CONFIRMED)
-                .orElseThrow(() -> new RuntimeException("Booking not found or not confirmed"));
+                .orElseThrow(() -> new ErrorException("Booking not found or not confirmed"));
 
         sessionRepository.findByBooking_BookingId(booking.getBookingId())
                 .ifPresent(s -> { throw new IllegalStateException("Session already exists for this booking"); });
@@ -52,10 +53,10 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         LocalDateTime windowEnd   = getBookingEnd(booking);
 
         if (now.isBefore(windowStart)) {
-            throw new IllegalStateException("Chưa đến giờ đặt. Chỉ được bắt đầu từ: " + windowStart);
+            throw new ErrorException("Chưa đến giờ đặt. Chỉ được bắt đầu từ: " + windowStart);
         }
         if (now.isAfter(windowEnd)) {
-            throw new IllegalStateException("Đã quá giờ đặt (đến: " + windowEnd + "). Không thể bắt đầu.");
+            throw new ErrorException("Đã quá giờ đặt (đến: " + windowEnd + "). Không thể bắt đầu.");
         }
 
         int initialSoc = ThreadLocalRandom.current().nextInt(5, 25);
@@ -106,7 +107,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     @Transactional
     public StopCharSessionResponse stopChargingSession(StopCharSessionRequest request) {
         ChargingSession session = sessionRepository.findById(request.getSessionId())
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseThrow(() -> new ErrorException("Session not found"));
 
         LocalDateTime endTime = LocalDateTime.now();
         Integer reqSoc = request.getFinalSoc();
@@ -120,7 +121,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     @Override
     public ViewCharSessionResponse getCharSessionById(Long sessionId) {
         ChargingSession session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Charging session not found"));
+                .orElseThrow(() -> new ErrorException("Charging session not found"));
         return mapper.toResponse(session);
     }
 
@@ -147,13 +148,13 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         return booking.getBookingSlots().stream()
                 .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getStartTime()))
                 .min(LocalDateTime::compareTo)
-                .orElseThrow(() -> new IllegalStateException("Booking has no slot start time"));
+                .orElseThrow(() -> new ErrorException("Booking has no slot start time"));
     }
 
     private LocalDateTime getBookingEnd(Booking booking) {
         return booking.getBookingSlots().stream()
                 .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getEndTime()))
                 .max(LocalDateTime::compareTo)
-                .orElseThrow(() -> new IllegalStateException("Booking has no slot end time"));
+                .orElseThrow(() -> new ErrorException("Booking has no slot end time"));
     }
 }

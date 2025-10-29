@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.SlotAvailability;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class SlotAvailabilitySchedulerService {
     public int resetAndCreateForConfigInDate(Long configId, LocalDate date) {
         var config = slotConfigRepository.findByConfigId(configId);
         if (config == null) {
-            throw new IllegalArgumentException("Không tìm thấy SlotConfig id=" + configId);
+            throw new ErrorException("Không tìm thấy SlotConfig id=" + configId);
         }
 
         LocalDateTime start = date.atStartOfDay();

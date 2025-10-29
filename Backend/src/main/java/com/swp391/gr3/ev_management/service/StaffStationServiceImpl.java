@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.entity.StationStaff;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +28,15 @@ public class StaffStationServiceImpl implements StaffStationService {
     @Override
     public StationStaffResponse updateStation(Long staffId, Long stationId) {
         StationStaff ss = stationStaffRepository.findEntityByStaffId(staffId)
-                .orElseThrow(() -> new RuntimeException("Staff not found with staffId " + staffId));
+                .orElseThrow(() -> new ErrorException("Staff not found with staffId " + staffId));
 
         var newStation = chargingStationRepository.findById(stationId)
-                .orElseThrow(() -> new RuntimeException("Station not found with id " + stationId));
+                .orElseThrow(() -> new ErrorException("Station not found with id " + stationId));
 
         // Nếu trạm không đổi thì trả luôn
         if (ss.getStation() != null && ss.getStation().getStationId().equals(stationId)) {
             return stationStaffRepository.findByStaffId(staffId)
-                    .orElseThrow(() -> new RuntimeException("Failed to load staff after update"));
+                    .orElseThrow(() -> new ErrorException("Failed to load staff after update"));
         }
 
         // (Tuỳ chọn) cập nhật mốc thời gian
@@ -47,6 +48,6 @@ public class StaffStationServiceImpl implements StaffStationService {
 
         // Trả projection response giống getStaffByUserId
         return stationStaffRepository.findByStaffId(staffId)
-                .orElseThrow(() -> new RuntimeException("Failed to load staff after update"));
+                .orElseThrow(() -> new ErrorException("Failed to load staff after update"));
     }
 }

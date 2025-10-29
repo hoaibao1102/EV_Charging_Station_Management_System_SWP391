@@ -3,6 +3,8 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.PaymentType;
+import com.swp391.gr3.ev_management.exception.ConflictException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.PaymentMethodRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService{
         boolean exists = paymentMethodRepository
                 .existsByMethodTypeAndProviderAndAccountNo(methodType, provider, accountNo);
         if (exists) {
-            throw new IllegalStateException("PaymentMethod already exists with same type/provider/accountNo");
+            throw new ConflictException("PaymentMethod already exists with same type/provider/accountNo");
         }
 
         PaymentMethod pm = PaymentMethod.builder()
@@ -50,7 +52,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService{
                                              String accountNo,
                                              LocalDate expiryDate) {
         PaymentMethod existing = paymentMethodRepository.findById(methodId)
-                .orElseThrow(() -> new IllegalArgumentException("PaymentMethod not found: " + methodId));
+                .orElseThrow(() -> new ErrorException("PaymentMethod not found: " + methodId));
 
         existing.setMethodType(methodType);
         existing.setProvider(provider);

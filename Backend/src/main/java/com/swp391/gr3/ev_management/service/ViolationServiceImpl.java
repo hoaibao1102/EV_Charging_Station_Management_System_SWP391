@@ -8,7 +8,7 @@ import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.ViolationStatus;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,11 +51,11 @@ public class ViolationServiceImpl implements ViolationService {
 
         // 1) Driver
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         // 2) Booking (JOIN đủ chain connectorType qua repo findByIdWithConnectorType)
         var booking = bookingsRepository.findByIdWithConnectorType(bookingId)
-                .orElseThrow(() -> new NotFoundException("Booking not found with id " + bookingId));
+                .orElseThrow(() -> new ErrorException("Booking not found with id " + bookingId));
 
         // 3) Rule NO-SHOW:
         //    - Phạt toàn bộ thời lượng slot nếu không có charging session hợp lệ
@@ -124,7 +124,7 @@ public class ViolationServiceImpl implements ViolationService {
                 log.warn("[createViolation][NO_SHOW] Fallback connectorTypeId via vehicle.model for bookingId={}: {}",
                         bookingId, connectorTypeId);
             } catch (Exception ex) {
-                throw new NotFoundException("Không xác định được ConnectorType cho bookingId " + bookingId);
+                throw new ErrorException("Không xác định được ConnectorType cho bookingId " + bookingId);
             }
         }
 
@@ -159,7 +159,7 @@ public class ViolationServiceImpl implements ViolationService {
     private Long resolveConnectorTypeIdFromDriverVehicles(Long driverId) {
         var vehicles = userVehicleRepository.findByDriverIdWithModelAndConnector(driverId);
         if (vehicles == null || vehicles.isEmpty()) {
-            throw new NotFoundException("Driver has no vehicle with connector type configured");
+            throw new ErrorException("Driver has no vehicle with connector type configured");
         }
         return vehicles.get(0).getModel().getConnectorType().getConnectorTypeId();
     }
@@ -170,7 +170,7 @@ public class ViolationServiceImpl implements ViolationService {
         return tariffRepository.findActiveByConnectorType(connectorTypeId, now)
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new NotFoundException(
+                .orElseThrow(() -> new ErrorException(
                         "No active tariff found for connectorTypeId " + connectorTypeId));
     }
 
@@ -219,7 +219,7 @@ public class ViolationServiceImpl implements ViolationService {
     @Transactional(readOnly = true)
     public List<ViolationResponse> getViolationsByUserId(Long userId) {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         return violationRepository.findByDriver_DriverId(driver.getDriverId())
                 .stream().map(v -> buildViolationResponse(v, false))

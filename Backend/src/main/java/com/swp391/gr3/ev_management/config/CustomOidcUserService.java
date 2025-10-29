@@ -17,7 +17,7 @@ import java.util.Set;
 public class CustomOidcUserService extends OidcUserService {
 
     // Nếu bạn không muốn chặn email chưa verify, set cờ này = false
-    private final boolean requireVerifiedEmail = true;
+    private static final boolean REQUIRE_VERIFIED_EMAIL = true;
 
     @Override
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
@@ -26,7 +26,7 @@ public class CustomOidcUserService extends OidcUserService {
 
         // Bảo vệ: yêu cầu email đã xác minh (tuỳ chính sách)
         Boolean emailVerified = oidcUser.getEmailVerified();
-        if (requireVerifiedEmail && (emailVerified == null || !emailVerified)) {
+        if (REQUIRE_VERIFIED_EMAIL && (emailVerified == null || !emailVerified)) {
             throw new OAuth2AuthenticationException(
                     new OAuth2Error("email_not_verified", "Google email is not verified", null),
                     "Google email is not verified");
