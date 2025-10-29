@@ -95,6 +95,12 @@ public class AdminController {
         return ResponseEntity.ok(staffService.updateStatus(userId, status));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all-staffs")
+    @Operation(summary = "Get all staffs", description = "Admin retrieves a list of all staffs")
+    public ResponseEntity<List<StaffResponse>> getAllStaffs() {
+        return ResponseEntity.ok(staffService.getAll());
+    }
 
 
     // ----------------------ADMIN: Quản lý DRIVER----------------------------- //
