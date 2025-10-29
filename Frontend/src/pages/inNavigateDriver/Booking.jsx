@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import paths from "../../path/paths.jsx";
 import { isAuthenticated } from "../../utils/authUtils.js";
 import { stationAPI } from "../../api/stationApi.js";
+import "./Booking.css";
 
 // ===== Utility: chuẩn hóa 1 record slot từ API =====
 function normalizeSlotRecord(record, pointId, templateBase, templateMap) {
@@ -295,34 +296,20 @@ export default function Booking() {
   // ===== Lấy danh sách slot theo PointID và chuẩn hóa =====
   const fetchAvailableSlots = async () => {
     if (!pointId) {
-      console.log("⚠️ Không có pointId để lấy slot");
       return;
     }
 
     try {
       setLoading(true);
-      console.log("🔍 Đang lấy slots cho PointID:", pointId);
 
       const response = await stationAPI.getAvaila(pointId);
-      console.log("📦 Raw API Response:", response);
-      console.log("📦 Response.data:", response?.data);
-
-      // Axios: dữ liệu ở response.data
       const rows = Array.isArray(response?.data) ? response.data : [];
-      console.log("📋 Rows array:", rows);
-      console.log("📋 First row example:", rows[0]);
 
-      // Lọc các row cho point hiện tại (hỗ trợ nhiều biến thể tên trường point id)
       const matchedRows = rows.filter((r) => {
         const rowPointId = r?.pointid ?? r?.pointId ?? r?.PointID ?? r?.pointID;
-        const match = String(rowPointId) === String(pointId);
-        console.log(
-          `🔍 Filter: PointID ${rowPointId} === ${pointId}? ${match}`
-        );
-        return match;
+        return String(rowPointId) === String(pointId);
       });
 
-      // Lấy danh sách templateId duy nhất từ matchedRows
       const templateIds = Array.from(
         new Set(
           matchedRows
@@ -338,7 +325,6 @@ export default function Booking() {
         )
       );
 
-      // Fetch templates in parallel and build a map templateId -> templateData
       const templateMap = {};
       if (templateIds.length > 0) {
         try {
@@ -351,14 +337,11 @@ export default function Booking() {
               templateMap[String(tid)] = res.data;
             }
           });
-          console.log("🔧 templateMap:", templateMap);
         } catch (err) {
           console.warn("⚠️ Error fetching templates:", err);
         }
       }
 
-      // Nếu backend dùng templateId liên tiếp (ví dụ templateId 97..120 cho 24 slot),
-      // ta có thể dùng minTemplateId làm templateBase để tính slotNumber = templateId - base + 1
       const numericTemplateIds = matchedRows
         .map(
           (r) =>
@@ -370,7 +353,6 @@ export default function Booking() {
         numericTemplateIds.length > 0
           ? Math.min(...numericTemplateIds)
           : undefined;
-      console.log("🔢 Detected templateBase:", templateBase);
 
       const normalized = matchedRows.map((r) => {
         const result = normalizeSlotRecord(
@@ -379,12 +361,37 @@ export default function Booking() {
           templateBase,
           templateMap
         );
-        console.log("🔄 Normalized record:", result);
         return result;
       });
 
-      setAvailableSlots(normalized);
-      console.log("✅ Final Available Slots (normalized):", normalized);
+      console.log("📊 Total normalized slots:", normalized.length);
+      console.log("📊 Sample normalized slot:", normalized[0]);
+
+      // Lấy giờ hiện tại và làm tròn xuống (ví dụ: 11:28 -> 11:00)
+      const now = new Date();
+      const currentHour = now.getHours();
+
+      console.log("⏰ Current hour:", currentHour);
+
+      // Filter slots: chỉ filter theo giờ, ẩn các slot có giờ bắt đầu < giờ hiện tại
+      const filteredSlots = normalized.filter((slot) => {
+        const slotStartTimeStr = slot.StartTime;
+
+        // Nếu slot không có StartTime hợp lệ, GIỮ LẠI
+        if (!slotStartTimeStr || slotStartTimeStr === "N/A") {
+          return true;
+        }
+
+        // Parse giờ bắt đầu của slot
+        const slotHour = parseInt(slotStartTimeStr.split(":")[0], 10);
+
+        // Chỉ hiển thị slot có giờ bắt đầu >= giờ hiện tại
+        return slotHour >= currentHour;
+      });
+
+      console.log("✅ Total filtered slots:", filteredSlots.length);
+      console.log("✅ Sample filtered slot:", filteredSlots[0]);
+      setAvailableSlots(filteredSlots);
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách slot:", error);
       toast.error("Không thể lấy danh sách slot sạc!", {
@@ -585,11 +592,21 @@ export default function Booking() {
                 const isSelected = isSlotSelected(slot.id);
                 const isAvailable =
                   String(slot.Status ?? "").toLowerCase() === "available";
+
+                // Kiểm tra nếu slot đã qua giờ hiện tại
+                const now = new Date(); // Lấy giờ hiện tại
+                const slotStartTime = new Date(
+                  `${slot.Date}T${slot.StartTime}:00`
+                ); // Thêm giây để đảm bảo định dạng
+                const isPast = slotStartTime <= now;
+
                 const canSelect =
-                  selectedSlots.length === 0 ||
-                  isSlotAdjacent(slot.SlotID, selectedSlots);
+                  !isPast &&
+                  (selectedSlots.length === 0 ||
+                    isSlotAdjacent(slot.SlotID, selectedSlots));
                 // Disabled if not available or other selection rules
                 const isDisabled =
+                  isPast ||
                   !isAvailable ||
                   (!isSelected && selectedSlots.length >= MAX_SLOTS) ||
                   (!isSelected && selectedSlots.length > 0 && !canSelect);
@@ -597,124 +614,35 @@ export default function Booking() {
                 return (
                   <div
                     key={slot.id || slot.SlotID}
-                    style={{
-                      padding: "15px",
-                      border: isSelected
-                        ? "3px solid #00BFA6"
-                        : "2px solid #e0e0e0",
-                      borderRadius: "8px",
-                      cursor: isDisabled ? "not-allowed" : "pointer",
-                      transition: "all 0.3s",
-                      background: isSelected
-                        ? "#e6f9f5"
-                        : isDisabled
-                        ? "#f5f5f5"
-                        : "white",
-                      opacity: isDisabled ? 0.5 : 1,
-                      position: "relative",
+                    className={`slot-card ${isSelected ? "selected" : ""} ${
+                      isDisabled ? "disabled" : ""
+                    }`}
+                    onClick={() => {
+                      if (!isDisabled) {
+                        handleToggleSlot(slot);
+                      }
                     }}
-                    onClick={() => !isDisabled && handleToggleSlot(slot)}
                   >
-                    {/* Checkbox icon */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "10px",
-                        right: "10px",
-                        width: "24px",
-                        height: "24px",
-                        border: isSelected
-                          ? "2px solid #00BFA6"
-                          : "2px solid #ccc",
-                        borderRadius: "4px",
-                        background: isSelected ? "#00BFA6" : "white",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "16px",
-                        color: "white",
-                      }}
-                    >
+                    <div className={`checkbox ${isSelected ? "checked" : ""}`}>
                       {isSelected && "✓"}
                     </div>
 
-                    {/* Status badge (available / busy / reserved) */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "10px",
-                        left: "10px",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
-                        background:
-                          isAvailable && !isSelected ? "#10b981" : "#9ca3af",
-                        color: "white",
-                        fontSize: "12px",
-                        fontWeight: "700",
-                      }}
-                    >
-                      {isAvailable && !isSelected
-                        ? "Còn trống"
-                        : String(slot.Status)}
-                    </div>
-
-                    {/* Indicator cho slot có thể chọn tiếp theo (moved right to avoid overlap) */}
-                    {!isSelected &&
-                      canSelect &&
-                      selectedSlots.length > 0 &&
-                      selectedSlots.length < MAX_SLOTS && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "10px",
-                            left: "44px",
-                            background: "#4CAF50",
-                            color: "white",
-                            borderRadius: "50%",
-                            width: "20px",
-                            height: "20px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                          }}
-                          title="Có thể chọn"
-                        >
-                          ➜
-                        </div>
-                      )}
-
-                    <p style={{ marginTop: "5px", marginBottom: "8px" }}>
+                    <p className="slot-time">
                       <strong>
                         ⏰ {slot.StartTime} - {slot.EndTime}
                       </strong>
                     </p>
-                    <p style={{ marginBottom: "8px", fontSize: "14px" }}>
+                    <p className="slot-status">
                       <strong>Trạng thái:</strong>{" "}
-                      <span
-                        style={{
-                          color:
-                            String(slot.Status).toLowerCase() === "available"
-                              ? "#4CAF50"
-                              : "#666",
-                        }}
-                      >
-                        {String(slot.Status).toLowerCase() === "available"
+                      <span className={isPast ? "past" : "available"}>
+                        {isPast
+                          ? "Đã qua giờ"
+                          : String(slot.Status).toLowerCase() === "available"
                           ? "Còn trống"
                           : slot.Status}
                       </span>
                     </p>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#00BFA6",
-                      }}
-                    >
-                      💰 {slot.Price ?? "N/A"} VNĐ
-                    </p>
+                    <p className="slot-price">💰 {slot.Price ?? "N/A"} VNĐ</p>
                   </div>
                 );
               })}

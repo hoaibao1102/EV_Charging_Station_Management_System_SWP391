@@ -115,6 +115,19 @@ export const createBooking = (payload) => {
   );
 };
 
+// ====== Khởi động phiên sạc ======
+export const startChargingSession = (payload) => {
+  return handleApiCall(
+    () =>
+      apiClient.post("/api/charging-sessions/start", payload, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
+      }),
+    "Khởi động phiên sạc thất bại"
+  );
+};
+
 // ====== Export default object ======
 export const stationAPI = {
   getConnectorTypes,
@@ -125,4 +138,5 @@ export const stationAPI = {
   getTemplate,
   createBooking,
   confirmBooking,
+  startChargingSession,
 };
