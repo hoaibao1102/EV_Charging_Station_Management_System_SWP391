@@ -2,7 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.OtpVerification;
 import com.swp391.gr3.ev_management.entity.User;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.OtpRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email);
         if (user == null) {
             // tuỳ policy: hoặc im lặng coi như đã gửi, hoặc báo không tồn tại
-            throw new NotFoundException("Email không tồn tại trong hệ thống");
+            throw new ErrorException("Email không tồn tại trong hệ thống");
         }
         // 2) Sinh và gửi OTP qua email (đã có template "email-otp")
         otpService.generateOtp(email);
@@ -49,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
     public void resetPassword(String email, String otp, String newPassword) {
         // 1) Lấy OTP mới nhất
         OtpVerification latest = otpRepository.findTopByEmailOrderByCreatedAtDesc(email)
-                .orElseThrow(() -> new NotFoundException("OTP không tồn tại."));
+                .orElseThrow(() -> new ErrorException("OTP không tồn tại."));
 
         // 2) Kiểm tra còn hạn & khớp mã
         if (latest.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -66,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 3) Đổi mật khẩu
         User user = userRepository.findByEmail(email);
-        if (user == null) throw new NotFoundException("Email không tồn tại.");
+        if (user == null) throw new ErrorException("Email không tồn tại.");
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 

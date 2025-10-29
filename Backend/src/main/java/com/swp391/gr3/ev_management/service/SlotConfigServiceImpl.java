@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.DTO.response.SlotConfigResponse;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.SlotConfig;
 import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.SlotConfigMapper;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
@@ -55,7 +56,7 @@ public class SlotConfigServiceImpl implements SlotConfigService {
     public SlotConfigResponse addSlotConfig(SlotConfigRequest req) {
         ChargingStation station = chargingStationRepository.findByStationId(req.getStationId());
         if (station == null) {
-            throw new IllegalArgumentException("Không tìm thấy trạm sạc có ID = " + req.getStationId());
+            throw new ErrorException("Không tìm thấy trạm sạc có ID = " + req.getStationId());
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -88,7 +89,7 @@ public class SlotConfigServiceImpl implements SlotConfigService {
 
         ChargingStation station = chargingStationRepository.findByStationId(req.getStationId());
         if (station == null) {
-            throw new IllegalArgumentException("Không tìm thấy trạm sạc có ID = " + req.getStationId());
+            throw new ErrorException("Không tìm thấy trạm sạc có ID = " + req.getStationId());
         }
 
         mapper.updateEntity(existing, req, station);
@@ -115,10 +116,10 @@ public class SlotConfigServiceImpl implements SlotConfigService {
     @Transactional
     public SlotConfigResponse deactivateConfig(Long configId) {
         SlotConfig config = slotConfigRepository.findById(configId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy SlotConfig: " + configId));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy SlotConfig: " + configId));
 
         if (config.getIsActive() == SlotConfigStatus.INACTIVE) {
-            throw new IllegalArgumentException("SlotConfig này đã INACTIVE rồi.");
+            throw new ErrorException("SlotConfig này đã INACTIVE rồi.");
         }
 
         config.setIsActive(SlotConfigStatus.INACTIVE);

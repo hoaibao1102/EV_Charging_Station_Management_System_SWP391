@@ -6,7 +6,7 @@ import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.exception.ConflictException;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.VehicleModelMapper;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
@@ -35,7 +35,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
             throw new ConflictException("Vehicle model already exists for brand/model/year");
         }
         ConnectorType connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
-                .orElseThrow(() -> new NotFoundException("ConnectorType not found with id " + request.getConnectorTypeId()));
+                .orElseThrow(() -> new ErrorException("ConnectorType not found with id " + request.getConnectorTypeId()));
 
         VehicleModel entity = VehicleModel.builder()
                 .brand(request.getBrand())
@@ -54,7 +54,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
     @Transactional(readOnly = true)
     public VehicleModelResponse getById(Long id) {
     VehicleModel vm = vehicleModelRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("VehicleModel not found with id " + id));
+        .orElseThrow(() -> new ErrorException("VehicleModel not found with id " + id));
     return vehicleModelMapper.toResponse(vm);
     }
 
@@ -75,7 +75,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
     @Transactional
     public VehicleModelResponse update(Long id, VehicleModelUpdateRequest request) {
         VehicleModel vm = vehicleModelRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("VehicleModel not found with id " + id));
+                .orElseThrow(() -> new ErrorException("VehicleModel not found with id " + id));
 
         String newBrand = request.getBrand() != null ? request.getBrand() : vm.getBrand();
         String newModel = request.getModel() != null ? request.getModel() : vm.getModel();
@@ -93,7 +93,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
 
         if (request.getConnectorTypeId() != null) {
             ConnectorType ct = connectorTypeRepository.findById(request.getConnectorTypeId())
-                    .orElseThrow(() -> new NotFoundException("ConnectorType not found with id " + request.getConnectorTypeId()));
+                    .orElseThrow(() -> new ErrorException("ConnectorType not found with id " + request.getConnectorTypeId()));
             vm.setConnectorType(ct);
         }
 
@@ -109,7 +109,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
     @Transactional
     public void delete(Long id) {
         VehicleModel vm = vehicleModelRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("VehicleModel not found with id " + id));
+                .orElseThrow(() -> new ErrorException("VehicleModel not found with id " + id));
 
         long usage = vehicleRepisitory.countByModel_ModelId(id);
         if (usage > 0) {

@@ -137,7 +137,8 @@ public class SecurityConfig {
                                 "/api/users/login", "/api/users/logout", "/api/users/register/**",
 
                                 // 👇 Cho phép các endpoint OAuth2
-                                "/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**"
+                                "/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**",
+                                "/api/payment/vnpay/**"
                         ).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()

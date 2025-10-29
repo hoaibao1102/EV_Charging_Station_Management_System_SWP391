@@ -4,7 +4,7 @@ import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeCreateRequest;
 import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.ConnectorTypeResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
     @Override
     public ConnectorTypeResponse getConnectorTypeById(Long connectorTypeId) {
         ConnectorType connectorType = connectorTypeRepository.findById(connectorTypeId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy connector type với ID: " + connectorTypeId));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy connector type với ID: " + connectorTypeId));
         return toResponse(connectorType);
     }
 
@@ -38,7 +38,7 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
     public ConnectorTypeResponse createConnectorType(ConnectorTypeCreateRequest request) {
         // Kiểm tra code đã tồn tại
         if (connectorTypeRepository.existsByCodeAndMode(request.getCode(), request.getMode())) {
-            throw new IllegalArgumentException("Code and Mode không được trùng: " + request.getCode() + "And" + request.getMode());
+            throw new ErrorException("Code and Mode không được trùng: " + request.getCode() + "And" + request.getMode());
         }
 
         ConnectorType connectorType = ConnectorType.builder()
@@ -57,12 +57,12 @@ public class ConnectorTypeServiceImpl implements ConnectorTypeService {
     @Transactional
     public ConnectorTypeResponse updateConnectorType(Long connectorTypeId, ConnectorTypeUpdateRequest request) {
         ConnectorType connectorType = connectorTypeRepository.findById(connectorTypeId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy connector type với ID: " + connectorTypeId));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy connector type với ID: " + connectorTypeId));
 
         // Kiểm tra code nếu muốn update và code khác với code hiện tại
         if (request.getCode() != null && !request.getCode().equals(connectorType.getCode())) {
             if (connectorTypeRepository.existsByCodeAndMode(request.getCode(), request.getMode())) {
-                throw new IllegalArgumentException("Code and Mode không được trùng: " + request.getCode() + "And" + request.getMode());
+                throw new ErrorException("Code and Mode không được trùng: " + request.getCode() + "And" + request.getMode());
             }
             connectorType.setCode(request.getCode());
         }
