@@ -13,6 +13,7 @@ import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,18 +52,18 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse createBooking(CreateBookingRequest request) {
         // 1️⃣ Lấy thông tin xe
         UserVehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+                .orElseThrow(() -> new ErrorException("Vehicle not found"));
 
         // 2️⃣ Lấy danh sách slot
         List<SlotAvailability> slots = slotAvailabilityRepository.findAllById(request.getSlotIds());
         if (slots.isEmpty()) {
-            throw new RuntimeException("No slots found");
+            throw new ErrorException("No slots found");
         }
 
         // Kiểm tra tất cả đều AVAILABLE và cùng trạm
         for (SlotAvailability slot : slots) {
             if (slot.getStatus() != SlotStatus.AVAILABLE) {
-                throw new RuntimeException("Slot " + slot.getSlotId() + " is not available for booking");
+                throw new ErrorException("Slot " + slot.getSlotId() + " is not available for booking");
             }
         }
 
@@ -125,10 +126,10 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public BookingResponse confirmBooking(Long bookingId) {
         Booking booking = bookingsRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ErrorException("Booking not found"));
 
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Only pending bookings can be confirmed");
+            throw new ErrorException("Only pending bookings can be confirmed");
         }
 
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -142,7 +143,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (booking.getBookingSlots().isEmpty()) {
-            throw new RuntimeException("No slots found for this booking");
+            throw new ErrorException("No slots found for this booking");
         }
 
         SlotAvailability slot = booking.getBookingSlots().get(0).getSlot();
@@ -263,7 +264,7 @@ public class BookingServiceImpl implements BookingService {
                     .withoutPadding()
                     .encodeToString(json.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize QR payload", e);
+            throw new ErrorException("Failed to serialize QR payload");
         }
     }
 
@@ -277,7 +278,7 @@ public class BookingServiceImpl implements BookingService {
             MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
             return baos.toByteArray();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate QR image", e);
+            throw new ErrorException("Failed to generate QR image");
         }
     }
 
@@ -288,7 +289,7 @@ public class BookingServiceImpl implements BookingService {
             String json = new String(Base64.getUrlDecoder().decode(base64), StandardCharsets.UTF_8);
             return mapper.readValue(json, BookingRequest.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to decode QR payload", e);
+            throw new ErrorException("Failed to decode QR payload");
         }
     }
 
@@ -296,7 +297,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse getBookingById(Long bookingId) {
         return mapper.convertValue(
                 bookingsRepository.findById(bookingId)
-                        .orElseThrow(() -> new RuntimeException("Booking not found")),
+                        .orElseThrow(() -> new ErrorException("Booking not found")),
                 BookingResponse.class
         );
     }
@@ -305,18 +306,18 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public BookingResponse cancelBooking(Long bookingId) {
         Booking booking = bookingsRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ErrorException("Booking not found"));
 
         if (booking.getStatus() == BookingStatus.CANCELED) {
-            throw new RuntimeException("Booking đã bị hủy trước đó");
+            throw new ErrorException("Booking đã bị hủy trước đó");
         }
         if (booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new RuntimeException("Không thể hủy booking đã hoàn thành");
+            throw new ErrorException("Không thể hủy booking đã hoàn thành");
         }
 
         // ✅ Lấy slot sớm nhất trong booking
         if (booking.getBookingSlots() == null || booking.getBookingSlots().isEmpty()) {
-            throw new RuntimeException("Booking không có slot nào để xác định thời gian bắt đầu");
+            throw new ErrorException("Booking không có slot nào để xác định thời gian bắt đầu");
         }
 
         SlotAvailability firstSlot = booking.getBookingSlots().stream()
@@ -336,7 +337,7 @@ public class BookingServiceImpl implements BookingService {
 
         // ✅ Không cho hủy nếu còn dưới 30 phút
         if (!now.isBefore(slotStart.minusMinutes(30))) {
-            throw new RuntimeException("Không thể hủy đặt chỗ khi còn dưới 30 phút trước thời gian bắt đầu.");
+            throw new ErrorException("Không thể hủy đặt chỗ khi còn dưới 30 phút trước thời gian bắt đầu.");
         }
 
         // ✅ Cập nhật trạng thái booking

@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,17 +34,17 @@ public class ChargingSessionTxHandler {
     public StopCharSessionResponse stopSessionInternalTx(Long sessionId, Integer finalSocIfAny, LocalDateTime endTime) {
         ChargingSession cs = sessionRepository
                 .findByIdWithBookingVehicleDriverUser(sessionId) // <- Query có JOIN FETCH
-                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+                .orElseThrow(() -> new ErrorException("Session not found"));
 
         if (cs.getStatus() != ChargingSessionStatus.IN_PROGRESS) {
-            throw new RuntimeException("Session is not currently active");
+            throw new ErrorException("Session is not currently active");
         }
 
         Booking booking = cs.getBooking(); // đã fetch
         User user = booking.getVehicle().getDriver().getUser(); // đã fetch
 
         Integer initialSoc = Optional.ofNullable(cs.getInitialSoc())
-                .orElseThrow(() -> new IllegalStateException("Initial SoC not recorded"));
+                .orElseThrow(() -> new ErrorException("Initial SoC not recorded"));
 
         int finalSoc = (finalSocIfAny != null) ? clampSoc(finalSocIfAny) : estimateFinalSoc(cs, endTime);
         if (finalSoc < initialSoc) {
@@ -59,7 +60,7 @@ public class ChargingSessionTxHandler {
         // Lấy connector/điểm sạc + pointNumber
         var firstSlot = booking.getBookingSlots().stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No slot found for booking"));
+                .orElseThrow(() -> new ErrorException("No slot found for booking"));
         ChargingPoint point = firstSlot.getSlot().getChargingPoint();
         String pointNumber = (point != null) ? point.getPointNumber() : "Unknown";
         ConnectorType connectorType = (point != null && point.getConnectorType() != null)
@@ -71,7 +72,7 @@ public class ChargingSessionTxHandler {
         Tariff tariff = tariffRepository
                 .findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(
                         connectorType.getConnectorTypeId(), pricingTime, pricingTime)
-                .orElseThrow(() -> new RuntimeException("No active tariff for connector type"));
+                .orElseThrow(() -> new ErrorException("No active tariff for connector type"));
 
         double pricePerKWh = tariff.getPricePerKWh();
         double cost = round2(pricePerKWh * energyKWh);
@@ -112,7 +113,7 @@ public class ChargingSessionTxHandler {
 
         // Invoice
         invoiceRepository.findBySession_SessionId(cs.getSessionId())
-                .ifPresent(i -> { throw new RuntimeException("Invoice already exists for this session"); });
+                .ifPresent(i -> { throw new ErrorException("Invoice already exists for this session"); });
 
         Invoice invoice = new Invoice();
         invoice.setSession(cs);

@@ -5,7 +5,7 @@ import com.swp391.gr3.ev_management.DTO.request.TariffUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.TariffResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.Tariff;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.TariffRepository;
 import jakarta.transaction.Transactional;
@@ -32,7 +32,7 @@ public class TariffServiceImpl implements TariffService {
     @Override
     public TariffResponse getTariffById(long tariffId) {
         Tariff tariff = tariffRepository.findById(tariffId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy tariff với ID: " + tariffId));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy tariff với ID: " + tariffId));
         return toResponse(tariff);
     }
 
@@ -41,12 +41,12 @@ public class TariffServiceImpl implements TariffService {
     public TariffResponse createTariff(TariffCreateRequest request) {
         // Validate effectiveFrom < effectiveTo
         if (request.getEffectiveFrom().isAfter(request.getEffectiveTo())) {
-            throw new IllegalArgumentException("EffectiveFrom phải trước EffectiveTo");
+            throw new ErrorException("EffectiveFrom phải trước EffectiveTo");
         }
 
         // Kiểm tra ConnectorType có tồn tại không
         ConnectorType connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy connector type với ID: " + request.getConnectorTypeId()));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy connector type với ID: " + request.getConnectorTypeId()));
 
         Tariff tariff = Tariff.builder()
                 .connectorType(connectorType)
@@ -65,12 +65,12 @@ public class TariffServiceImpl implements TariffService {
     @Transactional
     public TariffResponse updateTariff(long tariffId, TariffUpdateRequest request) {
         Tariff tariff = tariffRepository.findById(tariffId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy tariff với ID: " + tariffId));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy tariff với ID: " + tariffId));
 
         // Update ConnectorType nếu có
         if (request.getConnectorTypeId() != 0) {
             ConnectorType connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
-                    .orElseThrow(() -> new NotFoundException("Không tìm thấy connector type với ID: " + request.getConnectorTypeId()));
+                    .orElseThrow(() -> new ErrorException("Không tìm thấy connector type với ID: " + request.getConnectorTypeId()));
             tariff.setConnectorType(connectorType);
         }
 
@@ -93,7 +93,7 @@ public class TariffServiceImpl implements TariffService {
 
         // Validate effectiveFrom < effectiveTo sau khi update
         if (tariff.getEffectiveFrom().isAfter(tariff.getEffectiveTo())) {
-            throw new IllegalArgumentException("EffectiveFrom phải trước EffectiveTo");
+            throw new ErrorException("EffectiveFrom phải trước EffectiveTo");
         }
 
         Tariff updated = tariffRepository.save(tariff);

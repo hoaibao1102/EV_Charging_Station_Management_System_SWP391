@@ -33,14 +33,11 @@ public class VnPayController {
         return ResponseEntity.ok(Collections.singletonMap("paymentUrl", payUrl));
     }
 
+    // Controller
     @GetMapping("/return")
-    public ResponseEntity<String> handleReturn(HttpServletRequest request) throws Exception {
-        Map<String, String[]> paramMap = request.getParameterMap();
-        Map<String, String> flat = new HashMap<>();
-        paramMap.forEach((k, v) -> flat.put(k, (v != null && v.length > 0) ? v[0] : null));
-
-        paymentService.handleVnPayReturn(flat);
-        return ResponseEntity.ok("OK");
+    public ResponseEntity<?> handleReturn(HttpServletRequest req) throws Exception {
+        paymentService.handleVnPayReturn(req); // truyền request để đọc raw query
+        return ResponseEntity.ok(Map.of("message", "OK"));
     }
 
     private String getClientIp(HttpServletRequest request) {

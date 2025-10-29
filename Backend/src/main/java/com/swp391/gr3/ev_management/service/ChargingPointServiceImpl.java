@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.DTO.request.StopChargingPointRequest;
 import com.swp391.gr3.ev_management.DTO.response.ChargingPointResponse;
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
 import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingPointMapper;
 import com.swp391.gr3.ev_management.repository.ChargingPointRepository;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
@@ -32,7 +33,7 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     public ChargingPointResponse stopChargingPoint(StopChargingPointRequest request) {
 
         ChargingPoint point = pointRepository.findById(request.getPointId())
-                .orElseThrow(() -> new RuntimeException("Charging point not found"));
+                .orElseThrow(() -> new ErrorException("Charging point not found"));
 
                 if (point.getStatus() == ChargingPointStatus.OCCUPIED) {
             throw new RuntimeException("Cannot stop point while in use");
@@ -74,18 +75,18 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     public ChargingPointResponse createChargingPoint(CreateChargingPointRequest request) {
         // 1️⃣ Kiểm tra Station
         var station = chargingStationRepository.findById(request.getStationId())
-                .orElseThrow(() -> new RuntimeException("Station not found"));
+                .orElseThrow(() -> new ErrorException("Station not found"));
 
         // 2️⃣ Kiểm tra ConnectorType
         var connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
-                .orElseThrow(() -> new RuntimeException("Connector type not found"));
+                .orElseThrow(() -> new ErrorException("Connector type not found"));
 
         // 3️⃣ Kiểm tra trùng
         if (pointRepository.findByStation_StationIdAndPointNumber(request.getStationId(), request.getPointNumber()).isPresent()) {
-            throw new RuntimeException("Point number already exists in this station");
+            throw new ErrorException("Point number already exists in this station");
         }
         if (pointRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
-            throw new RuntimeException("Serial number already exists");
+            throw new ErrorException("Serial number already exists");
         }
 
         // 4️⃣ Dùng mapper để tạo Entity

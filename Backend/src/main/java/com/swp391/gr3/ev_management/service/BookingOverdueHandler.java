@@ -6,6 +6,7 @@ import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.BookingsRepository;
 import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class BookingOverdueHandler {
     public void cancelAndCreateViolationTx(Long bookingId) {
         // ⚠️ Load lại trong TX để có session + fetch đủ associations
         Booking booking = bookingsRepository.findByIdWithAllNeeded(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
+                .orElseThrow(() -> new ErrorException("Booking not found: " + bookingId));
 
         // Idempotent: nếu đã cancel (hoặc completed) thì bỏ qua
         if (booking.getStatus() != BookingStatus.CONFIRMED) {

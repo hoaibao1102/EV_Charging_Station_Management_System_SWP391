@@ -20,6 +20,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+import static org.aspectj.weaver.tools.cache.SimpleCacheFactory.path;
+
 /**
  * JWT filter: đọc Bearer token, xác thực và đưa quyền vào SecurityContext.
  * Phù hợp với TokenService:
@@ -55,13 +57,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         // Bỏ qua preflight
-        if (HttpMethod.OPTIONS.matches(request.getMethod())) return true;
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
 
         final String uri = request.getRequestURI();
+
+        // ⬇️ Bỏ qua toàn bộ return/IPN VNPay
+        if (uri.startsWith("/api/payment/vnpay/")) return true;
+        // hoặc: if (pathMatcher.match("/api/payment/vnpay/**", uri)) return true;
+
+        // ⬇️ Các đường public khác
         for (String pattern : PUBLIC_PATHS) {
             if (pathMatcher.match(pattern, uri)) return true;
         }
-        return false;
+
+        return false; // còn lại thì filter JWT
     }
 
     @Override
@@ -118,4 +127,5 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         chain.doFilter(req, res);
     }
+
 }
