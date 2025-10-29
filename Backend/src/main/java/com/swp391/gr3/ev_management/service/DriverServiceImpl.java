@@ -11,7 +11,7 @@ import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.entity.UserVehicle;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.exception.ConflictException;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
 import com.swp391.gr3.ev_management.repository.UserVehicleRepository;
@@ -54,7 +54,7 @@ public class DriverServiceImpl implements DriverService {
 
         User user = userRepository.findUserByUserId(userId);
         if (user == null) {
-            throw new NotFoundException("User not found with ID: " + userId);
+            throw new ErrorException("User not found with ID: " + userId);
         }
 
         // Check trùng đúng cách theo userId
@@ -85,7 +85,7 @@ public class DriverServiceImpl implements DriverService {
     @Transactional(readOnly = true)
     public DriverResponse getByUserId(Long userId) {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
     return driverMapper.toDriverResponse(driver);
     }
 
@@ -96,7 +96,7 @@ public class DriverServiceImpl implements DriverService {
     @Transactional(readOnly = true)
     public DriverResponse getByDriverId(Long driverId) {
         Driver driver = driverRepository.findByDriverIdWithUser(driverId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with driverId " + driverId));
+                .orElseThrow(() -> new ErrorException("Driver not found with driverId " + driverId));
     return driverMapper.toDriverResponse(driver);
     }
 
@@ -116,7 +116,7 @@ public class DriverServiceImpl implements DriverService {
     @Transactional
     public DriverResponse updateDriverProfile(Long userId, DriverUpdateRequest req) {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         User user = driver.getUser();
         if (req.getName() != null)        user.setName(req.getName());
@@ -135,7 +135,7 @@ public class DriverServiceImpl implements DriverService {
     @Transactional
     public DriverResponse updateDriverPassword(Long userId, String oldPassword, String newPassword, String confirmNewPassword) {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
         User user = driver.getUser();
         String currentHash = user.getPasswordHash();
         if (!passwordEncoder.matches(oldPassword, currentHash)) {
@@ -164,7 +164,7 @@ public class DriverServiceImpl implements DriverService {
     @Transactional
     public DriverResponse updateStatus(Long userId, DriverStatus status) {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
         driver.setStatus(status);
     driverRepository.save(driver);
     return driverMapper.toDriverResponse(driver);
@@ -183,11 +183,11 @@ public class DriverServiceImpl implements DriverService {
 
         // Lấy driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         // BR-03: Kiểm tra VehicleModel có tồn tại
         VehicleModel vehicleModel = vehicleModelRepository.findById(request.getModelId())
-                .orElseThrow(() -> new NotFoundException("Vehicle model not found with ID: " + request.getModelId()));
+                .orElseThrow(() -> new ErrorException("Vehicle model not found with ID: " + request.getModelId()));
 
         // Chuẩn hoá biển số để kiểm tra trùng (chỉ chữ + số, bỏ hết ký tự đặc biệt)
         String normalizedPlate = normalizePlate(request.getLicensePlate());
@@ -277,7 +277,7 @@ public class DriverServiceImpl implements DriverService {
 
         // Lấy driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         // Lấy danh sách xe với thông tin chi tiết
         List<UserVehicle> vehicles = userVehicleRepository.findByDriverIdWithDetails(driver.getDriverId());
@@ -299,11 +299,11 @@ public class DriverServiceImpl implements DriverService {
 
         // Lấy driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Driver not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         // Lấy vehicle
         UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new NotFoundException("Vehicle not found with ID: " + vehicleId));
+                .orElseThrow(() -> new ErrorException("Vehicle not found with ID: " + vehicleId));
 
         // Kiểm tra xe có thuộc về driver này không
         if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {

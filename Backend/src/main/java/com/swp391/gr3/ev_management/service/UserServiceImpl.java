@@ -7,6 +7,7 @@ import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -50,11 +51,11 @@ public class UserServiceImpl implements UserService{
     @Override
     public User register(RegisterRequest r) {
         if (r.getPasswordHash() == null || r.getPasswordHash().isBlank())
-            throw new IllegalArgumentException("Password is required");
+            throw new ErrorException("Password is required");
         if (userRepository.existsByPhoneNumber(r.getPhoneNumber()))
-            throw new IllegalStateException("Phone number already in use");
+            throw new ErrorException("Phone number already in use");
         if (r.getEmail() != null && userRepository.existsByEmail(r.getEmail()))
-            throw new IllegalStateException("Email already in use");
+            throw new ErrorException("Email already in use");
 
         Role role = roleRepository.findByRoleId(3L); // default USER
         if (role == null) throw new IllegalStateException("Role not found");
@@ -148,7 +149,7 @@ public class UserServiceImpl implements UserService{
         // 1️⃣ Kiểm tra user tồn tại
         User user = userRepository.findUsersByPhoneNumber(phoneNumber);
         if (user == null) {
-            throw new IllegalArgumentException("Số điện thoại không tồn tại");
+            throw new ErrorException("Số điện thoại không tồn tại");
         }
 
         // 2️⃣ Kiểm tra trạng thái hoạt động (tuỳ role)
@@ -162,12 +163,12 @@ public class UserServiceImpl implements UserService{
                 && user.getRole().getRoleName().equals("ADMIN");
 
         if (!isDriverActive && !isStaffActive && !isAdmin) {
-            throw new IllegalArgumentException("Tài khoản của bạn đang bị khóa hoặc không hoạt động");
+            throw new ErrorException("Tài khoản của bạn đang bị khóa hoặc không hoạt động");
         }
 
         // 3️⃣ Kiểm tra mật khẩu
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Mật khẩu không chính xác");
+            throw new ErrorException("Mật khẩu không chính xác");
         }
 
         // ✅ Thành công
@@ -194,11 +195,11 @@ public class UserServiceImpl implements UserService{
     @Override
     @Transactional
     public User registerAsStaff(RegisterRequest req, Long stationId) {
-        if (userRepository.existsByEmail(req.getEmail())) throw new IllegalArgumentException("Email đã tồn tại");
-        if (userRepository.existsByPhoneNumber(req.getPhoneNumber())) throw new IllegalArgumentException("Số điện thoại đã tồn tại");
+        if (userRepository.existsByEmail(req.getEmail())) throw new ErrorException("Email đã tồn tại");
+        if (userRepository.existsByPhoneNumber(req.getPhoneNumber())) throw new ErrorException("Số điện thoại đã tồn tại");
 
         Role staffRole = roleRepository.findByRoleName("STAFF");
-        if (staffRole == null) throw new IllegalStateException("Role STAFF chưa được seed");
+        if (staffRole == null) throw new ErrorException("Role STAFF chưa được seed");
 
         // 1) Tạo user
         User user = User.builder()
@@ -231,7 +232,7 @@ public class UserServiceImpl implements UserService{
 
         // 2) Lấy Staff theo user
         Staffs staff = staffsRepo.findByUser_UserId(user.getUserId())
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy staff cho user " + user.getUserId()));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy staff cho user " + user.getUserId()));
 
         Long stationStaffId = null;
 
@@ -239,7 +240,7 @@ public class UserServiceImpl implements UserService{
         if (stationId != null) {
             // 3.1) Kiểm tra station tồn tại
             ChargingStation station = chargingStationRepository.findById(stationId)
-                    .orElseThrow(() -> new IllegalArgumentException("Station không tồn tại với id=" + stationId));
+                    .orElseThrow(() -> new ErrorException("Station không tồn tại với id=" + stationId));
 
             // 3.2) Đóng assignment cũ (nếu có)
             stationStaffRepository.findActiveByStaffId(staff.getStaffId())

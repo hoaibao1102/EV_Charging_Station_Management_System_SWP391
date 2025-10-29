@@ -2,7 +2,10 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.InvoiceStatus;
+import com.swp391.gr3.ev_management.exception.ConflictException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,22 +51,22 @@ public class PaymentService {
                                         String clientIp) throws Exception {
 
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
+                .orElseThrow(() -> new ErrorException("Driver not found"));
 
         ChargingSession session = chargingSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+                .orElseThrow(() -> new ErrorException("Session not found"));
 
         PaymentMethod method = paymentMethodRepository.findById(paymentMethodId)
-                .orElseThrow(() -> new IllegalArgumentException("Payment method not found"));
+                .orElseThrow(() -> new ErrorException("Payment method not found"));
 
         // 1) Lấy invoice đã tạo ở bước stop session
         Invoice invoice = invoiceRepository.findBySession_SessionId(sessionId)
-                .orElseThrow(() -> new IllegalStateException(
+                .orElseThrow(() -> new ErrorException(
                         "No invoice found for session " + sessionId + ". Stop session must create an UNPAID invoice first."));
 
         // 2) Chỉ cho phép thanh toán khi invoice còn UNPAID
         if (invoice.getStatus() != InvoiceStatus.UNPAID) {
-            throw new IllegalStateException("Invoice #" + invoice.getInvoiceId() + " is not UNPAID (current: " + invoice.getStatus() + ")");
+            throw new ConflictException("Invoice #" + invoice.getInvoiceId() + " is not UNPAID (current: " + invoice.getStatus() + ")");
         }
 
         // 3) Lấy amount/currency từ invoice để đảm bảo đúng số tiền cần thu
@@ -131,8 +134,11 @@ public class PaymentService {
     }
 
     private String hmacSHA512(String key, String data) throws NoSuchAlgorithmException, InvalidKeyException {
+        // Trim key để loại \r, \n, space vô tình khi copy
+        String safeKey = key == null ? "" : key.trim();
+
         Mac hmac = Mac.getInstance("HmacSHA512");
-        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+        SecretKeySpec keySpec = new SecretKeySpec(safeKey.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
         hmac.init(keySpec);
         byte[] bytes = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
 
@@ -146,41 +152,98 @@ public class PaymentService {
      * VNPay sẽ trả về nhiều param như vnp_ResponseCode, vnp_TxnRef, vnp_SecureHash, ...
      */
     @Transactional
-    public void handleVnPayReturn(Map<String, String> allParams) throws Exception {
-        // 1) Xác thực chữ ký
-        Map<String, String> sorted = new TreeMap<>(allParams);
-        String receivedHash = sorted.remove("vnp_SecureHash"); // bỏ ra để ký lại
-        String dataToSign = buildQuery(sorted, true);
-        String expectedHash = hmacSHA512(secretKey, dataToSign);
-        if (!expectedHash.equalsIgnoreCase(receivedHash)) {
+    public void handleVnPayReturn(HttpServletRequest request) throws Exception {
+        // ==== 0) Chuẩn hóa secretKey ====
+        this.secretKey = (this.secretKey == null) ? "" : this.secretKey.trim();
+
+        // ==== 1) Lấy hash nhận được ====
+        String receivedHashParam = request.getParameter("vnp_SecureHash");
+        String receivedHash = (receivedHashParam == null) ? "" : receivedHashParam.trim();
+
+        // ==== 2A) Cách A: ký theo RAW QUERY (percent-encoded gốc) ====
+        String rawQuery = Optional.ofNullable(request.getQueryString()).orElse("");
+        Map<String, String> vnpRaw = new HashMap<>();
+        for (String pair : rawQuery.split("&")) {
+            int i = pair.indexOf('=');
+            if (i <= 0) continue;
+            String k = pair.substring(0, i);
+            String v = pair.substring(i + 1); // GIỮ NGUYÊN percent-encoding
+            if (k.startsWith("vnp_")) vnpRaw.put(k, v);
+        }
+        String receivedHashRaw = Optional.ofNullable(vnpRaw.remove("vnp_SecureHash")).orElse(receivedHash);
+        vnpRaw.remove("vnp_SecureHashType");
+        SortedMap<String, String> rawSorted = new TreeMap<>(vnpRaw);
+        StringBuilder rawDataToSign = new StringBuilder();
+        for (Map.Entry<String, String> e : rawSorted.entrySet()) {
+            if (rawDataToSign.length() > 0) rawDataToSign.append('&');
+            rawDataToSign.append(e.getKey()).append('=').append(e.getValue()); // GIỮ NGUYÊN
+        }
+        String rawExpected = hmacSHA512(secretKey, rawDataToSign.toString());
+
+        // ==== 2B) Cách B: ký theo PARAM MAP (đã decode) + RFC3986 re-encode ====
+        Map<String, String[]> pm = request.getParameterMap();
+        Map<String, String> vnpDecoded = new HashMap<>();
+        pm.forEach((k, v) -> {
+            if (k.startsWith("vnp_")) vnpDecoded.put(k, (v != null && v.length > 0) ? v[0] : "");
+        });
+        String receivedHashDec = Optional.ofNullable(vnpDecoded.remove("vnp_SecureHash")).orElse(receivedHash);
+        vnpDecoded.remove("vnp_SecureHashType");
+        SortedMap<String, String> decSorted = new TreeMap<>(vnpDecoded);
+        StringBuilder decDataToSign = new StringBuilder();
+        for (Map.Entry<String, String> e : decSorted.entrySet()) {
+            if (decDataToSign.length() > 0) decDataToSign.append('&');
+            decDataToSign.append(rfc3986(e.getKey())).append('=').append(rfc3986(e.getValue()));
+        }
+        String decExpected = hmacSHA512(secretKey, decDataToSign.toString());
+
+        // ==== 3) Chấp nhận nếu một trong hai cách khớp ====
+        boolean ok =
+                (rawExpected.equalsIgnoreCase(receivedHash) || rawExpected.equalsIgnoreCase(receivedHashRaw))
+                        || (decExpected.equalsIgnoreCase(receivedHash) || decExpected.equalsIgnoreCase(receivedHashDec));
+
+        if (!ok) {
+            // Bật log debug tạm thời để so đối chiếu (đừng log ở prod)
+            System.out.println("[VNPay] received      = " + receivedHash);
+            System.out.println("[VNPay] RAW  dataSign = " + rawDataToSign);
+            System.out.println("[VNPay] RAW  expected = " + rawExpected);
+            System.out.println("[VNPay] DEC  dataSign = " + decDataToSign);
+            System.out.println("[VNPay] DEC  expected = " + decExpected);
             throw new SecurityException("Invalid VNPay signature");
         }
 
-        // 2) Lấy invoiceId & transactionId từ returnUrl query (mình đã đính kèm khi tạo URL)
-        Long invoiceId = Long.valueOf(sorted.get("invoiceId"));
-        Long transactionId = Long.valueOf(sorted.get("transactionId"));
+        // ==== 4) Lấy param nghiệp vụ của bạn (KHÔNG tham gia ký) ====
+        Long invoiceId = Long.valueOf(request.getParameter("invoiceId"));
+        Long transactionId = Long.valueOf(request.getParameter("transactionId"));
 
+        // ==== 5) Xử lý trạng thái ====
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
-
+                .orElseThrow(() -> new ErrorException("Invoice not found"));
         Transaction tx = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
+                .orElseThrow(() -> new ErrorException("Transaction not found"));
 
-        // 3) Đọc mã phản hồi VNPay
-        String responseCode = sorted.get("vnp_ResponseCode"); // "00" là thành công
+        String responseCode = request.getParameter("vnp_ResponseCode");
         if ("00".equals(responseCode)) {
-            tx.setStatus("Completed"); // hoặc TransactionStatus.COMPLETED.name()
+            tx.setStatus("Completed");
             invoice.setStatus(InvoiceStatus.PAID);
             invoice.setPaidAt(LocalDateTime.now());
         } else {
-            tx.setStatus("Failed"); // hoặc FAILED
-            // chỉ đổi Invoice sang FAILED nếu chưa có giao dịch thành công nào khác
+            tx.setStatus("Failed");
             if (invoice.getStatus() == InvoiceStatus.PENDING) {
                 invoice.setStatus(InvoiceStatus.FAILED);
             }
         }
-
         transactionRepository.save(tx);
         invoiceRepository.save(invoice);
+
+        System.out.println("[VNPay] URL=" + request.getRequestURL()
+                + " | query=" + request.getQueryString()
+                + " | method=" + request.getMethod());
+    }
+
+    // Encode chuẩn RFC3986 (space = %20, giữ ~)
+    private static String rfc3986(String s) {
+        return URLEncoder.encode(s, StandardCharsets.UTF_8)
+                .replace("+", "%20")
+                .replace("%7E", "~");
     }
 }

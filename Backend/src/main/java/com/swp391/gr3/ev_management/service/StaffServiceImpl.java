@@ -6,7 +6,7 @@ import com.swp391.gr3.ev_management.DTO.response.StaffResponse;
 import com.swp391.gr3.ev_management.entity.Staffs;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
-import com.swp391.gr3.ev_management.exception.NotFoundException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.StaffMapper;
 import com.swp391.gr3.ev_management.repository.StaffsRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
@@ -30,7 +30,7 @@ public class StaffServiceImpl implements StaffService {
     @Transactional
     public StaffResponse updateStatus(Long userId, StaffStatus status) {
         Staffs staffs = staffsRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Staff not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Staff not found with userId " + userId));
         staffs.setStatus(status);
         staffsRepository.save(staffs);
         return staffMapper.toStaffResponse(staffs);
@@ -41,7 +41,7 @@ public class StaffServiceImpl implements StaffService {
     @Transactional
     public StaffResponse updateProfile(Long userId, UpdateStaffProfileRequest request) {
         Staffs staff = staffsRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Staff not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Staff not found with userId " + userId));
 
         User user = staff.getUser();
 
@@ -77,29 +77,29 @@ public class StaffServiceImpl implements StaffService {
     @Transactional
     public void updatePassword(Long userId, UpdatePasswordRequest request) {
         Staffs staff = staffsRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new NotFoundException("Staff not found with userId " + userId));
+                .orElseThrow(() -> new ErrorException("Staff not found with userId " + userId));
 
         User user = staff.getUser();
 
         // Kiểm tra mật khẩu cũ
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Mật khẩu cũ không đúng");
+            throw new ErrorException("Mật khẩu cũ không đúng");
         }
 
         // Kiểm tra độ dài mật khẩu mới
         if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
-            throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự");
+            throw new ErrorException("Mật khẩu mới phải có ít nhất 6 ký tự");
         }
 
         // ✅ Kiểm tra xác nhận mật khẩu
         if (request.getConfirmPassword() == null ||
                 !request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("Xác nhận mật khẩu mới không khớp");
+            throw new ErrorException("Xác nhận mật khẩu mới không khớp");
         }
 
         // Kiểm tra trùng với mật khẩu cũ
         if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ");
+            throw new ErrorException("Mật khẩu mới không được trùng với mật khẩu cũ");
         }
 
         // Cập nhật mật khẩu

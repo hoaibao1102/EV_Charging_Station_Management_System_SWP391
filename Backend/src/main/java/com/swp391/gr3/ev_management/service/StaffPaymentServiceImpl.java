@@ -9,6 +9,7 @@ import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.Transaction;
 import com.swp391.gr3.ev_management.enums.InvoiceStatus;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.UnpaidInvoiceMapper;
 import com.swp391.gr3.ev_management.repository.InvoiceRepository;
 import com.swp391.gr3.ev_management.repository.PaymentMethodRepository;
@@ -36,22 +37,22 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
     @Transactional
     public ConfirmPaymentResponse confirmPayment(ConfirmPaymentRequest request) {
         StationStaff stationStaff = stationStaffRepository.findActiveByStationStaffId(request.getStaffId())
-                .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
+                .orElseThrow(() -> new ErrorException("Staff not found or not active"));
 
         Invoice invoice = invoiceRepository.findById(request.getInvoiceId())
-                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+                .orElseThrow(() -> new ErrorException("Invoice not found"));
 
         if (!stationStaff.getStation().getStationId()
                 .equals(invoice.getSession().getBooking().getStation().getStationId())) {
-            throw new RuntimeException("Staff has no permission for this station");
+            throw new ErrorException("Staff has no permission for this station");
         }
 
         if ("paid".equalsIgnoreCase(String.valueOf(invoice.getStatus()))) {
-            throw new RuntimeException("Invoice already paid");
+            throw new ErrorException("Invoice already paid");
         }
 
         if (request.getAmount() != invoice.getAmount()) {
-            throw new RuntimeException("Payment amount mismatch");
+            throw new ErrorException("Payment amount mismatch");
         }
 
         PaymentMethod method = paymentMethodRepository
@@ -98,10 +99,10 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
     @Override
     public List<UnpaidInvoiceResponse> getUnpaidInvoicesByStation(Long stationId, Long userId) {
         StationStaff staff = stationStaffRepository.findActiveByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Staff not found or not active"));
+                .orElseThrow(() -> new ErrorException("Staff not found or not active"));
 
         if (!staff.getStation().getStationId().equals(stationId)) {
-            throw new RuntimeException("Staff has no permission for this station");
+            throw new ErrorException("Staff has no permission for this station");
         }
 
         List<Invoice> invoices = invoiceRepository.findUnpaidInvoicesByStation(stationId);

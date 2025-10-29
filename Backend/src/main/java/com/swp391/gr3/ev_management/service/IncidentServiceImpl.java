@@ -5,13 +5,13 @@ import com.swp391.gr3.ev_management.DTO.response.IncidentResponse;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.Incident;
 import com.swp391.gr3.ev_management.entity.Staffs;
-import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.enums.IncidentStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
+import com.swp391.gr3.ev_management.exception.ConflictException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.IncidentMapper;
 import com.swp391.gr3.ev_management.repository.IncidentRepository;
 import com.swp391.gr3.ev_management.repository.StaffsRepository;
-import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,11 +32,11 @@ public class IncidentServiceImpl implements IncidentService {
     @Transactional
     public IncidentResponse createIncident(CreateIncidentRequest request) {
         Staffs staff = staffsRepository.findById(request.getStaffId())
-                .orElseThrow(() -> new RuntimeException("Station staff not found"));
+                .orElseThrow(() -> new ErrorException("Station staff not found"));
 
         // ✅ Dùng enum thay vì string
         if (staff.getStatus() != StaffStatus.ACTIVE) {
-            throw new RuntimeException("Staff is not active");
+            throw new ConflictException("Staff is not active");
         }
 
         Incident incident = new Incident();
@@ -57,7 +57,7 @@ public class IncidentServiceImpl implements IncidentService {
     @Transactional(Transactional.TxType.SUPPORTS)
     public IncidentResponse findById(Long incidentId) {
         Incident incident = incidentRepository.findById(incidentId)
-                .orElseThrow(() -> new RuntimeException("Incident not found"));
+                .orElseThrow(() -> new ErrorException("Incident not found"));
         return mapper.mapToIncident(incident);
     }
 
@@ -78,7 +78,7 @@ public class IncidentServiceImpl implements IncidentService {
             existingIncident.setStatus(IncidentStatus.valueOf(status));
             incidentRepository.save(existingIncident);
         } else {
-            throw new RuntimeException("Incident not found");
+            throw new ErrorException("Incident not found");
         }
     }
 }

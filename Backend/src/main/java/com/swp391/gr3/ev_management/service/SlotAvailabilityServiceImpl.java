@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.DTO.request.SlotAvailabilityCreateRequest;
 import com.swp391.gr3.ev_management.DTO.response.SlotAvailabilityResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.SlotAvailabilityMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,10 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     @Transactional
     public List<SlotAvailabilityResponse> createForTemplates(SlotAvailabilityCreateRequest req) {
         if (req.getTemplateIds() == null || req.getTemplateIds().isEmpty()) {
-            throw new IllegalArgumentException("templateIds không được rỗng");
+            throw new ErrorException("templateIds không được rỗng");
         }
         if (req.getConnectorTypeIds() == null || req.getConnectorTypeIds().isEmpty()) {
-            throw new IllegalArgumentException("connectorTypeIds không được rỗng");
+            throw new ErrorException("connectorTypeIds không được rỗng");
         }
 
         List<SlotTemplate> templates = slotTemplateRepository.findAllById(req.getTemplateIds());
@@ -50,7 +51,7 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
             Long stationId = Optional.ofNullable(template.getConfig())
                     .map(SlotConfig::getStation)
                     .map(ChargingStation::getStationId)
-                    .orElseThrow(() -> new IllegalStateException(
+                    .orElseThrow(() -> new ErrorException(
                             "Template " + template.getTemplateId() + " không có liên kết Station qua Config"));
 
             // Chuẩn hóa ngày về 00:00:00 cùng ngày của template.startTime
@@ -92,7 +93,7 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     @Transactional
     public List<SlotAvailabilityResponse> createForConfigInDate(Long configId, LocalDate date) {
         SlotConfig config = slotConfigRepository.findByConfigId(configId);
-        if (config == null) throw new IllegalArgumentException("Không tìm thấy SlotConfig id=" + configId);
+        if (config == null) throw new ErrorException("Không tìm thấy SlotConfig id=" + configId);
 
         // Lấy các template thuộc config trong khoảng ngày [start, end)
         LocalDateTime start = date.atStartOfDay();
@@ -122,7 +123,7 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     @Transactional
     public SlotAvailabilityResponse updateStatus(Long slotAvailabilityId, SlotStatus status) {
         SlotAvailability sa = slotAvailabilityRepository.findById(slotAvailabilityId)
-                .orElseThrow(() -> new NoSuchElementException("Không tìm thấy SlotAvailability id=" + slotAvailabilityId));
+                .orElseThrow(() -> new ErrorException("Không tìm thấy SlotAvailability id=" + slotAvailabilityId));
         sa.setStatus(status);
         return mapper.toResponse(slotAvailabilityRepository.save(sa));
     }
@@ -132,7 +133,7 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
         List<SlotAvailability> slots = slotAvailabilityRepository.findAllByChargingPoint_PointId(pointId);
 
         if (slots.isEmpty()) {
-            throw new NoSuchElementException("Không tìm thấy SlotAvailability cho PointId = " + pointId);
+            throw new ErrorException("Không tìm thấy SlotAvailability cho PointId = " + pointId);
         }
 
         return slots.stream()

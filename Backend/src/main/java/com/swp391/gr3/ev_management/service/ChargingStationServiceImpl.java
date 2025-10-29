@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.DTO.request.ChargingStationRequest;
 import com.swp391.gr3.ev_management.DTO.response.ChargingStationResponse;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.enums.ChargingStationStatus;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingStationMapper;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +59,7 @@ public class ChargingStationServiceImpl implements ChargingStationService {
     public ChargingStationResponse updateStationStatus(long stationId, ChargingStationStatus newStatus) {
         ChargingStation station = chargingStationRepository.findByStationId(stationId);
         if (station == null) {
-            throw new RuntimeException("Station not found with id: " + stationId);
+            throw new ErrorException("Station not found with id: " + stationId);
         }
 
         // ⚡ cập nhật trạng thái

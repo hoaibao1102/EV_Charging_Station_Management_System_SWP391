@@ -2,6 +2,8 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
 import com.swp391.gr3.ev_management.entity.Notification;
+import com.swp391.gr3.ev_management.exception.ConflictException;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.NotificationMapper;
 import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import jakarta.transaction.Transactional;
@@ -46,9 +48,9 @@ public class NotificationsServiceImpl implements NotificationsService{
     @Transactional
     public void markAsRead(Long notificationId, Long userId) {
         Notification n = notificationsRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ErrorException("Notification not found"));
         if (!n.getUser().getUserId().equals(userId)) {
-            throw new RuntimeException("No permission to mark this notification");
+            throw new ConflictException("No permission to mark this notification");
         }
 
         n.setStatus("READ");
@@ -69,7 +71,7 @@ public class NotificationsServiceImpl implements NotificationsService{
 
         // Kiểm tra quyền sở hữu
         if (!notification.getUser().getUserId().equals(userId)) {
-            throw new RuntimeException("Bạn không có quyền truy cập thông báo này");
+            throw new ConflictException("Bạn không có quyền truy cập thông báo này");
         }
 
         // Nếu thông báo chưa đọc → cập nhật trạng thái sang "READ"
