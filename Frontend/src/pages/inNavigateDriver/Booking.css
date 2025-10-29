@@ -1,0 +1,66 @@
+.slot-card {
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  position: relative;
+}
+
+.slot-card.disabled {
+  background: #f5f5f5;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slot-card.selected {
+  border: 3px solid #00bfa6;
+  background: #e6f9f5;
+}
+
+.checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: white;
+}
+
+.checkbox.checked {
+  border-color: #00bfa6;
+  background: #00bfa6;
+}
+
+.slot-time {
+  margin-top: 5px;
+  margin-bottom: 8px;
+}
+
+.slot-status {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.slot-status .available {
+  color: #4caf50;
+}
+
+.slot-status .past {
+  color: #666;
+}
+
+.slot-price {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #00bfa6;
+}
