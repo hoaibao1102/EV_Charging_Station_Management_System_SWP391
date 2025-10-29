@@ -6,9 +6,12 @@ import com.swp391.gr3.ev_management.DTO.response.StaffResponse;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public interface StaffService {
     StaffResponse updateStatus(Long userId, StaffStatus status);
     StaffResponse updateProfile(Long userId, UpdateStaffProfileRequest request);
     void updatePassword(Long userId, UpdatePasswordRequest request);
+    List<StaffResponse> getAll();
 }
