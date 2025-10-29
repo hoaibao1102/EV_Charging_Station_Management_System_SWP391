@@ -52,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         try {
+<<<<<<< Updated upstream
             initConnectorTypes();     // seed các loại đầu sạc phổ biến
             initRoles();              // seed các role chuẩn
             initAdmins();             // tạo 1 admin mặc định + map bảng Admin
@@ -63,6 +64,18 @@ public class DataInitializer implements CommandLineRunner {
             initSlotAvailability();   // seed mẫu slot theo Seed_Data
             initTariffs();            // seed bảng Tariff
             initPaymentMethods();     // seed bảng PaymentMethod
+=======
+           initConnectorTypes();     // seed các loại đầu sạc phổ biến
+           initRoles();              // seed các role chuẩn
+           initAdmins();             // tạo 1 admin mặc định + map bảng Admin
+           initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
+           initVehicleModels();      // seed VehicleModel (cần connector types)
+           initDrivers();            // seed Driver
+           initChargingStations();   // seed trạm sạc theo Seed_Data
+           initChargingPoints();     // seed điểm sạc theo Seed_Data
+           initSlotAvailability();   // seed mẫu slot theo Seed_Data
+           initTariffs();            // seed bảng Tariff
+>>>>>>> Stashed changes
 
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
@@ -546,7 +559,7 @@ public class DataInitializer implements CommandLineRunner {
     private void initDrivers() {
         createDriverIfNotExists(
                 "0911111111",
-                "driver@example.com",
+                "hoaibaole.qng@gmail.com",
                 "123123",
                 "Test Driver",
                 "M",

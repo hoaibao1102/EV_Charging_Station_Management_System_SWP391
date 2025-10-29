@@ -44,6 +44,7 @@ import ManagementModel from "../pages/admin/ManagementModel.jsx";
 import ReportAccidents from "../pages/staff/ReportAccident.jsx";
 import ManagementTransaction from "../pages/staff/ManagementTransaction.jsx";
 import SessionCharging from "../pages/staff/SessionCharging.jsx";
+import SessionChargingCreate from "../pages/staff/SessionChargingCreate.jsx";
 import StaffDashboard from "../pages/staff/StaffDashboard.jsx";
 
 const AppRouter = () => {
@@ -122,6 +123,10 @@ const AppRouter = () => {
             <Route
               path={paths.manageSessionCharging}
               element={<SessionCharging />}
+            />
+            <Route
+              path={paths.manageSessionChargingCreate}
+              element={<SessionChargingCreate />}
             />
             <Route
               path={paths.manageTransaction}
