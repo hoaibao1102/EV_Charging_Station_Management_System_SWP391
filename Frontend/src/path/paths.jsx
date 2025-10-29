@@ -34,6 +34,7 @@ export const paths = {
   //staff
   staffDashboard: "/staff",
   manageSessionCharging: "/staff/manage-session-charging",
+  manageSessionChargingCreate: "/staff/manage-session-charging/new",
   manageTransaction: "/staff/manage-transaction",
   reportAccidents: "/staff/report-accidents",
 };

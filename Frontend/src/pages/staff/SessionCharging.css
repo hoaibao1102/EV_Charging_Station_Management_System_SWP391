@@ -1,0 +1,89 @@
+/* Session Charging - staff page styles (matches app theme) */
+
+:root {
+  --primary: #00bfa6;
+  --muted: #6b7280;
+  --surface: #f8fafb;
+}
+
+.session-container {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, var(--surface) 0%, #eef6f6 100%);
+  min-height: calc(100vh - 40px);
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.session-header h1 {
+  color: var(--primary);
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.session-section {
+  margin-top: 18px;
+}
+.session-section h2 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+}
+
+.table-wrap {
+  overflow: auto;
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+.session-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+.session-table th,
+.session-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+}
+.session-table thead th {
+  background: #fbfffe;
+  font-weight: 700;
+  color: #0f172a;
+}
+.row-ongoing {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.04), transparent);
+}
+.row-completed {
+  background: transparent;
+}
+
+.session-card {
+  background: white;
+  padding: 18px;
+  border-radius: 10px;
+}
+
+@media (min-width: 768px) {
+  .session-header h1 {
+    font-size: 1.8rem;
+  }
+}
