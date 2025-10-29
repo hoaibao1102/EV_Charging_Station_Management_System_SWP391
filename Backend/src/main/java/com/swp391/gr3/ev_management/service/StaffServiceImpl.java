@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class StaffServiceImpl implements StaffService {
@@ -105,5 +107,13 @@ public class StaffServiceImpl implements StaffService {
         // Cập nhật mật khẩu
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+    }
+
+    @Override
+    public List<StaffResponse> getAll() {
+        return staffsRepository.findAll()
+                .stream()
+                .map(staffMapper::toStaffResponse)
+                .toList();
     }
 }
