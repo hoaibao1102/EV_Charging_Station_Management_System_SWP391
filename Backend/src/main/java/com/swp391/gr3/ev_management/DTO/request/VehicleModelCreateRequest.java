@@ -25,6 +25,9 @@ public class VehicleModelCreateRequest {
     @NotBlank
     private String imageUrl;
 
+    @NotBlank
+    private String imagePublicId;
+
     @NotNull(message = "connectorTypeId is required")
     private Long connectorTypeId;
 

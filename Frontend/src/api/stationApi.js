@@ -9,6 +9,22 @@ export const getConnectorTypes = () => {
   );
 };
 
+//update connector type
+export const updateConnectorTypeApi = (connectorTypeId, connectorTypeData) => {
+  return handleApiCall(
+    () => apiClient.put(`/api/connector-types/${connectorTypeId}`, connectorTypeData),
+    "Cập nhật thông tin loại cổng sạc thất bại"
+  );
+};
+
+//tạo mới connector type
+export const addConnectorTypeApi = (connectorTypeData) => {
+  return handleApiCall(
+    () => apiClient.post("/api/connector-types", connectorTypeData),
+    "Thêm mới loại cổng sạc thất bại"
+  );
+};
+
 // ====== Lấy danh sách tất cả trạm sạc ======
 export const getAllStations = () => {
   return handleApiCall(
@@ -35,6 +51,32 @@ export const addStationApi = (stationData) => {
     "Thêm mới trạm sạc thất bại"
   );
 };
+
+//sửa thông tin trạm sạc
+export const updateStationApi = (stationId, stationData) => {
+  return handleApiCall(
+    () => apiClient.put(`/api/charging-stations/${stationId}`, stationData),
+    "Cập nhật thông tin trạm sạc thất bại"
+  );
+}
+
+//lay het thong tin slot config
+export const getAllSlotConfigs = () => {
+  return handleApiCall(
+    () => apiClient.get("/api/slot-configs"),
+    "Lấy danh sách cấu hình slot thất bại"
+  );
+}
+
+//them cau hinh moi cho slot
+export const addSlotConfigApi = (slotConfigData) => {
+  return handleApiCall(
+    () => apiClient.post("/api/slot-configs", slotConfigData),
+    "Thêm mới cấu hình slot thất bại"
+  );
+};
+
+
 
 // ====== Lấy thông tin trạm theo ID ======
 export const getStationById = (id) => {

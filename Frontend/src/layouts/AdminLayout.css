@@ -9,7 +9,7 @@
 
 /* Sidebar Navigation - Cố định bên trái */
 .admin-sidebar {
-  width: 15% ;
+  width: 14% ;
   background-color: aliceblue;
   flex-shrink: 0;
   overflow: hidden;
@@ -18,7 +18,7 @@
 /* Main Content Area */
 .admin-main {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Biến CSS cho màu sắc */
