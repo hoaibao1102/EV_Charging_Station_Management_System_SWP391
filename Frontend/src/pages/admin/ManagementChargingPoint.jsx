@@ -5,7 +5,7 @@ import './ManagementUser.css';
 import Header from '../../components/admin/Header.jsx';
 import {toast} from 'react-toastify';
 import {getAllChargingPoints} from '../../api/chargingPointApi.js';
-import { updateChargingPointStatus} from '../../api/stationApi.js';
+import { updateChargingPointStatus} from '../../api/chargingPointApi.js';
 import AddChargingPointForm from '../../components/admin/AddChargingPointForm.jsx';
 
 export const statusChargingPoint = {
@@ -16,6 +16,7 @@ export const statusChargingPoint = {
   };
 
 export default function ManagementChargingPoint() { 
+  const status = statusChargingPoint;
   const [activeTab, setActiveTab] = useState('allChargingPoints');
   const [chargingPoints, setChargingPoints] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,7 +59,7 @@ export default function ManagementChargingPoint() {
 
   const handleCloseForm = () => {
     setShowAddChargingPointForm(false);
-    handleSetLoading(); // Fetch lại dữ liệu sau khi đóng form
+    handleSetLoading(); 
   };
 
   const handleStatusChargingPoint = async (chargingPointId, newStatus) => {
@@ -69,7 +70,7 @@ export default function ManagementChargingPoint() {
       console.log('Updating status for charging point:', chargingPointId, 'to', newStatus);
       const response = await updateChargingPointStatus(chargingPointId, newStatus);
       if (response.success) {
-        setLoading(!loading); // Kích hoạt useEffect để fetch lại
+        setLoading(!loading); 
         toast.success('Cập nhật trạng thái trụ sạc thành công');
       }
     } catch (error) {
@@ -78,13 +79,13 @@ export default function ManagementChargingPoint() {
     }
   };
 
-  // Tính toán thống kê (dựa trên logic 3 trạng thái của bạn)
+
   const totalChargingPoints = chargingPoints.length;
   const totalActive = chargingPoints.filter(s => s.status === status.available || s.status === status.occupied).length;
   const totalMaintenance = chargingPoints.filter(s => s.status === status.maintenance).length;
   const totalInactive = chargingPoints.filter(s => s.status === status.out_of_service).length;
 
-  // 💡 SỬA LỖI: Tính toán danh sách hiển thị
+
   const displayedChargingPoints = useMemo(() => {
     let filtered = chargingPoints;
 
@@ -104,12 +105,15 @@ export default function ManagementChargingPoint() {
       filtered = filtered.filter(chargingPoint => 
         chargingPoint.pointNumber?.toLowerCase().includes(searchTerm) ||
         chargingPoint.stationName?.toLowerCase().includes(searchTerm) ||
-        chargingPoint.connectorType?.toLowerCase().includes(searchTerm) 
+        (
+          (typeof chargingPoint.connectorType === 'string' && chargingPoint.connectorType.toLowerCase().includes(searchTerm)) ||
+          (chargingPoint.connectorType?.name?.toLowerCase().includes(searchTerm))
+        )
       );
     }
 
     return filtered;
-  }, [chargingPoints, activeTab, searchTerm, status]); // Thêm 'status' vào dependency
+  }, [chargingPoints, activeTab, searchTerm]);
 
   return (
     <>
@@ -153,7 +157,6 @@ export default function ManagementChargingPoint() {
                 <Nav.Link eventKey="allChargingPoints">Tất cả trụ sạc</Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                {/* 💡 SỬA LỖI: Đổi eventKey thành "active" */}
                 <Nav.Link eventKey="active">Đang hoạt động</Nav.Link>
               </Nav.Item>
               <Nav.Item>
@@ -198,7 +201,6 @@ export default function ManagementChargingPoint() {
                       <td>{point.pointNumber}</td>
                       <td>{point.stationName}</td>
                       <td>
-                        {/* Logic hiển thị trạng thái (đã đúng) */}
                         {point.status === status.available || point.status === status.occupied ? (
                           <span className="status-active">Đang hoạt động</span>
                         ) : point.status === status.maintenance ? (
@@ -210,19 +212,15 @@ export default function ManagementChargingPoint() {
                       <td>{point.serialNumber}</td>
                       <td>{point.connectorType}</td>
                       <td>{point.maxPowerKW}</td>
-                      {/* 💡 SỬA LỖI: Thêm optional chaining '?.' để tránh crash nếu null */}
                       <td>{point.createdAt?.split('T')[0]}</td>
                       <td>{point.lastMaintenanceDate?.split('T')[0]}</td>
                       <td>
-                        {/* 💡 SỬA LỖI: Thay thế status.map bằng logic if/else dựa trên trạng thái hiện tại */}
-                        
                         {/* TRƯỜNG HỢP 1: Đang hoạt động (Bình thường) */}
                         {(point.status === status.available || point.status === status.occupied) && (
                           <>
                             <div className="action-buttons">
                               <button 
                                 className="btn-transfer" 
-                                // 💡 SỬA LỖI: Dùng point.pointId và đúng status
                                 onClick={() => handleStatusChargingPoint(point.pointId, status.maintenance)}>
                                 BẢO TRÌ
                               </button>
