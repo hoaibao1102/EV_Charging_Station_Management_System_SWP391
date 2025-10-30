@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.UserVehicle;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,6 +36,7 @@ public class DriverMapper {
                 .modelId(model.getModelId())
                 .modelName(model.getModel())
                 .brand(model.getBrand())
+                .vehicleStatus(UserVehicleStatus.ACTIVE)
                 .connectorTypeName(model.getConnectorType() != null ?
                         model.getConnectorType().getDisplayName() : null)
                 .build();

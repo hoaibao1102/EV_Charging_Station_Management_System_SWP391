@@ -3,8 +3,10 @@ package com.swp391.gr3.ev_management.controller;
 import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverChangePasswordRequest;
+import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import com.swp391.gr3.ev_management.service.DriverService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,16 +31,16 @@ public class DriverController {
 
     private final TokenService tokenService;
 
-    @PreAuthorize("hasRole('DRIVER')")
-    @DeleteMapping("/vehicles/{vehicleId}")
-    @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
-    public ResponseEntity<Void> removeVehicle(
-            HttpServletRequest request,
-            @PathVariable Long vehicleId) {
-        Long userId = tokenService.extractUserIdFromRequest(request);
-        driverService.removeVehicle(userId, vehicleId);
-        return ResponseEntity.noContent().build();
-    }
+//    @PreAuthorize("hasRole('DRIVER')")
+//    @DeleteMapping("/vehicles/{vehicleId}")
+//    @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
+//    public ResponseEntity<Void> removeVehicle(
+//            HttpServletRequest request,
+//            @PathVariable Long vehicleId) {
+//        Long userId = tokenService.extractUserIdFromRequest(request);
+//        driverService.removeVehicle(userId, vehicleId);
+//        return ResponseEntity.noContent().build();
+//    }
 
     // ✅ Driver cập nhật hồ sơ
     @PreAuthorize("hasRole('DRIVER')")
@@ -76,6 +78,34 @@ public class DriverController {
         Long userId = tokenService.extractUserIdFromRequest(request);
         VehicleResponse vehicle = driverService.addVehicle(userId, addRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(vehicle);
+    }
+
+    // ✅ Driver cập nhật thông tin 1 xe (model, biển số)
+    @PreAuthorize("hasRole('DRIVER')")
+    @PatchMapping("/vehicles/{vehicleId}")
+    @Operation(summary = "Update my vehicle", description = "Driver updates their own vehicle (model, license plate)")
+    public ResponseEntity<VehicleResponse> updateMyVehicle(
+            HttpServletRequest request,
+            @PathVariable Long vehicleId,
+            @Valid @RequestBody UpdateVehicleRequest updateRequest
+    ) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        VehicleResponse updated = driverService.updateVehicle(userId, vehicleId, updateRequest);
+        return ResponseEntity.ok(updated);
+    }
+
+    // ✅ Driver đổi trạng thái 1 xe (ACTIVE/INACTIVE/…)
+    @PreAuthorize("hasRole('DRIVER')")
+    @PatchMapping("/vehicles/{vehicleId}/status")
+    @Operation(summary = "Update my vehicle status", description = "Driver updates status of their own vehicle")
+    public ResponseEntity<VehicleResponse> updateMyVehicleStatus(
+            HttpServletRequest request,
+            @PathVariable Long vehicleId,
+            @RequestParam com.swp391.gr3.ev_management.enums.UserVehicleStatus status
+    ) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        VehicleResponse updated = driverService.updateVehicleStatus(userId, vehicleId, status);
+        return ResponseEntity.ok(updated);
     }
 
    

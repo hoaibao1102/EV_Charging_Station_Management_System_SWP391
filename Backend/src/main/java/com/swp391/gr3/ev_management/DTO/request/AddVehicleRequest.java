@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -23,4 +24,6 @@ public class AddVehicleRequest {
         message = "Biển số phải theo cấu trúc VN: 2 số (tỉnh) + 1-2 chữ + 4-5 số (VD: 86B381052, 30G12345, 51AB12345)"
     )
     private String licensePlate;
+
+    private UserVehicleStatus vehicleStatus;
 }

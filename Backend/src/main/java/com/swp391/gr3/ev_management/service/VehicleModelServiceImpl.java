@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.cloudinary.Cloudinary;
+import com.swp391.gr3.ev_management.enums.VehicleModelStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelCreateRequest;
@@ -43,6 +44,11 @@ public class VehicleModelServiceImpl implements VehicleModelService {
         ConnectorType connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
                 .orElseThrow(() -> new ErrorException("ConnectorType not found with id " + request.getConnectorTypeId()));
 
+        // ❗ Chặn nếu connector type/station bị deprecated
+        if (Boolean.TRUE.equals(connectorType.getIsDeprecated())) {
+            throw new ErrorException("Cannot create vehicle_model: connector type is deprecated");
+        }
+
         VehicleModel entity = VehicleModel.builder()
                 .brand(request.getBrand())
                 .model(request.getModel())
@@ -50,6 +56,7 @@ public class VehicleModelServiceImpl implements VehicleModelService {
                 .imageUrl(request.getImageUrl())
                 .imagePublicId(request.getImagePublicId())
                 .connectorType(connectorType)
+                .status(VehicleModelStatus.ACTIVE)
                 .batteryCapacityKWh(request.getBatteryCapacityKWh())
                 .build();
 
@@ -156,6 +163,41 @@ public class VehicleModelServiceImpl implements VehicleModelService {
         vehicleModelRepository.delete(vm);
     }
 
-    
+    @Override
+    @Transactional
+    public VehicleModelResponse updateStatus(Long id, VehicleModelStatus status) {
+        if (status == null) {
+            throw new ErrorException("Status must not be null");
+        }
+
+        VehicleModel vm = vehicleModelRepository.findById(id)
+                .orElseThrow(() -> new ErrorException("VehicleModel not found with id " + id));
+
+        // Nếu không đổi trạng thái thì trả luôn
+        if (vm.getStatus() == status) {
+            return vehicleModelMapper.toResponse(vm);
+        }
+
+        // Quy tắc nghiệp vụ:
+        // Không cho chuyển sang INACTIVE nếu model đang được sử dụng
+        if (status == VehicleModelStatus.INACTIVE) {
+            long usage = vehicleRepisitory.countByModel_ModelId(id);
+            if (usage > 0) {
+                throw new ConflictException(
+                        "Cannot set status to INACTIVE. Model is used by " + usage + " vehicle(s)"
+                );
+            }
+        }
+
+        VehicleModelStatus oldStatus = vm.getStatus();
+        vm.setStatus(status);
+        VehicleModel saved = vehicleModelRepository.save(vm);
+
+        logger.info("Updated VehicleModel(id={}) status from {} to {}", id, oldStatus, status);
+
+        return vehicleModelMapper.toResponse(saved);
+    }
+
+
 }
 
