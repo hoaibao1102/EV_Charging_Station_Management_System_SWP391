@@ -16,6 +16,7 @@ public class StaffMapper {
                 .status(staffs.getStatus())
                 .staffName(staffs.getUser() != null ? staffs.getUser().getName() : null)
                 .email(staffs.getUser() != null ? staffs.getUser().getEmail() : null)
+                .userId(staffs.getUser().getUserId() != null ? staffs.getUser().getUserId() : null)
                 .build();
     }
 }
