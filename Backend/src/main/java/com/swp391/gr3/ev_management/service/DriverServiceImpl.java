@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
@@ -10,6 +11,8 @@ import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.entity.UserVehicle;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
+import com.swp391.gr3.ev_management.enums.VehicleModelStatus;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
@@ -189,6 +192,11 @@ public class DriverServiceImpl implements DriverService {
         VehicleModel vehicleModel = vehicleModelRepository.findById(request.getModelId())
                 .orElseThrow(() -> new ErrorException("Vehicle model not found with ID: " + request.getModelId()));
 
+        // ❗ Chỉ cho phép thêm khi model ACTIVE
+        if (vehicleModel.getStatus() != VehicleModelStatus.ACTIVE) {
+            throw new ConflictException("Cannot add vehicle: vehicle model is not ACTIVE");
+        }
+
         // Chuẩn hoá biển số để kiểm tra trùng (chỉ chữ + số, bỏ hết ký tự đặc biệt)
         String normalizedPlate = normalizePlate(request.getLicensePlate());
 
@@ -209,6 +217,7 @@ public class DriverServiceImpl implements DriverService {
                 .driver(driver)
                 .vehiclePlate(formattedPlate) // Lưu dạng có format đẹp
                 .model(vehicleModel)
+                .status(UserVehicleStatus.ACTIVE)
                 .build();
 
         UserVehicle saved = userVehicleRepository.save(vehicle);
@@ -312,6 +321,98 @@ public class DriverServiceImpl implements DriverService {
 
         userVehicleRepository.delete(vehicle);
         log.info("Vehicle removed successfully: {}", vehicleId);
+    }
+
+    @Override
+    @Transactional
+    public VehicleResponse updateVehicle(Long userId, Long vehicleId, UpdateVehicleRequest request) {
+        log.info("Updating vehicle {} for userId: {}", vehicleId, userId);
+
+        // 1) Xác thực driver
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+
+        // 2) Lấy vehicle
+        UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new ErrorException("Vehicle not found with ID: " + vehicleId));
+
+        // 3) Kiểm tra quyền sở hữu
+        if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {
+            throw new ConflictException("Vehicle does not belong to this driver");
+        }
+
+        // 4) Cập nhật model nếu có
+        if (request.getModelId() != null && !request.getModelId().equals(
+                vehicle.getModel() != null ? vehicle.getModel().getModelId() : null)) {
+            VehicleModel newModel = vehicleModelRepository.findById(request.getModelId())
+                    .orElseThrow(() -> new ErrorException("Vehicle model not found with ID: " + request.getModelId()));
+
+            // ❗ Chỉ cho phép đổi sang model ACTIVE
+            if (newModel.getStatus() != VehicleModelStatus.ACTIVE) {
+                throw new ConflictException("Cannot update vehicle: target vehicle model is not ACTIVE");
+            }
+
+            vehicle.setModel(newModel);
+        }
+
+        // 5) Cập nhật biển số nếu có
+        if (request.getLicensePlate() != null && !request.getLicensePlate().isBlank()) {
+            String normalizedNew = normalizePlate(request.getLicensePlate());
+
+            // Check trùng (loại trừ chính vehicle hiện tại)
+            List<UserVehicle> existingVehicles = userVehicleRepository.findAll();
+            for (UserVehicle v : existingVehicles) {
+                if (!v.getVehicleId().equals(vehicleId)) {
+                    if (normalizePlate(v.getVehiclePlate()).equals(normalizedNew)) {
+                        throw new ConflictException("License plate already registered: " + request.getLicensePlate());
+                    }
+                }
+            }
+
+            String formatted = formatVietnamPlate(request.getLicensePlate());
+            vehicle.setVehiclePlate(formatted);
+        }
+
+        UserVehicle saved = userVehicleRepository.save(vehicle);
+        log.info("Vehicle updated successfully: {}", saved.getVehicleId());
+        return driverMapper.toVehicleResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public VehicleResponse updateVehicleStatus(Long userId, Long vehicleId, UserVehicleStatus status) {
+        log.info("Updating vehicle {} status for userId: {} -> {}", vehicleId, userId, status);
+
+        if (status == null) {
+            throw new ErrorException("Status must not be null");
+        }
+
+        // 1) Xác thực driver
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+
+        // 2) Lấy vehicle
+        UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new ErrorException("Vehicle not found with ID: " + vehicleId));
+
+        // 3) Kiểm tra quyền sở hữu
+        if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {
+            throw new ConflictException("Vehicle does not belong to this driver");
+        }
+
+        // (Optional) Business rule: nếu đang có lịch sạc thì không cho INACTIVE — TODO nếu bạn cần
+
+        // 4) Không thay đổi thì trả luôn
+        if (vehicle.getStatus() == status) {
+            return driverMapper.toVehicleResponse(vehicle);
+        }
+
+        UserVehicleStatus old = vehicle.getStatus();
+        vehicle.setStatus(status);
+        UserVehicle saved = userVehicleRepository.save(vehicle);
+
+        log.info("Vehicle status updated: {} -> {}", old, status);
+        return driverMapper.toVehicleResponse(saved);
     }
 
 }

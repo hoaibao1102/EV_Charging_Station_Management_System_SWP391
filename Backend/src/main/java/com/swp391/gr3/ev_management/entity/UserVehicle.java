@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +25,10 @@ public class UserVehicle {
 
     @Column(name = "VehiclePlate", unique = true, nullable = false, columnDefinition = "NVARCHAR(20)")
     private String vehiclePlate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", nullable = false)
+    private UserVehicleStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ModelID",nullable = false)

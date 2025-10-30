@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelCreateRequest;
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelUpdateRequest;
+import com.swp391.gr3.ev_management.DTO.response.UpdateStatusRequest;
 import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import com.swp391.gr3.ev_management.service.VehicleModelService;
@@ -54,6 +55,16 @@ public class VehicleModelController {
         return ResponseEntity.ok(vehicleModelService.update(id, request));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/status")
+    @Operation(
+            summary = "Update Vehicle Model Status (Admin)",
+            description = "Update status of a vehicle model (e.g. ACTIVE / INACTIVE)"
+    )
+    public ResponseEntity<VehicleModelResponse> updateStatus(@PathVariable Long id,
+                                                             @Valid @RequestBody UpdateStatusRequest body) {
+        return ResponseEntity.ok(vehicleModelService.updateStatus(id, body.getStatus()));
+    }
 
 
     // ============ PUBLIC ENDPOINTS (no auth required) ============
@@ -101,6 +112,7 @@ public class VehicleModelController {
         }
         return ResponseEntity.ok(response);
     }
+
 
 
 }

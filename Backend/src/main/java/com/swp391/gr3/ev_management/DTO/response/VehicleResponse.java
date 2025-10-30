@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +18,5 @@ public class VehicleResponse {
     private String modelName;
     private String brand;
     private String connectorTypeName;
+    private UserVehicleStatus vehicleStatus;
 }
