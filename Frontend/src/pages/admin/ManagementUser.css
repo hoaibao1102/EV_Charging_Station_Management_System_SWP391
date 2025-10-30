@@ -112,7 +112,7 @@
 .filter-section {
   /* ✅ THÊM 3 DÒNG NÀY ĐỂ DÍNH FILTER LẠI */
   position: sticky;
-  top: 25px;
+  top: 0px;
   z-index: 11; /* Phải cao hơn z-index của header (10) */
 
   /* Style cũ của bạn */
@@ -211,7 +211,7 @@
 .custom-table thead th {
   /* ✅ THAY ĐỔI 3 DÒNG NÀY */
   position: sticky; 
-  top: 136px;  /* Dính bên dưới filter (filter cao 111px) */
+  top: 111px;  /* Dính bên dưới filter (filter cao 111px) */
   z-index: 10; 
 
   /* Style cũ */
