@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import lombok.AllArgsConstructor;
@@ -17,4 +18,5 @@ public class StaffResponse {
     private String email;
     private String roleAtStation;
     private StaffStatus status;
+    private Long userId;
 }
