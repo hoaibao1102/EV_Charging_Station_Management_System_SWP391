@@ -81,12 +81,12 @@ public class VehicleModelServiceImpl implements VehicleModelService {
     @Override
     @Transactional
     public VehicleModelResponse update(Long id, VehicleModelUpdateRequest request) {
-    VehicleModel vm = vehicleModelRepository.findById(id)
-        .orElseThrow(() -> new ErrorException("VehicleModel not found with id " + id));
-    // --- THAY ĐỔI: Lưu lại publicId CŨ trước khi cập nhật ---
-    String oldPublicId = vm.getImagePublicId();
+        VehicleModel vm = vehicleModelRepository.findById(id)
+                .orElseThrow(() -> new ErrorException("VehicleModel not found with id " + id));
+        // --- THAY ĐỔI: Lưu lại publicId CŨ trước khi cập nhật ---
+        String oldPublicId = vm.getImagePublicId();
 
-    String newBrand = request.getBrand() != null ? request.getBrand() : vm.getBrand();
+        String newBrand = request.getBrand() != null ? request.getBrand() : vm.getBrand();
         String newModel = request.getModel() != null ? request.getModel() : vm.getModel();
         int newYear = request.getYear() != null ? request.getYear() : vm.getYear();
 
