@@ -52,7 +52,6 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         try {
-<<<<<<< Updated upstream
             initConnectorTypes();     // seed các loại đầu sạc phổ biến
             initRoles();              // seed các role chuẩn
             initAdmins();             // tạo 1 admin mặc định + map bảng Admin
