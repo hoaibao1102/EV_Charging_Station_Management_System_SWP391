@@ -25,6 +25,14 @@ export const statusStaffApi = (staffId, status) => {
     );
 }
 
+//chuyển công tác nhân viên
+export const transferStaffApi = (staffId, newStationId) => {
+    return handleApiCall(
+        () => apiClient.put(`/api/station-staff/${staffId}/station?stationId=${newStationId}`),
+        'Chuyển công tác nhân viên thất bại'
+    );
+}
+
 //gỡ lệnh khóa tài khoản tài xế
 export const unbanDriverApi = (driverId) => {
     return handleApiCall(

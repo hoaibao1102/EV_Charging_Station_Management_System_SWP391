@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 7px 10px;
   background-color: white;
   border: 2px solid #20b2aa;
   border-radius: 8px !important;
@@ -24,7 +24,7 @@
   color: #333;
   transition: all 0.3s ease;
   cursor: pointer;
-  min-height: 60px;
+  min-height: 58px;
 }
 
 /* Hover effect - phóng to cả button */
@@ -57,16 +57,16 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 35px;
+  height: 35px;
   background-color: #20b2aa;
   border-radius: 50%;
   transition: all 0.3s ease;
 }
 
 .navIcon img {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
   object-fit: contain;
   filter: brightness(0) invert(1);
   /* Filter này giữ icon màu trắng */
@@ -75,7 +75,7 @@
 /* Label text */
 .navLabel {
   flex: 1;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 500;
   color: #2c3e50;
   white-space: nowrap;

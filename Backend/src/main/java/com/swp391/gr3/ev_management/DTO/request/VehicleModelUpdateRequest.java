@@ -18,6 +18,7 @@ public class VehicleModelUpdateRequest {
     @Min(value = 1886, message = "Year must be realistic")
     private Integer year; // optional
     private String imageUrl; // optional
+    private String imagePublicId; // optional
     private Long connectorTypeId; // optional
     @JsonAlias({"batteryCapacity", "battery-capacity"})
     @DecimalMin(value = "0.0", inclusive = false, message = "Battery Capacity must be greater than 0")

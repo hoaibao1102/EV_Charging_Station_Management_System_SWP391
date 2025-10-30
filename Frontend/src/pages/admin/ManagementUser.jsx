@@ -1,6 +1,3 @@
-
-import { useSelector } from 'react-redux';
-import { selectUser } from '../../redux/slices/authSlice';
 import Nav from 'react-bootstrap/Nav';
 import { useEffect, useState, useMemo } from 'react';
 import { getAllUsersApi, statusStaffApi, unbanDriverApi } from '../../api/admin.js';
@@ -10,10 +7,11 @@ import { useNavigate } from 'react-router-dom';
 import paths from '../../path/paths.jsx';
 import './ManagementUser.css';
 import Header from '../../components/admin/Header.jsx';
+import SelectStationForm from '../../components/admin/SelectStationForm.jsx';
 
 export default function ManagementUser() {
   const navigator = useNavigate();
-  const user = useSelector(selectUser);
+  const user = JSON.parse(localStorage.getItem('userDetails'));
   if (!user) {
     navigator(paths.login);
   }
@@ -22,11 +20,9 @@ export default function ManagementUser() {
   const [usersList, setUsersList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddStaffForm, setShowAddStaffForm] = useState(false);
+  const [showSelectStationForm, setShowSelectStationForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(4); 
+  const [selectedStaff, setSelectedStaff] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -44,7 +40,6 @@ export default function ManagementUser() {
 
   const handleSelect = (selectedKey) => {
     setActiveTab(selectedKey);
-    setCurrentPage(1); // Reset về trang 1 khi chuyển tab
   };
 
   const handleSetLoading = () => {
@@ -53,7 +48,6 @@ export default function ManagementUser() {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value.toLowerCase());
-    setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
   };
 
   const handleAddStaff = () => {
@@ -62,6 +56,8 @@ export default function ManagementUser() {
 
   const handleCloseForm = () => {
     setShowAddStaffForm(false);
+    setShowSelectStationForm(false);
+    setSelectedStaff(null);
   };
 
   // Tính toán thống kê 
@@ -90,65 +86,6 @@ export default function ManagementUser() {
     return filtered;
   }, [usersList, activeTab, searchTerm]);
 
-  // Pagination calculations
-  const totalPages = Math.ceil(displayedUsers.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentUsers = displayedUsers.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Pagination handlers
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  // Generate page numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i);
-        }
-        pages.push('...');
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push('...');
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        pages.push('...');
-        pages.push(currentPage - 1);
-        pages.push(currentPage);
-        pages.push(currentPage + 1);
-        pages.push('...');
-        pages.push(totalPages);
-      }
-    }
-    
-    return pages;
-  };
-
   const handleStatusStaff = async (staffId, status) => {
     const confirmed = window.confirm(`Bạn có chắc chắn muốn ${status === 'BANNED' ? 'xóa' : 'kích hoạt lại'} nhân viên này?`);
     if (confirmed) {
@@ -162,12 +99,16 @@ export default function ManagementUser() {
     }
   };
 
-  const handleTransferStaff = () => {
-    alert('Chuyển công tác nhân viên');
-  };      
+  const handleTransferStaff = (staff) => {
+    const confirmed = window.confirm('Bạn có chắc chắn muốn chuyển công tác nhân viên này?');
+    if (confirmed) {
+      setSelectedStaff(staff);
+      setShowSelectStationForm(true);
+    }
+  }; 
 
   const handleDriverUnblock = async (driverId) => {
-   const confirmed = window.confirm('Bạn có chắc chắn muốn gỡ lệnh khóa tài khoản tài xế này?');
+    const confirmed = window.confirm('Bạn có chắc chắn muốn gỡ lệnh khóa tài khoản tài xế này?');
     if (confirmed) {
       const response = await unbanDriverApi(driverId);
       if (response.success) {
@@ -182,8 +123,9 @@ export default function ManagementUser() {
 
   return (
     <>
+      {showSelectStationForm && <SelectStationForm onClose={handleCloseForm} onAddSuccess={handleSetLoading} staff={selectedStaff} />}
       {showAddStaffForm && <AddStaffForm onClose={handleCloseForm} onAddSuccess={handleSetLoading} />}
-      {!showAddStaffForm && (
+      {!showAddStaffForm && !showSelectStationForm && (
         <div className="management-user-container">
           {/* Header Section */}
           <Header />
@@ -212,135 +154,101 @@ export default function ManagementUser() {
             </li>
           </ul>
 
-          {/* Filter Section */}
-          <div className="filter-section">
-            <Nav justify variant="tabs" activeKey={activeTab} onSelect={handleSelect}>
-              <Nav.Item>
-                <Nav.Link eventKey="allUsers">Tất cả người dùng</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="ADMIN">Quản trị viên</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="STAFF">Nhân viên</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="DRIVER">Tài xế</Nav.Link>
-              </Nav.Item>
-            </Nav>
-            
-            <div style={{ marginTop: '15px' }}>
-              <input 
-                type="text"
-                className="search-input"
-                placeholder="🔍 Tìm kiếm theo tên, email, số điện thoại..." 
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
-            </div>
-          </div>
-
           {/* Table Section */}
           <div className="table-section">
-            <Table className="custom-table">
-              <thead>
-                <tr>
-                  <th>TÊN</th>
-                  <th>VAI TRÒ</th>
-                  <th>SỐ ĐIỆN THOẠI</th>
-                  <th>EMAIL</th>
-                  <th>ĐỊA CHỈ</th>
-                  <th>NGÀY SINH</th>
-                  <th>GIỚI TÍNH</th>
-                  <th>THAO TÁC</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentUsers.length > 0 ? (
-                  currentUsers.map((user, index) => (
-                    <tr key={user.phoneNumber || index}>
-                      <td>{user.name}</td>
-                      <td>{user.roleName}</td>
-                      <td>{user.phoneNumber}</td>
-                      <td>{user.email}</td>
-                      <td>{user.address}</td>
-                      <td>{user.dateOfBirth}</td>
-                      <td>{user.gender}</td>
-                      <td>
-                        {user.roleName === 'STAFF' && user.status === 'ACTIVE' &&(
-                          <div className="action-buttons">
-                            <button className="btn-delete" onClick={() => handleStatusStaff(user.userId, 'BANNED')}>
-                              Xóa
-                            </button> 
-                            <button className="btn-transfer" onClick={() => handleTransferStaff(user.userId)}>
-                              Chuyển công tác
-                            </button> 
-                          </div>
-                        )}
-                        {user.roleName === 'STAFF' && user.status === 'BANNED' &&(
-                          <div className="action-buttons">
-                            <button className="btn-delete" onClick={() => handleStatusStaff(user.userId , 'ACTIVE')}>
-                              Quay lại làm việc
-                            </button> 
-                          </div>
-                        )}
-                        {user.roleName === 'DRIVER' && user.status === 'BANNED' && (
-                          <button className="btn-unblock" onClick={() => handleDriverUnblock(user.userId)}>
-                            Gỡ lệnh khóa tài khoản
-                          </button> 
-                        )}
+            <div className="table-scroll-container"> 
+              <div className="filter-section">
+                <Nav justify variant="tabs" activeKey={activeTab} onSelect={handleSelect}>
+                  <Nav.Item>
+                    <Nav.Link eventKey="allUsers">Tất cả người dùng</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="ADMIN">Quản trị viên</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="STAFF">Nhân viên</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="DRIVER">Tài xế</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+                
+                <div style={{ marginTop: '5px' }}>
+                  <input 
+                    type="text"
+                    className="search-input"
+                    placeholder="🔍 Tìm kiếm theo tên, email, số điện thoại..." 
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                  />
+                </div>
+              </div>
+
+              <Table className="custom-table">
+                <thead>
+                  <tr>
+                    <th>TÊN</th>
+                    <th>VAI TRÒ</th>
+                    <th>SỐ ĐIỆN THOẠI</th>
+                    <th>EMAIL</th>
+                    <th>ĐỊA CHỈ</th>
+                    <th>NGÀY SINH</th>
+                    <th>GIỚI TÍNH</th>
+                    <th>THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody> 
+                  {displayedUsers.length > 0 ? (
+                    displayedUsers.map((user, index) => (
+                      <tr key={user.phoneNumber || index}>
+                        <td>{user.name}</td>
+                        <td>{user.roleName === 'STAFF'? 'NHÂN VIÊN' : user.roleName === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI XẾ'}</td>
+                        <td>{user.phoneNumber}</td>
+                        <td>{user.email}</td>
+                        <td>{user.address}</td>
+                        <td>{user.dateOfBirth}</td>
+                        <td>{user.gender === 'M' ? 'Nam' : 'Nữ'}</td>
+                        <td>
+                          {user.roleName === 'STAFF' && user.status === 'ACTIVE' &&(
+                            <div className="action-buttons">
+                              <button className="btn-delete" onClick={() => handleStatusStaff(user.userId, 'BANNED')}>
+                                Xóa
+                              </button> 
+                              <button className="btn-transfer" onClick={() => handleTransferStaff(user)}>
+                                Công tác
+                              </button> 
+                            </div>
+                          )}
+                          {user.roleName === 'STAFF' && user.status === 'BANNED' &&(
+                            <div className="action-buttons">
+                              <button className="btn-delete" onClick={() => handleStatusStaff(user.userId , 'ACTIVE')}>
+                                Quay lại làm việc
+                              </button> 
+                            </div>
+                          )}
+                          {user.roleName === 'DRIVER' && user.status === 'BANNED' && (
+                            <div className="action-buttons">
+                              <button className="btn-unblock" onClick={() => handleDriverUnblock(user.userId)}>
+                                Gỡ lệnh khóa tài khoản
+                              </button> 
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )) 
+                  ) : (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>
+                        Không tìm thấy người dùng phù hợp với yêu cầu.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>
-                      Không tìm thấy người dùng phù hợp với yêu cầu.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-
-            {/* Pagination */}
-            {displayedUsers.length > 0 && (
-              <div className="pagination-section">
-                <button 
-                  className="btn-page" 
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                >
-                  ‹ Trước
-                </button>
-
-                {getPageNumbers().map((page, index) => (
-                  page === '...' ? (
-                    <span key={`ellipsis-${index}`} style={{ padding: '0 5px' }}>...</span>
-                  ) : (
-                    <button
-                      key={page}
-                      className={`btn-page ${currentPage === page ? 'active' : ''}`}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </button>
-                  )
-                ))}
-
-                <button 
-                  className="btn-page"
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                >
-                  Sau ›
-                </button>
-
-                <span className="pagination-info">
-                  Trang {currentPage} / {totalPages} - Hiển thị {indexOfFirstItem + 1} đến {Math.min(indexOfLastItem, displayedUsers.length)} của {displayedUsers.length} người dùng
-                </span>
-              </div>
-            )}
+                  )}
+                </tbody>
+              </Table>
+            </div>
+            {/* (Hết table-scroll-container) */}
           </div>
+          {/* (Hết table-section) */}
         </div>
       )}
     </>

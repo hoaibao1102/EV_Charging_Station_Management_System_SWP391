@@ -28,6 +28,9 @@ public class VehicleModel {
     @Column(name = "ImageURL", columnDefinition = "NVARCHAR(255)",nullable = false)
     private String imageUrl;
 
+    @Column(name = "imagePublicId", columnDefinition = "NVARCHAR(255)",nullable = false)
+    private String imagePublicId;
+
     @Column(name = "Year",nullable = false)
     private int year;
 
