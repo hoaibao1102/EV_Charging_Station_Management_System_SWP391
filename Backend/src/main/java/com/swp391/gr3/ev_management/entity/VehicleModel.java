@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.VehicleModelStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +37,10 @@ public class VehicleModel {
 
     @Column(name = "BatteryCapacityKWh", nullable = false)
     private double batteryCapacityKWh;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", nullable = false)
+    private VehicleModelStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ConnectorTypeID",nullable = false)

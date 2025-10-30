@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,5 +50,14 @@ public class StaffStationServiceImpl implements StaffStationService {
         // Trả projection response giống getStaffByUserId
         return stationStaffRepository.findByStaffId(staffId)
                 .orElseThrow(() -> new ErrorException("Failed to load staff after update"));
+    }
+
+    @Override
+    public List<StationStaffResponse> getAll() {
+        return stationStaffRepository.findAll()
+                .stream()
+                .map(ss -> stationStaffRepository.findByStaffId(ss.getStaff().getStaffId())
+                        .orElseThrow(() -> new ErrorException("Failed to load staff with id " + ss.getStaff().getStaffId())))
+                .toList();
     }
 }

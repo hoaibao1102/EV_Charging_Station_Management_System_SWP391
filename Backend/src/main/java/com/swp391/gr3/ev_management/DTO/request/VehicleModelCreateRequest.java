@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.swp391.gr3.ev_management.enums.VehicleModelStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -30,6 +31,9 @@ public class VehicleModelCreateRequest {
 
     @NotNull(message = "connectorTypeId is required")
     private Long connectorTypeId;
+
+    @NotBlank(message = "Status is required")
+    private VehicleModelStatus status;
 
     @JsonAlias({"batteryCapacity", "battery-capacity"})
     @NotNull(message = "Battery Capacity is required")

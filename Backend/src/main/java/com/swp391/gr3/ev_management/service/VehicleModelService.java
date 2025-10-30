@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelCreateRequest;
 import com.swp391.gr3.ev_management.DTO.request.VehicleModelUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
+import com.swp391.gr3.ev_management.enums.VehicleModelStatus;
 
 import java.util.List;
 
@@ -13,5 +14,6 @@ public interface VehicleModelService {
     List<VehicleModelResponse> search(String brand, String model, Integer year, Integer connectorTypeId);
     VehicleModelResponse update(Long id, VehicleModelUpdateRequest request);
     void delete(Long id); //hard delete
+    VehicleModelResponse updateStatus(Long id, VehicleModelStatus status);
 }
 
