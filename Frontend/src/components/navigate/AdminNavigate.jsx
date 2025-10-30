@@ -5,6 +5,8 @@ import dashBoardIcon from "../../assets/icon/admin/ad_dashboard.png";
 import accident from "../../assets/icon/admin/accident.png";
 import station from "../../assets/icon/admin/ad_charging-station.png";
 import charger from "../../assets/icon/admin/charger_ad.png";
+import price from "../../assets/icon/admin/best-price.png";
+import chargingPoint from "../../assets/icon/admin/charging-building.png";
 import { NavLink, useLocation } from "react-router-dom";
 import "./AdminNavigate.css";
 import classed from "../../assets/css/Main.module.css";
@@ -43,12 +45,12 @@ export default function AdminNavigate() {
     },
     {
       path: paths.chargingPointManagement,
-      icon: modelIcon,
+      icon: chargingPoint,
       label: "Quản lý trụ sạc",
     },
     {
       path: paths.chargerManagement,
-      icon: modelIcon,
+      icon: charger,
       label: "Quản lý cổng sạc",
     },
     {
@@ -58,7 +60,7 @@ export default function AdminNavigate() {
     },
     {
       path: paths.chargingPriceConfiguration,
-      icon: charger,
+      icon: price,
       label: "Cấu hình giá sạc",
     },
     {

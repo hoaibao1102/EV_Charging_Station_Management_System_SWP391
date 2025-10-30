@@ -83,6 +83,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Thư viện này để hỗ trợ upload ảnh lên cloudinary -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http45</artifactId>
+            <version>1.38.0</version>
+         </dependency>
+
         <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
