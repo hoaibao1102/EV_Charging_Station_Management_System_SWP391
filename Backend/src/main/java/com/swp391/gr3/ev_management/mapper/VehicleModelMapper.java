@@ -16,6 +16,7 @@ public class VehicleModelMapper {
                 .model(vm.getModel())
                 .year(vm.getYear())
                 .imageUrl(vm.getImageUrl())
+                .imagePublicId(vm.getImagePublicId())
                 .connectorTypeId(ct != null ? ct.getConnectorTypeId() : null)
                 .connectorTypeCode(ct != null ? ct.getCode() : null)
                 .connectorTypeDisplayName(ct != null ? ct.getDisplayName() : null)

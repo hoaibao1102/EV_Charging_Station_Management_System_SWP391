@@ -5,7 +5,7 @@ import Row from 'react-bootstrap/Row';
 import Alert from 'react-bootstrap/Alert';
 import stationIcon from '../../assets/icon/staff/charging-station.png'; 
 import { useState } from 'react';
-import { addStationApi } from '../../api/stationApi.js'; 
+import { addStationApi, updateStationApi } from '../../api/stationApi.js'; 
 
 import './AddStaffForm.css'; 
 import { toast } from 'react-toastify';
@@ -30,10 +30,11 @@ const initialFormErrors = {
 };
 
 
-export default function AddStationForm({ onClose, onAddSuccess }) {
+export default function AddStationForm({ onClose, onAddSuccess, station }) {
   const [formData, setFormData] = useState(initialFormData);
   const [formErrors, setFormErrors] = useState(initialFormErrors);
   const [apiError, setApiError] = useState(''); 
+  const stationReady = station || null;
 
   const validateField = (name, value) => {
     switch (name) {
@@ -87,6 +88,33 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
     }
   };
 
+  const handleUpdate = async (event) => {
+    event.preventDefault();
+    try {
+      const stationData = {
+        stationName: formData.stationName || stationReady.stationName,
+        address: formData.address || stationReady.address,
+        latitude: parseFloat(formData.latitude) || stationReady.latitude,
+        longitude: parseFloat(formData.longitude) || stationReady.longitude,
+        operatingHours: formData.operatingHours || stationReady.operatingHours,
+        status: formData.status || stationReady.status,
+      };
+      const result = await updateStationApi(stationReady.stationId, stationData);
+      if (result.success) {
+        toast.success('Cập nhật trạm sạc thành công!');
+        onAddSuccess();
+        console.log("Cập nhật trạm thành công:", result.data);
+        onClose();
+      } else {
+        toast.error(result.message || 'Cập nhật trạm sạc thất bại.');
+        setApiError(result.message || 'Cập nhật trạm sạc thất bại.');
+      }
+    } catch (error) {
+      console.error("Lỗi hệ thống khi cập nhật trạm:", error);
+      setApiError('Lỗi hệ thống. Vui lòng thử lại sau.');
+    }
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setApiError(''); 
@@ -139,7 +167,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
   };
 
   return (
-    <Form noValidate onSubmit={handleSubmit} className="add-staff-form"> 
+    <Form noValidate onSubmit={stationReady ? handleUpdate : handleSubmit} className="add-staff-form">
 
       <img src={stationIcon} alt="Add Station" className="staff-icon" /> <br />
 
@@ -151,7 +179,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
             type="text"
             placeholder="Nhập tên trạm sạc"
             name="stationName"
-            value={formData.stationName}
+            value={formData.stationName || (stationReady ? stationReady.stationName : '')}
             onChange={handleChange}
             onBlur={handleBlur}
             isInvalid={!!formErrors.stationName}
@@ -168,7 +196,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
             type="text"
             placeholder="VD: 24/7 hoặc 8:00 - 22:00"
             name="operatingHours"
-            value={formData.operatingHours}
+            value={formData.operatingHours || (stationReady ? stationReady.operatingHours : '')}
             onChange={handleChange}
             onBlur={handleBlur}
             isInvalid={!!formErrors.operatingHours}
@@ -188,7 +216,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
             type="text" 
             placeholder="VD: 10.7769"
             name="latitude"
-            value={formData.latitude}
+            value={formData.latitude || (stationReady ? stationReady.latitude : '')}
             onChange={handleChange}
             onBlur={handleBlur}
             isInvalid={!!formErrors.latitude}
@@ -205,7 +233,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
             type="text" 
             placeholder="VD: 106.6953"
             name="longitude"
-            value={formData.longitude}
+            value={formData.longitude || (stationReady ? stationReady.longitude : '')}
             onChange={handleChange}
             onBlur={handleBlur}
             isInvalid={!!formErrors.longitude}
@@ -226,7 +254,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
           rows={3}
           placeholder="Nhập địa chỉ chi tiết của trạm"
           name="address"
-          value={formData.address}
+          value={formData.address || (stationReady ? stationReady.address : '')}
           onChange={handleChange}
           onBlur={handleBlur}
           isInvalid={!!formErrors.address}
@@ -249,9 +277,9 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
           required
         >
           <option value="" disabled>Chọn trạng thái ban đầu...</option>
-          <option value="ACTIVE">Hoạt động </option>
-          <option value="MAINTENANCE">Bảo trì </option>
-          <option value="INACTIVE">Ngưng hoạt động </option>
+          <option selected={stationReady?.status === 'ACTIVE'} value="ACTIVE">Hoạt động </option>
+          <option selected={stationReady?.status === 'MAINTENANCE'} value="MAINTENANCE">Bảo trì </option>
+          <option selected={stationReady?.status === 'INACTIVE'} value="INACTIVE">Ngưng hoạt động </option>
         </Form.Select>
         <Form.Control.Feedback type="invalid">
           {formErrors.status}
@@ -267,7 +295,7 @@ export default function AddStationForm({ onClose, onAddSuccess }) {
 
       <div className="form-button-group mt-3">
         <Button variant="primary" type="submit" className="me-2">
-          Tạo mới
+          {stationReady ? 'Cập nhật' : 'Tạo mới'}
         </Button>
         <Button variant="primary" type="button" className="me-2" onClick={handleBack}>
           Trở về

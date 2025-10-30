@@ -189,14 +189,9 @@ export default function AddStaffForm({ onClose, onAddSuccess }) {
   };
 
   return (
-    // 'noValidate' RẤT QUAN TRỌNG, nó tắt validation của trình duyệt
     <Form noValidate onSubmit={handleSubmit} className="add-staff-form">
 
       <img src={staff} alt="Add Staff" className="staff-icon" />
-
-      {/* Cập nhật tất cả các field */}
-      
-      {/* HÀNG 1: Tên + SĐT */}
       <Row className="mb-3">
         <Form.Group as={Col} controlId="formBasicName">
           <Form.Label>Tên nhân viên</Form.Label>
@@ -211,7 +206,7 @@ export default function AddStaffForm({ onClose, onAddSuccess }) {
             required
           />
           <Form.Control.Feedback type="invalid">
-            {formErrors.formBasicName} {/* Tin nhắn lỗi */}
+            {formErrors.formBasicName} 
           </Form.Control.Feedback>
         </Form.Group>
 
