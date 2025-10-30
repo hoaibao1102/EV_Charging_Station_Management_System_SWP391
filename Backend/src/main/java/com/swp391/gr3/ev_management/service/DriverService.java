@@ -3,9 +3,11 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
 import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,9 @@ public interface DriverService {
     VehicleResponse addVehicle(Long userId, @Valid AddVehicleRequest request);
     List<VehicleResponse> getMyVehicles(Long userId);
     void removeVehicle(Long userId, Long vehicleId);
+
+    VehicleResponse updateVehicle(Long userId, Long vehicleId, UpdateVehicleRequest request);
+    VehicleResponse updateVehicleStatus(Long userId, Long vehicleId, UserVehicleStatus status);
 
     DriverResponse updateDriverPassword(Long userId, String oldPassword, String newPassword, String confirmNewPassword);
 }

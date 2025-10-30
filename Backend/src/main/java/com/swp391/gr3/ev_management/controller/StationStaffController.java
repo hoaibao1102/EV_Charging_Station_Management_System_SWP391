@@ -3,11 +3,14 @@ package com.swp391.gr3.ev_management.controller;
 import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/station-staff")
@@ -26,5 +29,13 @@ public class StationStaffController {
             @RequestParam Long stationId
     ) {
         return ResponseEntity.ok(staffStationService.updateStation(staffId, stationId));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    @Operation(summary = "Get all staff-station assignments", description = "Admin gets all staff with their assigned charging stations")
+    public ResponseEntity<List<StationStaffResponse>> getAll() {
+        List<StationStaffResponse> list = staffStationService.getAll();
+        return ResponseEntity.ok(list);
     }
 }

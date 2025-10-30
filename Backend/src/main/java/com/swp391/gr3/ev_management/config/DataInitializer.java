@@ -52,17 +52,17 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         try {
-//            initConnectorTypes();     // seed các loại đầu sạc phổ biến
-//            initRoles();              // seed các role chuẩn
-//            initAdmins();             // tạo 1 admin mặc định + map bảng Admin
-//            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
-//            initVehicleModels();      // seed VehicleModel (cần connector types)
-//            initDrivers();            // seed Driver
-//            initChargingStations();   // seed trạm sạc theo Seed_Data
-//            initChargingPoints();     // seed điểm sạc theo Seed_Data
-//            initSlotAvailability();   // seed mẫu slot theo Seed_Data
-//            initTariffs();            // seed bảng Tariff
-//            initPaymentMethods();     // seed bảng PaymentMethod
+            initConnectorTypes();     // seed các loại đầu sạc phổ biến
+            initRoles();              // seed các role chuẩn
+            initAdmins();             // tạo 1 admin mặc định + map bảng Admin
+            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
+            initVehicleModels();      // seed VehicleModel (cần connector types)
+            initDrivers();            // seed Driver
+            initChargingStations();   // seed trạm sạc theo Seed_Data
+            initChargingPoints();     // seed điểm sạc theo Seed_Data
+            initSlotAvailability();   // seed mẫu slot theo Seed_Data
+            initTariffs();            // seed bảng Tariff
+            initPaymentMethods();     // seed bảng PaymentMethod
 
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
@@ -322,16 +322,16 @@ public class DataInitializer implements CommandLineRunner {
 
     // ================== VEHICLE MODELS (tùy chọn) ==================
     private void initVehicleModels() {
-        createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "tesla-model3",   "CCS2",75);
-        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "tesla-modely",   "TYPE2",80);
-        createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "hyundai-kona",   "CCS2", 64);
-        createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "kia-ev6",       "CCS2", 77);
-        createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "vinfast-vfe34",   "CCS2",42);
-        createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "nissan-leaf",    "CHADEMO",40);
-        createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "mitsubishi-outlander", "TYPE1",23.8);
+        createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "tesla-model3",   "CCS2",75, VehicleModelStatus.ACTIVE);
+        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "tesla-modely",   "TYPE2",80, VehicleModelStatus.ACTIVE);
+        createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "hyundai-kona",   "CCS2", 64, VehicleModelStatus.ACTIVE);
+        createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "kia-ev6",       "CCS2", 77, VehicleModelStatus.ACTIVE);
+        createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "vinfast-vfe34",   "CCS2",42, VehicleModelStatus.ACTIVE);
+        createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "nissan-leaf",    "CHADEMO",40, VehicleModelStatus.ACTIVE);
+        createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "mitsubishi-outlander", "TYPE1",23.8, VehicleModelStatus.ACTIVE);
     }
 
-    private void createModelIfNotExists(String brand, String model, int year, String img, String imagePublicId, String connectorCode, double batteryCapacityKWh) {
+    private void createModelIfNotExists(String brand, String model, int year, String img, String imagePublicId, String connectorCode, double batteryCapacityKWh, VehicleModelStatus status) {
         try {
             boolean exists = vehicleModelRepository
                     .existsByBrandIgnoreCaseAndModelIgnoreCaseAndYear(brand, model, year);
@@ -353,13 +353,14 @@ public class DataInitializer implements CommandLineRunner {
                     .imageUrl((img != null && !img.isEmpty()) ? img : "default-vehicle.png")
                     .imagePublicId((imagePublicId != null && !imagePublicId.isEmpty()) ? imagePublicId : "default-vehicle.png")
                     .connectorType(connector)
+                    .status(status)
                     .batteryCapacityKWh(batteryCapacityKWh)
                     .build();
 
             vehicleModelRepository.save(vm);
-            log.info("Created VehicleModel: {} {} {} ({})", brand, model, year, connectorCode);
+            log.info("Created VehicleModel: {} {} {} {} ({})", brand, model, year, status, connectorCode);
         } catch (Exception e) {
-            log.warn("Failed to create VehicleModel {} {} {}: {}", brand, model, year, e.getMessage());
+            log.warn("Failed to create VehicleModel {} {} {} {}: {}", brand, model, year, status, e.getMessage());
         }
     }
 

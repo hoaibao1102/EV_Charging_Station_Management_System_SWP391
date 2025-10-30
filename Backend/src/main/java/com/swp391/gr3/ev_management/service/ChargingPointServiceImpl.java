@@ -73,27 +73,33 @@ public class ChargingPointServiceImpl implements ChargingPointService {
     @Override
     @Transactional
     public ChargingPointResponse createChargingPoint(CreateChargingPointRequest request) {
-        // 1️⃣ Kiểm tra Station
+        // 1) Kiểm tra Station
         var station = chargingStationRepository.findById(request.getStationId())
                 .orElseThrow(() -> new ErrorException("Station not found"));
 
-        // 2️⃣ Kiểm tra ConnectorType
+        // 2) Kiểm tra ConnectorType
         var connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
                 .orElseThrow(() -> new ErrorException("Connector type not found"));
 
-        // 3️⃣ Kiểm tra trùng
-        if (pointRepository.findByStation_StationIdAndPointNumber(request.getStationId(), request.getPointNumber()).isPresent()) {
+        // ❗ Chặn nếu connector type/station bị deprecated
+        if (Boolean.TRUE.equals(connectorType.getIsDeprecated())) {
+            throw new ErrorException("Cannot create charging point: connector type is deprecated");
+        }
+
+        // 3) Kiểm tra trùng
+        if (pointRepository.findByStation_StationIdAndPointNumber(
+                request.getStationId(), request.getPointNumber()).isPresent()) {
             throw new ErrorException("Point number already exists in this station");
         }
         if (pointRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
             throw new ErrorException("Serial number already exists");
         }
 
-        // 4️⃣ Dùng mapper để tạo Entity
+        // 4) Map & save
         ChargingPoint point = chargingPointMapper.toEntity(request, station, connectorType);
         pointRepository.save(point);
 
-        // 5️⃣ Dùng mapper để trả Response
+        // 5) Trả response
         return chargingPointMapper.toResponse(point);
     }
 }

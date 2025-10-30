@@ -41,6 +41,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     @Query("""
         select new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
             ss.stationStaffId,
+            stf.staffId,    
             s.stationId,
             u.name,
             u.email,
@@ -81,6 +82,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     @Query("""
     select new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
         ss.stationStaffId,
+        stf.staffId,
         s.stationId,
         u.name,
         u.email,
