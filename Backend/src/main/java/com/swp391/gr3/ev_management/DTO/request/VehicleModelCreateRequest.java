@@ -40,9 +40,4 @@ public class VehicleModelCreateRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Battery Capacity must be greater than 0")
     private Double batteryCapacityKWh;
 
-//    @SuppressWarnings("unused")
-//    @AssertTrue(message = "Year cannot be in the far future")
-//    public boolean isYearNotInFarFuture() {
-//        return year <= Year.now().getValue() + 1;
-//    }
 }

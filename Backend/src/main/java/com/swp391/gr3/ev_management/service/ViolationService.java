@@ -2,6 +2,8 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
 import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
+import com.swp391.gr3.ev_management.entity.Driver;
+import com.swp391.gr3.ev_management.entity.DriverViolation;
 import com.swp391.gr3.ev_management.enums.ViolationStatus;
 
 import java.util.List;
@@ -19,4 +21,6 @@ public interface ViolationService {
 
     //Đếm số vi phạm ACTIVE của driver
     int countActiveViolations(Long userId);
+
+    void attachViolationToTriplet(Driver driver, DriverViolation violation);
 }

@@ -29,35 +29,37 @@ public class ChargingSessionTxHandler {
     private final SessionSocCache sessionSocCache;
     private final ApplicationEventPublisher eventPublisher;
 
-    /** STOP session trong giao dịch, đã fetch đủ associations để tránh Lazy */
+    /**
+     * STOP session trong transaction, đã fetch đủ associations để tránh LazyInitializationException
+     */
     @Transactional
     public StopCharSessionResponse stopSessionInternalTx(Long sessionId, Integer finalSocIfAny, LocalDateTime endTime) {
         ChargingSession cs = sessionRepository
-                .findByIdWithBookingVehicleDriverUser(sessionId) // <- Query có JOIN FETCH
+                .findByIdWithBookingVehicleDriverUser(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
 
         if (cs.getStatus() != ChargingSessionStatus.IN_PROGRESS) {
             throw new ErrorException("Session is not currently active");
         }
 
-        Booking booking = cs.getBooking(); // đã fetch
-        User user = booking.getVehicle().getDriver().getUser(); // đã fetch
+        Booking booking = cs.getBooking();
+        User user = booking.getVehicle().getDriver().getUser();
 
         Integer initialSoc = Optional.ofNullable(cs.getInitialSoc())
                 .orElseThrow(() -> new ErrorException("Initial SoC not recorded"));
 
+        // ✅ Tính toán SoC cuối cùng
         int finalSoc = (finalSocIfAny != null) ? clampSoc(finalSocIfAny) : estimateFinalSoc(cs, endTime);
-        if (finalSoc < initialSoc) {
-            finalSoc = initialSoc; // không để thấp hơn initial
-        }
+        if (finalSoc < initialSoc) finalSoc = initialSoc;
 
+        // ✅ Tính toán năng lượng tiêu thụ
         double batteryCapacityKWh = booking.getVehicle().getModel().getBatteryCapacityKWh();
         double deltaSoc = finalSoc - initialSoc;
         double energyKWh = round2((deltaSoc / 100.0) * batteryCapacityKWh);
 
         long minutes = Math.max(0, ChronoUnit.MINUTES.between(cs.getStartTime(), endTime));
 
-        // Lấy connector/điểm sạc + pointNumber
+        // ✅ Lấy thông tin điểm sạc
         var firstSlot = booking.getBookingSlots().stream()
                 .findFirst()
                 .orElseThrow(() -> new ErrorException("No slot found for booking"));
@@ -67,7 +69,7 @@ public class ChargingSessionTxHandler {
                 ? point.getConnectorType()
                 : booking.getVehicle().getModel().getConnectorType();
 
-        // Pricing theo thời điểm end
+        // ✅ Lấy giá theo thời điểm endTime
         LocalDateTime pricingTime = endTime;
         Tariff tariff = tariffRepository
                 .findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(
@@ -77,7 +79,7 @@ public class ChargingSessionTxHandler {
         double pricePerKWh = tariff.getPricePerKWh();
         double cost = round2(pricePerKWh * energyKWh);
 
-        // Update session
+        // ✅ Cập nhật session
         cs.setEndTime(endTime);
         cs.setDurationMinutes((int) minutes);
         cs.setFinalSoc(finalSoc);
@@ -88,11 +90,11 @@ public class ChargingSessionTxHandler {
 
         sessionSocCache.remove(cs.getSessionId());
 
-        // Update booking
+        // ✅ Cập nhật booking
         booking.setStatus(BookingStatus.COMPLETED);
         bookingsRepository.save(booking);
 
-        // Notification → publish event để listener gửi email
+        // ✅ Gửi thông báo
         Notification done = new Notification();
         done.setUser(user);
         done.setBooking(booking);
@@ -111,7 +113,7 @@ public class ChargingSessionTxHandler {
         notificationsRepository.save(done);
         eventPublisher.publishEvent(new NotificationCreatedEvent(done.getNotiId()));
 
-        // Invoice
+        // ✅ Tạo hóa đơn
         invoiceRepository.findBySession_SessionId(cs.getSessionId())
                 .ifPresent(i -> { throw new ErrorException("Invoice already exists for this session"); });
 
@@ -124,6 +126,7 @@ public class ChargingSessionTxHandler {
         invoice.setDriver(booking.getVehicle().getDriver());
         invoiceRepository.save(invoice);
 
+        // ✅ Trả response
         return StopCharSessionResponse.builder()
                 .sessionId(cs.getSessionId())
                 .stationName(booking.getStation().getStationName())
@@ -142,28 +145,45 @@ public class ChargingSessionTxHandler {
                 .build();
     }
 
-    /** Auto-stop nếu còn IN_PROGRESS tại windowEnd (gọi từ scheduler) */
+    /**
+     * Auto-stop nếu session vẫn đang IN_PROGRESS khi tới windowEnd (gọi từ scheduler)
+     * ✅ Chỉ dùng cache nếu khác initial; ngược lại để null để ước lượng.
+     */
     @Transactional
     public void autoStopIfStillRunningTx(Long sessionId, LocalDateTime windowEnd) {
         var opt = sessionRepository.findById(sessionId);
         if (opt.isEmpty()) return;
+
         var session = opt.get();
         if (session.getStatus() != ChargingSessionStatus.IN_PROGRESS) return;
 
-        Integer latestSoc = sessionSocCache.get(sessionId).orElse(null);
-        int finalSoc = (latestSoc != null) ? clampSoc(latestSoc) : estimateFinalSoc(session, windowEnd);
+        Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
 
-        stopSessionInternalTx(sessionId, finalSoc, windowEnd);
+        Integer finalSocIfAny = null;
+        if (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc())) {
+            finalSocIfAny = clampSoc(cachedSoc);
+        }
+
+        stopSessionInternalTx(sessionId, finalSocIfAny, windowEnd);
     }
 
-    // -------- helpers --------
-    private static double round2(double v) { return Math.round(v * 100.0) / 100.0; }
-    private static int clampSoc(Integer soc) { return Math.max(0, Math.min(100, (soc == null ? 0 : soc))); }
+    // ------------------ Helper methods ------------------
 
-    /** Ước lượng SoC dựa trên thời gian sạc x công suất (lấy từ booking/point) */
+    private static double round2(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+
+    private static int clampSoc(Integer soc) {
+        return Math.max(0, Math.min(100, (soc == null ? 0 : soc)));
+    }
+
+    /**
+     * Ước lượng SoC dựa trên thời gian sạc x công suất (tính gần đúng)
+     */
     private int estimateFinalSoc(ChargingSession session, LocalDateTime endTime) {
         int initial = Optional.ofNullable(session.getInitialSoc()).orElse(20);
         Booking b = session.getBooking();
+
         double capKWh = (b != null && b.getVehicle() != null && b.getVehicle().getModel() != null)
                 ? b.getVehicle().getModel().getBatteryCapacityKWh()
                 : 60.0;
@@ -184,8 +204,11 @@ public class ChargingSessionTxHandler {
         double estEnergy = round2(hours * ratedKW * efficiency);
         int estFinal = (int) Math.round(initial + (estEnergy / capKWh) * 100.0);
 
-        // ✅ Nếu thời gian > 0 mà kết quả == initial thì tăng thêm tối thiểu 1%
+        // Nếu có thời gian mà vẫn ra y như initial thì tăng thêm 1%
         if (minutes > 0 && estFinal == initial) estFinal = initial + 1;
+
+        log.info("⚡ Estimating SoC: initial={} capKWh={} ratedKW={} minutes={} hours={} estEnergy={} → estFinal={}",
+                initial, capKWh, ratedKW, minutes, hours, estEnergy, estFinal);
 
         return Math.min(100, Math.max(initial, estFinal));
     }

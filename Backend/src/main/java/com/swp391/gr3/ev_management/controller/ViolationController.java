@@ -52,6 +52,7 @@ public class ViolationController {
      * GET /api/violations/users/{userId}
      */
     @GetMapping("/users/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(summary = "Get all violations for a driver",
             description = "Retrieves all violations associated with the specified driver.")
     public ResponseEntity<List<ViolationResponse>> getViolations(@PathVariable Long userId) {
@@ -65,6 +66,7 @@ public class ViolationController {
      * GET /api/violations/users/{userId}/status/{status}
      */
     @GetMapping("/users/{userId}/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(summary = "Get violations by status for a driver",
             description = "Retrieves violations for the specified driver filtered by violation status.")
     public ResponseEntity<List<ViolationResponse>> getViolationsByStatus(
@@ -81,6 +83,7 @@ public class ViolationController {
      * GET /api/violations/users/{userId}/count
      */
     @GetMapping("/users/{userId}/count")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(summary = "Count active violations for a driver",
             description = "Counts the number of active violations for the specified driver.")
     public ResponseEntity<Integer> countActiveViolations(@PathVariable Long userId) {

@@ -9,6 +9,7 @@ import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.entity.Transaction;
 import com.swp391.gr3.ev_management.enums.InvoiceStatus;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
+import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.UnpaidInvoiceMapper;
 import com.swp391.gr3.ev_management.repository.InvoiceRepository;
@@ -72,7 +73,7 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
         tx.setPaymentMethod(method);
         tx.setAmount(request.getAmount());
         tx.setCurrency("VND");
-        tx.setStatus("success");
+        tx.setStatus(TransactionStatus.COMPLETED);
         tx.setCreatedAt(LocalDateTime.now());
         tx.setUpdatedAt(LocalDateTime.now());
         transactionRepository.save(tx);
