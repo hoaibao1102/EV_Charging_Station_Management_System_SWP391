@@ -53,7 +53,6 @@ public class ChargingPointController {
     }
 
     @GetMapping("station/{stationId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @Operation(summary = "Get charging points by station", description = "Get all charging points for a specific station")
     public ResponseEntity<List<ChargingPointResponse>> getPointsByStation(
             @Parameter(description = "Charging Station ID") @PathVariable Long stationId
