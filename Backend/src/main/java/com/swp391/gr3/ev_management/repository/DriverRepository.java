@@ -30,10 +30,5 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
            """)
     Optional<Driver> findByDriverIdWithUser(@Param("driverId") Long driverId);
 
-    // Các finder khác bạn đang dùng
-    List<Driver> findByStatus(DriverStatus status);
-
-    List<Driver> findByUser_NameContainingIgnoreCase(String name);
-
-    List<Driver> findByUser_PhoneNumberContaining(String phoneNumber);
+    Optional<Driver> findByUser_UserId(Long userId);
 }

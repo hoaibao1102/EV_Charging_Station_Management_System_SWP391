@@ -4,10 +4,14 @@ import com.swp391.gr3.ev_management.DTO.request.StartCharSessionRequest;
 import com.swp391.gr3.ev_management.DTO.request.StopCharSessionRequest;
 import com.swp391.gr3.ev_management.DTO.response.*;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.service.ChargingSessionService;
+import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,7 @@ import java.util.stream.Collectors;
 public class ChargingSessionController {
 
     private final ChargingSessionService chargingSessionService;
+    private final TokenService tokenService;
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
     @PostMapping("/start")
@@ -38,17 +43,9 @@ public class ChargingSessionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/stop")
-    @Operation(summary = "Stop charging session", description = "Staff stops an ongoing charging session and records final energy")
-    public ResponseEntity<StopCharSessionResponse> stopChargingSession(
-            @Valid @RequestBody StopCharSessionRequest request
-    ) {
-        StopCharSessionResponse response = chargingSessionService.stopChargingSession(request);
-        return ResponseEntity.ok(response);
-    }
-
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
     @GetMapping("all-session")
+    @Operation(summary = "Get all sessions", description = "Get list of all charging sessions")
     public List<ChargingSessionResponse> getAllSession() {
         return chargingSessionService.getAll()
                 .stream()
@@ -84,7 +81,9 @@ public class ChargingSessionController {
         return ResponseEntity.ok(sessions);
     }
 
+    @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
     @GetMapping("/session/{sessionId}/status")
+    @Operation(summary = "Get charging status", description = "Get current charging status (SoC, energy delivered) of an ongoing session")
     public ChargingStatusResponse getChargingStatus(
             @PathVariable Long sessionId,
             @RequestParam int initialSoc,
@@ -107,5 +106,46 @@ public class ChargingSessionController {
                 .energyKWh(energyKWh)
                 .minutesElapsed(minutes)
                 .build();
+    }
+
+    @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
+    @GetMapping("/stations/{stationId}/charging-sessions")
+    @Operation(summary = "Get all sessions by station", description = "Get all charging sessions for a specific station")
+    public ResponseEntity<List<ViewCharSessionResponse>> getAllByStation(@PathVariable Long stationId) {
+        List<ViewCharSessionResponse> res = chargingSessionService.getAllSessionsByStation(stationId);
+        return ResponseEntity.ok(res);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @PostMapping("/driver-stop")
+    @Operation(summary = "Driver stops their own charging session", description = "Driver stops their own charging session using session ID")
+    public ResponseEntity<StopCharSessionResponse> driverStopSession(
+            @RequestBody StopCharSessionRequest body,
+            HttpServletRequest httpReq
+    ) {
+        Long userId = tokenService.extractUserIdFromRequest(httpReq);   // <- lấy từ token
+        StopCharSessionResponse res =
+                chargingSessionService.driverStopSession(body.getSessionId(), userId);
+        return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/charging-sessions/current")
+    @Operation(summary = "Get current active session for driver",
+            description = "Driver retrieves their currently active charging session")
+    public ResponseEntity<ViewCharSessionResponse> getCurrentSession(HttpServletRequest httpReq) {
+        Long userId = tokenService.extractUserIdFromRequest(httpReq);
+
+        List<ChargingSession> all = chargingSessionService.getAll(); // hoặc tạo repo method riêng để tối ưu
+        ChargingSession current = all.stream()
+                .filter(s -> s.getStatus() == ChargingSessionStatus.IN_PROGRESS)
+                .filter(s -> s.getBooking() != null
+                        && s.getBooking().getVehicle() != null
+                        && s.getBooking().getVehicle().getDriver() != null
+                        && s.getBooking().getVehicle().getDriver().getUser().getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new ErrorException("Bạn không có phiên sạc nào đang hoạt động."));
+
+        ViewCharSessionResponse res = chargingSessionService.getCharSessionById(current.getSessionId());
+        return ResponseEntity.ok(res);
     }
 }

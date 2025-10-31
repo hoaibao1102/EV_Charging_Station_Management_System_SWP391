@@ -3,10 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
 import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
 import com.swp391.gr3.ev_management.entity.*;
-import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
-import com.swp391.gr3.ev_management.enums.DriverStatus;
-import com.swp391.gr3.ev_management.enums.NotificationTypes;
-import com.swp391.gr3.ev_management.enums.ViolationStatus;
+import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
@@ -33,6 +30,7 @@ public class ViolationServiceImpl implements ViolationService {
     private final ApplicationEventPublisher eventPublisher;
     private final BookingsRepository bookingsRepository;
     private final ChargingSessionRepository chargingSessionRepository;
+    private final DriverViolationTripletRepository driverViolationTripletRepository;
 
     // NEW: để tính tiền phạt theo phút dựa vào Tariff
     private final TariffRepository tariffRepository;
@@ -150,6 +148,9 @@ public class ViolationServiceImpl implements ViolationService {
         );
         log.info("[createViolation][NO_SHOW] Saved violationId={} for bookingId={}", savedViolation.getViolationId(), bookingId);
 
+        // 👇 Gọi ở đây
+        attachViolationToTriplet(driver, savedViolation);
+
         // 7) Auto-ban nếu cần
         boolean wasAutoBanned = autoCheckAndBanDriver(driver);
         return buildViolationResponse(savedViolation, wasAutoBanned);
@@ -201,7 +202,7 @@ public class ViolationServiceImpl implements ViolationService {
             noti.setUser(driver.getUser());
             noti.setTitle("Tài khoản bị khóa do vi phạm");
             noti.setContentNoti("Tài khoản của bạn đã bị khóa tự động vì có từ 3 vi phạm trở lên. "
-                    + "Vui lòng liên hệ hỗ trợ để được xem xét mở khóa.");
+                    + "Vui lòng liên hệ hỗ trợ hoặc tới trạm gần nhất để được xưử lý theo chính sách của chúng tôi.");
             noti.setType(NotificationTypes.USER_BANNED); // ⚠️ enum phải đúng chính tả
             noti.setStatus("UNREAD");
             noti.setCreatedAt(LocalDateTime.now());
@@ -256,5 +257,46 @@ public class ViolationServiceImpl implements ViolationService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    // 👇 Private helper nằm trong cùng class, chạy trong cùng @Transactional ở trên
+    public void attachViolationToTriplet(Driver driver, DriverViolation violation) {
+        // không cho 1 violation nằm ở 2 nhóm
+        if (driverViolationTripletRepository.existsByViolation(violation.getViolationId())) return;
 
+        // lấy hoặc tạo nhóm OPEN
+        DriverViolationTriplet triplet = driverViolationTripletRepository.findOpenByDriver(driver.getDriverId())
+                .stream().findFirst().orElse(null);
+
+        if (triplet == null || triplet.getCountInGroup() >= 3) {
+            triplet = DriverViolationTriplet.builder()
+                    .driver(driver)
+                    .status(TripletStatus.OPEN)
+                    .countInGroup(0)
+                    .totalPenalty(0)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            triplet = driverViolationTripletRepository.save(triplet);
+        }
+
+        // cập nhật nhóm
+        if (triplet.getCountInGroup() == 0) {
+            triplet.setV1(violation);
+            triplet.setWindowStartAt(violation.getOccurredAt());
+        } else if (triplet.getCountInGroup() == 1) {
+            triplet.setV2(violation);
+        } else {
+            triplet.setV3(violation);
+        }
+        triplet.setCountInGroup(triplet.getCountInGroup() + 1);
+        triplet.setTotalPenalty(triplet.getTotalPenalty() + violation.getPenaltyAmount());
+
+        if (triplet.getCountInGroup() == 3) {
+            triplet.setStatus(TripletStatus.CLOSED);
+            triplet.setWindowEndAt(violation.getOccurredAt());
+            triplet.setClosedAt(LocalDateTime.now());
+        }
+
+        driverViolationTripletRepository.save(triplet);
+    }
 }

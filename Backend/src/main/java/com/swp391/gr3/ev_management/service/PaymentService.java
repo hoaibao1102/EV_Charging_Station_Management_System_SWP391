@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.InvoiceStatus;
+import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
@@ -45,13 +46,14 @@ public class PaymentService {
     private String returnUrl;
 
     @Transactional
-    public String createVnPayPaymentUrl(Long driverId,
+    public String createVnPayPaymentUrl(Long userId,
                                         Long sessionId,
                                         Long paymentMethodId,
                                         String clientIp) throws Exception {
 
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new ErrorException("Driver not found"));
+        // 1) Resolve driver từ userId
+        Driver driver = driverRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found for current user"));
 
         ChargingSession session = chargingSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
@@ -78,7 +80,7 @@ public class PaymentService {
                 .amount(amount)
                 .currency(currency)
                 .description("Thanh toán hóa đơn #" + invoice.getInvoiceId() + " qua VNPay")
-                .status("Pending") // hoặc TransactionStatus.PENDING.name()
+                .status(TransactionStatus.PENDING) // hoặc TransactionStatus.PENDING.name()
                 .driver(driver)
                 .invoice(invoice)
                 .paymentMethod(method)
@@ -223,11 +225,11 @@ public class PaymentService {
 
         String responseCode = request.getParameter("vnp_ResponseCode");
         if ("00".equals(responseCode)) {
-            tx.setStatus("Completed");
+            tx.setStatus(TransactionStatus.COMPLETED);
             invoice.setStatus(InvoiceStatus.PAID);
             invoice.setPaidAt(LocalDateTime.now());
         } else {
-            tx.setStatus("Failed");
+            tx.setStatus(TransactionStatus.FAILED);
             if (invoice.getStatus() == InvoiceStatus.PENDING) {
                 invoice.setStatus(InvoiceStatus.FAILED);
             }

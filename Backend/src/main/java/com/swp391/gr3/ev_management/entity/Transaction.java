@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
+import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -35,7 +36,8 @@ public class Transaction {
 //    private String type; // TopUp, Payment, Refund, SubscriptionFee
 
     @Column(name = "Status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private String status; // Pending, Completed, Failed, Cancelled TODO: create Enum clas for status's Transaction
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status; // Pending, Completed, Failed, Cancelled TODO: create Enum clas for status's Transaction
 
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
