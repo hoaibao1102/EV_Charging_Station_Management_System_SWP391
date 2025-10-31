@@ -16,7 +16,9 @@ public class DriverRequest {
     @NotBlank(message = "Status is required")
     private DriverStatus driverStatus =  DriverStatus.ACTIVE; // Initial status when creating a driver
 
+    @NotBlank(message = "Driver ID is required")
     private long driverId;
 
+    @NotBlank(message = "Driver name is required")
     private String driverName;
 }

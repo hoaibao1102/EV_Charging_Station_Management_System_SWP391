@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.service.PaymentService;
+import com.swp391.gr3.ev_management.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,18 +17,21 @@ import java.util.Map;
 public class VnPayController {
 
     private final PaymentService paymentService;
+    private final TokenService tokenService;
 
     @PostMapping("/create")
     public ResponseEntity<Map<String, String>> create(
-            @RequestParam Long driverId,
             @RequestParam Long sessionId,
             @RequestParam Long paymentMethodId,
             HttpServletRequest request) throws Exception {
 
+        // Lấy userId từ token
+        Long userId = tokenService.extractUserIdFromRequest(request);
+
         String clientIp = getClientIp(request);
 
         String payUrl = paymentService.createVnPayPaymentUrl(
-                driverId, sessionId, paymentMethodId, clientIp
+                userId, sessionId, paymentMethodId, clientIp
         );
 
         return ResponseEntity.ok(Collections.singletonMap("paymentUrl", payUrl));

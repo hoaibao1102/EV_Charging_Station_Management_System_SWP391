@@ -19,4 +19,6 @@ public interface ChargingSessionService {
     List<ChargingSession> getAll();
 
     Optional<ChargingSession> findById(Long sessionId);
+    StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId);
+    List<ViewCharSessionResponse> getAllSessionsByStation(Long stationId);
 }

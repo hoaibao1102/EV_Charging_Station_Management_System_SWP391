@@ -37,4 +37,15 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
 """)
     Optional<ChargingSession> findByIdWithBookingVehicleDriverUser(Long sessionId);
 
+    @Query("""
+        select s from ChargingSession s
+          join fetch s.booking b
+          join fetch b.vehicle v
+          join fetch v.driver d
+          join fetch d.user u
+        where s.sessionId = :sid
+    """)
+    Optional<ChargingSession> findWithOwnerById(@Param("sid") Long sessionId);
+
+    List<ChargingSession> findAllByBooking_Station_StationIdOrderByStartTimeDesc(Long stationId);
 }

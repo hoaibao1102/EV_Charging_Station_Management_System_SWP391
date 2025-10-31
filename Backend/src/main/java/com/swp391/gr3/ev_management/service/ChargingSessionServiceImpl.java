@@ -68,6 +68,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         session.setInitialSoc(initialSoc);
         sessionRepository.save(session);
 
+        // Lưu initial vào cache (chỉ làm mốc)
         sessionSocCache.put(session.getSessionId(), initialSoc);
 
         // (tuỳ bạn) chuyển sang IN_PROGRESS hoặc BOOKED; để nguyên như bạn đang dùng:
@@ -110,11 +111,57 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .orElseThrow(() -> new ErrorException("Session not found"));
 
         LocalDateTime endTime = LocalDateTime.now();
-        Integer reqSoc = request.getFinalSoc();
-        Integer latestSoc = (reqSoc != null) ? reqSoc : sessionSocCache.get(session.getSessionId()).orElse(null);
 
-        // Delegate toàn bộ STOP qua bean TX (load lại bằng fetch-join bên trong)
-        return txHandler.stopSessionInternalTx(session.getSessionId(), latestSoc, endTime);
+        // Lấy SOC mới nhất trong cache
+        Integer cachedSoc = sessionSocCache.get(session.getSessionId()).orElse(null);
+
+        // ✅ Chỉ dùng cache nếu khác initial; nếu không, truyền null để TX handler ước lượng
+        Integer finalSocIfAny = null;
+        if (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc())) {
+            finalSocIfAny = cachedSoc;
+        }
+
+        // Gọi TX handler để xử lý stop
+        return txHandler.stopSessionInternalTx(session.getSessionId(), finalSocIfAny, endTime);
+    }
+
+    @Override
+    @Transactional
+    public StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId) {
+        ChargingSession session = sessionRepository.findWithOwnerById(sessionId)
+                .orElseThrow(() -> new ErrorException("Session not found"));
+
+        Long ownerUserId = session.getBooking()
+                .getVehicle()
+                .getDriver()
+                .getUser()
+                .getUserId();
+
+        if (!ownerUserId.equals(requesterUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not the owner of this session");
+        }
+
+        // Lấy SOC mới nhất trong cache
+        Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
+
+        // ✅ Chỉ dùng cache nếu khác initial; nếu không, để TX handler tự ước lượng
+        Integer finalSocIfAny = null;
+        if (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc())) {
+            finalSocIfAny = cachedSoc;
+        }
+
+        return txHandler.stopSessionInternalTx(sessionId, finalSocIfAny, LocalDateTime.now());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ViewCharSessionResponse> getAllSessionsByStation(Long stationId) {
+        List<ChargingSession> sessions =
+                sessionRepository.findAllByBooking_Station_StationIdOrderByStartTimeDesc(stationId);
+
+        return sessions.stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)

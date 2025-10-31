@@ -1,12 +1,11 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
-import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.request.DriverChangePasswordRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
+import com.swp391.gr3.ev_management.DTO.request.*;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
+import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
 import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
+import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import com.swp391.gr3.ev_management.service.DriverService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,16 +30,7 @@ public class DriverController {
 
     private final TokenService tokenService;
 
-//    @PreAuthorize("hasRole('DRIVER')")
-//    @DeleteMapping("/vehicles/{vehicleId}")
-//    @Operation(summary = "Remove vehicle", description = "Driver removes a vehicle from their profile")
-//    public ResponseEntity<Void> removeVehicle(
-//            HttpServletRequest request,
-//            @PathVariable Long vehicleId) {
-//        Long userId = tokenService.extractUserIdFromRequest(request);
-//        driverService.removeVehicle(userId, vehicleId);
-//        return ResponseEntity.noContent().build();
-//    }
+    private final ChargingSessionService chargingSessionService;
 
     // ✅ Driver cập nhật hồ sơ
     @PreAuthorize("hasRole('DRIVER')")
@@ -130,4 +120,5 @@ public class DriverController {
         List<VehicleResponse> vehicles = driverService.getMyVehicles(userId);
         return ResponseEntity.ok(vehicles);
     }
+
 }
