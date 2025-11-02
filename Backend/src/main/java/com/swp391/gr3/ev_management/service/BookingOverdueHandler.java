@@ -17,11 +17,15 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class BookingOverdueHandler {
+
+    private static final ZoneId TENANT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private final BookingsRepository bookingsRepository;
     private final NotificationsRepository notificationsRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -29,28 +33,26 @@ public class BookingOverdueHandler {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cancelAndCreateViolationTx(Long bookingId) {
-        // ⚠️ Load lại trong TX để có session + fetch đủ associations
-        Booking booking = bookingsRepository.findByIdWithAllNeeded(bookingId)
-                .orElseThrow(() -> new ErrorException("Booking not found: " + bookingId));
+        LocalDateTime now = LocalDateTime.now(TENANT_ZONE);
 
-        // Idempotent: nếu đã cancel (hoặc completed) thì bỏ qua
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            log.debug("[autoCancelOverdue] skip bookingId={} (status={})", bookingId, booking.getStatus());
+        // Atomic update để chống race-condition
+        int rows = bookingsRepository.updateStatusIfMatches(
+                bookingId, BookingStatus.CONFIRMED, BookingStatus.CANCELED, now);
+        if (rows == 0) {
+            var cur = bookingsRepository.findStatusOnly(bookingId);
+            log.debug("[overdue] skip cancel bookingId={} (currentStatus={})", bookingId, cur.orElse(null));
             return;
         }
+        log.info("[overdue] CANCELED bookingId={} at {}", bookingId, now);
 
-        // 1) Cập nhật Booking
-        booking.setStatus(BookingStatus.CANCELED);
-        booking.setUpdatedAt(LocalDateTime.now());
-        bookingsRepository.saveAndFlush(booking);
-        log.info("[autoCancelOverdue] canceled bookingId={}", bookingId);
+        Booking booking = bookingsRepository.findByIdWithAllNeeded(bookingId)
+                .orElseThrow(() -> new ErrorException("Booking not found after cancel: " + bookingId));
 
-        // 2) Tạo Violation (không để lỗi nhỏ làm rollback TX)
+        // Violation (bọc lỗi để không rollback)
         try {
             Long userId = booking.getVehicle().getDriver().getUser().getUserId();
-
             ViolationRequest vr = ViolationRequest.builder()
-                    .bookingId(bookingId) // BẮT BUỘC
+                    .bookingId(bookingId)
                     .description(String.format(
                             "Booking #%d đã quá hạn và bị hủy tự động (đến %s tại trạm %s).",
                             bookingId, booking.getScheduledEndTime(), booking.getStation().getStationName()))
@@ -58,36 +60,33 @@ public class BookingOverdueHandler {
 
             var resp = violationService.createViolation(userId, vr);
             if (resp == null) {
-                log.warn("[autoCancelOverdue] violation NOT created (resp=null) for bookingId={}", bookingId);
+                log.info("[overdue] violation NOT created (resp=null) bookingId={}", bookingId);
             } else {
-                log.info("[autoCancelOverdue] violation created for bookingId={}, violationId={}",
+                log.info("[overdue] violation created bookingId={} violationId={}",
                         bookingId, resp.getViolationId());
             }
         } catch (Exception e) {
-            // chỉ log, không throw để TX này vẫn commit phần booking đã cancel
-            log.error("[autoCancelOverdue] createViolation failed for bookingId={}: {}", bookingId, e.getMessage(), e);
+            log.error("[overdue] createViolation failed bookingId={}", bookingId, e);
         }
 
-        // 3) Notification — bọc riêng để không làm rollback
+        // Notification (bọc lỗi)
         try {
             Notification noti = new Notification();
             noti.setUser(booking.getVehicle().getDriver().getUser());
             noti.setTitle("Booking bị hủy do quá hạn");
             noti.setContentNoti("Booking #" + bookingId + " đã bị hủy vì quá giờ.");
             noti.setType(NotificationTypes.BOOKING_OVERDUE);
-            noti.setStatus("UNREAD");
+            noti.setStatus(Notification.STATUS_UNREAD);
             noti.setBooking(booking);
             notificationsRepository.save(noti);
 
-            // publish event có thể thất bại — cũng bắt lại
             try {
                 eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
             } catch (Exception mailEx) {
-                log.warn("[autoCancelOverdue] publish email event failed (bookingId={}): {}",
-                        bookingId, mailEx.getMessage());
+                log.warn("[overdue] publish email event failed bookingId={}: {}", bookingId, mailEx.getMessage());
             }
         } catch (Exception e) {
-            log.warn("[autoCancelOverdue] notify failed for bookingId={}: {}", bookingId, e.getMessage());
+            log.warn("[overdue] notify failed bookingId={}: {}", bookingId, e.getMessage());
         }
     }
 }

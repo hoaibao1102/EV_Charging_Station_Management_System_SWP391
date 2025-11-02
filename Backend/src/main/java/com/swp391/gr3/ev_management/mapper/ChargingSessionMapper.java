@@ -19,6 +19,7 @@ public class ChargingSessionMapper {
                 .startTime(session.getStartTime())
                 .endTime(session.getEndTime())
                 .energyKWh(session.getEnergyKWh())
+                .initialSoc(session.getInitialSoc())
                 .cost(session.getCost())
                 .currency("VND")
                 .status(session.getStatus())
