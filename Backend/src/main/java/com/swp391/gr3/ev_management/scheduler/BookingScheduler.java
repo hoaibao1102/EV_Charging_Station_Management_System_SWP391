@@ -1,15 +1,16 @@
 package com.swp391.gr3.ev_management.scheduler;
 
-import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
 import com.swp391.gr3.ev_management.entity.Booking;
+import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.repository.BookingsRepository;
-import com.swp391.gr3.ev_management.service.ViolationService;
+import com.swp391.gr3.ev_management.service.BookingOverdueHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Component
@@ -17,32 +18,28 @@ import java.util.List;
 @Slf4j
 public class BookingScheduler {
 
+    private static final ZoneId TENANT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private final BookingsRepository bookingsRepo;
-    private final ViolationService violationService;
+    private final BookingOverdueHandler overdueHandler;
 
-    @Scheduled(cron = "0 * * * * *")
+    // Mỗi phút theo giờ VN
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Ho_Chi_Minh")
     public void autoCancelOverdueBookings() {
-        log.info("[autoCancelOverdue] Checking overdue bookings...");
-        List<Booking> overdueBookings = bookingsRepo.findOverdueBookings(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now(TENANT_ZONE);
+        log.info("[autoCancelOverdue] tick at {}", now);
 
-        for (Booking b : overdueBookings) {
+        List<Booking> overdue = bookingsRepo
+                .findTop50ByStatusAndScheduledEndTimeLessThanEqualOrderByScheduledEndTimeAsc(
+                        BookingStatus.CONFIRMED, now);
+
+        log.info("[autoCancelOverdue] found {} bookings overdue", overdue.size());
+
+        for (Booking b : overdue) {
             try {
-                Long userId = b.getVehicle().getDriver().getUser().getUserId();
-                Long bookingId = b.getBookingId();
-
-                ViolationRequest req = ViolationRequest.builder()
-                        .bookingId(bookingId)
-                        .description("Overdue after scheduled end time")
-                        .build();
-
-                // xác nhận giá trị trước khi gọi service
-                log.info("[autoCancelOverdue] call createViolation with bookingId={}, dto.bookingId={}, userId={}",
-                        bookingId, req.getBookingId(), userId);
-
-                violationService.createViolation(userId, req);
-
+                overdueHandler.cancelAndCreateViolationTx(b.getBookingId());
             } catch (Exception ex) {
-                log.error("[autoCancelOverdue] Error with bookingId={}", b.getBookingId(), ex);
+                log.error("[autoCancelOverdue] Error bookingId={}: {}", b.getBookingId(), ex.getMessage(), ex);
             }
         }
     }

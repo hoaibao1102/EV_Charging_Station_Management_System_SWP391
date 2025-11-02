@@ -5,18 +5,26 @@ import com.swp391.gr3.ev_management.DTO.request.StopCharSessionRequest;
 import com.swp391.gr3.ev_management.DTO.response.StartCharSessionResponse;
 import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
 import com.swp391.gr3.ev_management.DTO.response.ViewCharSessionResponse;
-import com.swp391.gr3.ev_management.entity.*;
-import com.swp391.gr3.ev_management.enums.*;
+import com.swp391.gr3.ev_management.entity.Booking;
+import com.swp391.gr3.ev_management.entity.ChargingSession;
+import com.swp391.gr3.ev_management.entity.Notification;
+import com.swp391.gr3.ev_management.enums.BookingStatus;
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingSessionMapper;
-import com.swp391.gr3.ev_management.repository.*;
+import com.swp391.gr3.ev_management.repository.BookingsRepository;
+import com.swp391.gr3.ev_management.repository.ChargingSessionRepository;
+import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -26,6 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChargingSessionServiceImpl implements ChargingSessionService {
 
     private final ChargingSessionRepository sessionRepository;
@@ -35,8 +44,12 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     private final SessionSocCache sessionSocCache;
     private final TaskScheduler taskScheduler;
 
-    private final ChargingSessionTxHandler txHandler;              // ✅ bean TX
-    private final ApplicationEventPublisher eventPublisher;        // ✅ publish mail event
+    // TX handler chạy trong transaction riêng khi auto-stop/stop
+    private final ChargingSessionTxHandler txHandler;
+    private final ApplicationEventPublisher eventPublisher;
+
+    // === DÙNG MÚI GIỜ VIỆT NAM CHO TOÀN BỘ LUỒNG ===
+    private static final ZoneId TENANT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Override
     @Transactional
@@ -48,9 +61,12 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         sessionRepository.findByBooking_BookingId(booking.getBookingId())
                 .ifPresent(s -> { throw new IllegalStateException("Session already exists for this booking"); });
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime windowStart = getBookingStart(booking);
-        LocalDateTime windowEnd   = getBookingEnd(booking);
+        // Lấy thời điểm hiện tại theo VN
+        LocalDateTime now = LocalDateTime.now(TENANT_ZONE);
+
+        // Lấy khung thời gian session theo VN (ưu tiên scheduledStart/End)
+        LocalDateTime windowStart = resolveWindowStart(booking);
+        LocalDateTime windowEnd   = resolveWindowEnd(booking);
 
         if (now.isBefore(windowStart)) {
             throw new ErrorException("Chưa đến giờ đặt. Chỉ được bắt đầu từ: " + windowStart);
@@ -68,17 +84,30 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         session.setInitialSoc(initialSoc);
         sessionRepository.save(session);
 
-        // Lưu initial vào cache (chỉ làm mốc)
+        // cache mốc SOC
         sessionSocCache.put(session.getSessionId(), initialSoc);
 
-        // (tuỳ bạn) chuyển sang IN_PROGRESS hoặc BOOKED; để nguyên như bạn đang dùng:
+        // chuyển booking về trạng thái phù hợp trong khi sạc
         booking.setStatus(BookingStatus.BOOKED);
         bookingsRepository.save(booking);
 
-        // schedule auto-stop — GỌI QUA BEAN TX HANDLER để có TX khi chạy
-        Date triggerAt = Date.from(windowEnd.atZone(ZoneId.systemDefault()).toInstant());
+        // schedule auto-stop tại windowEnd (theo VN)
+        Instant triggerInstant = windowEnd.atZone(TENANT_ZONE).toInstant();
+        Date triggerAt = Date.from(triggerInstant);
         Long sid = session.getSessionId();
-        taskScheduler.schedule(() -> txHandler.autoStopIfStillRunningTx(sid, windowEnd), triggerAt);
+
+        log.info("[SCHEDULE STOP] sessionId={} bookingId={} triggerAt(VN)={} now(VN)={}",
+                sid, booking.getBookingId(), triggerAt, Date.from(now.atZone(TENANT_ZONE).toInstant()));
+
+        taskScheduler.schedule(() -> {
+            try {
+                txHandler.autoStopIfStillRunningTx(sid, windowEnd); // windowEnd theo VN
+            } catch (Exception ex) {
+                // Không để exception làm mất log/nuốt job
+                log.error("[SCHEDULE STOP] Uncaught error for sessionId={} windowEnd(VN)={}: {}",
+                        sid, windowEnd, ex.getMessage(), ex);
+            }
+        }, triggerAt);
 
         // Notification + publish event
         Notification noti = new Notification();
@@ -89,9 +118,9 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         noti.setContentNoti("Pin hiện tại: " + initialSoc + "%");
         noti.setType(NotificationTypes.CHARGING_STARTED);
         noti.setStatus(Notification.STATUS_UNREAD);
-        noti.setCreatedAt(LocalDateTime.now());
+        noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
         notificationsRepository.save(noti);
-        eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId())); // ✅ để listener gửi mail
+        eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
 
         return StartCharSessionResponse.builder()
                 .sessionId(session.getSessionId())
@@ -110,18 +139,13 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         ChargingSession session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new ErrorException("Session not found"));
 
-        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime endTime = LocalDateTime.now(TENANT_ZONE);
 
-        // Lấy SOC mới nhất trong cache
         Integer cachedSoc = sessionSocCache.get(session.getSessionId()).orElse(null);
+        Integer finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
+                ? cachedSoc
+                : null;
 
-        // ✅ Chỉ dùng cache nếu khác initial; nếu không, truyền null để TX handler ước lượng
-        Integer finalSocIfAny = null;
-        if (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc())) {
-            finalSocIfAny = cachedSoc;
-        }
-
-        // Gọi TX handler để xử lý stop
         return txHandler.stopSessionInternalTx(session.getSessionId(), finalSocIfAny, endTime);
     }
 
@@ -141,16 +165,12 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
             throw new org.springframework.security.access.AccessDeniedException("You are not the owner of this session");
         }
 
-        // Lấy SOC mới nhất trong cache
         Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
+        Integer finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
+                ? cachedSoc
+                : null;
 
-        // ✅ Chỉ dùng cache nếu khác initial; nếu không, để TX handler tự ước lượng
-        Integer finalSocIfAny = null;
-        if (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc())) {
-            finalSocIfAny = cachedSoc;
-        }
-
-        return txHandler.stopSessionInternalTx(sessionId, finalSocIfAny, LocalDateTime.now());
+        return txHandler.stopSessionInternalTx(sessionId, finalSocIfAny, LocalDateTime.now(TENANT_ZONE));
     }
 
     @Transactional(readOnly = true)
@@ -158,10 +178,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     public List<ViewCharSessionResponse> getAllSessionsByStation(Long stationId) {
         List<ChargingSession> sessions =
                 sessionRepository.findAllByBooking_Station_StationIdOrderByStartTimeDesc(stationId);
-
-        return sessions.stream()
-                .map(mapper::toResponse)
-                .toList();
+        return sessions.stream().map(mapper::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -191,14 +208,21 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     }
 
     // ---- helpers (read-only) ----
-    private LocalDateTime getBookingStart(Booking booking) {
+    /**
+     * Ưu tiên dùng scheduledStart/End nếu có (đồng bộ với luồng Violation),
+     * fallback về slot template nếu 2 field này null.
+     * Các LocalDateTime ở đây được hiểu theo VN (TENANT_ZONE) khi convert sang Instant.
+     */
+    private LocalDateTime resolveWindowStart(Booking booking) {
+        if (booking.getScheduledStartTime() != null) return booking.getScheduledStartTime();
         return booking.getBookingSlots().stream()
                 .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getStartTime()))
                 .min(LocalDateTime::compareTo)
                 .orElseThrow(() -> new ErrorException("Booking has no slot start time"));
     }
 
-    private LocalDateTime getBookingEnd(Booking booking) {
+    private LocalDateTime resolveWindowEnd(Booking booking) {
+        if (booking.getScheduledEndTime() != null) return booking.getScheduledEndTime();
         return booking.getBookingSlots().stream()
                 .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getEndTime()))
                 .max(LocalDateTime::compareTo)
