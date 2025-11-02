@@ -18,6 +18,7 @@ public class ViewCharSessionResponse {
     private LocalDateTime endTime;
     private double energyKWh;
     private int durationMinutes;
+    private Integer initialSoc;
     private double cost;
     private String currency;
     private ChargingSessionStatus status;
