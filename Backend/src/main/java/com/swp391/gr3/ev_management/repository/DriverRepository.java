@@ -31,4 +31,6 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     Optional<Driver> findByDriverIdWithUser(@Param("driverId") Long driverId);
 
     Optional<Driver> findByUser_UserId(Long userId);
+
+    long countByStatus(DriverStatus status);
 }
