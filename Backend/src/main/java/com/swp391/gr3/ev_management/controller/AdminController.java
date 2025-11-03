@@ -4,7 +4,6 @@ import com.swp391.gr3.ev_management.DTO.request.CreateStationStaffRequest;
 import com.swp391.gr3.ev_management.DTO.request.UpdateAdminProfileRequest;
 import com.swp391.gr3.ev_management.DTO.request.UpdatePasswordRequest;
 import com.swp391.gr3.ev_management.DTO.response.*;
-import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.service.*;
@@ -41,38 +40,9 @@ public class AdminController {
     // ADMIN: xem tất cả user
     @GetMapping("/all-users")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get all users", description = "Admin get list of users")
+    @Operation(summary = "Get all users", description = "Admin get list of users with sessions")
     public List<GetUsersResponse> getAllUsers() {
-        return userService.findAll() // đảm bảo method này gọi repo có fetch như trên
-                .stream()
-                .map(user -> new GetUsersResponse(
-                        user.getUserId(),
-                        user.getEmail(),
-                        user.getPhoneNumber(),
-                        user.getName(),
-                        user.getDateOfBirth(),
-                        user.getGender(),
-                        user.getAddress(),
-                        extractStatus(user),                 // 👈 status
-                        user.getRole() != null ? user.getRole().getRoleName() : null
-                ))
-                .toList();
-    }
-
-    private String extractStatus(User user) {
-        // Ưu tiên theo role, có thể đổi thứ tự nếu bạn muốn
-        if (user.getDriver() != null && user.getDriver().getStatus() != null) {
-            return user.getDriver().getStatus().name();   // DriverStatus enum
-        }
-        if (user.getStaffs() != null && user.getStaffs().getStatus() != null) {
-            return user.getStaffs().getStatus().name();   // StaffStatus enum
-        }
-        if (user.getAdmin() != null) {
-            // Nếu Admin cũng có status thì lấy tương tự:
-            // return user.getAdmin().getStatus().name();
-            return "ACTIVE"; // hoặc null / giá trị mặc định nếu Admin không có status
-        }
-        return null;
+        return userService.getAllUsersWithSessions();
     }
 
     // ----------------------ADMIN: Quản lý STAFF----------------------------- //

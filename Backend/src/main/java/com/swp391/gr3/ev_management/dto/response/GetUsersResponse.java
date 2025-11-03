@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.DTO.response;
 
 import com.swp391.gr3.ev_management.entity.User;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class GetUsersResponse {
@@ -20,5 +22,6 @@ public class GetUsersResponse {
     private String gender;
     private String address;
     private String status;
+    private long sessionCount;
     private String roleName; // ADMIN, STAFF, EV_DRIVER
 }

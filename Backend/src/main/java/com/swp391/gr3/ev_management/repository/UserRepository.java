@@ -33,4 +33,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
        left join fetch u.admin a
        """)
     List<User> findAllWithJoins();
+
 }

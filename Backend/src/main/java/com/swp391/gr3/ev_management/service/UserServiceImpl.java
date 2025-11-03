@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
 import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
+import com.swp391.gr3.ev_management.DTO.response.GetUsersResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
@@ -41,6 +42,7 @@ public class UserServiceImpl implements UserService{
     private final StaffsRepository  staffsRepo;
     private final StationStaffRepository stationStaffRepository;
     private final ChargingStationRepository chargingStationRepository;
+    private final ChargingSessionRepository chargingSessionRepository;
 
     @Override
     public User getUser(String phoneNumber, String password) {
@@ -271,6 +273,37 @@ public class UserServiceImpl implements UserService{
                 "stationId", stationId,
                 "stationStaffId", stationStaffId
         );
+    }
+
+    @Override
+    public List<GetUsersResponse> getAllUsersWithSessions() {
+        return userRepository.findAllWithJoins()
+                .stream()
+                .map(user -> {
+                    long sessionCount = chargingSessionRepository.countSessionsByUserId(user.getUserId());
+
+                    return GetUsersResponse.builder()
+                            .userId(user.getUserId())
+                            .email(user.getEmail())
+                            .phoneNumber(user.getPhoneNumber())
+                            .name(user.getName())
+                            .dateOfBirth(user.getDateOfBirth())
+                            .gender(user.getGender())
+                            .address(user.getAddress())
+                            .status(extractStatus(user))
+                            .roleName(user.getRole() != null ? user.getRole().getRoleName() : null)
+                            .sessionCount(sessionCount)
+                            .build();
+                })
+                .toList();
+    }
+
+    private String extractStatus(User user) {
+        if (user.getStaffs() != null && user.getStaffs().getStatus() != null)
+            return user.getStaffs().getStatus().name();
+        if (user.getDriver() != null && user.getDriver().getStatus() != null)
+            return user.getDriver().getStatus().name();
+        return "UNKNOWN";
     }
 
 }
