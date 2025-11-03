@@ -6,13 +6,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ChargingSessionRepository extends JpaRepository<ChargingSession,Long> {
-    // Tìm session theo status
-    List<ChargingSession> findByBooking_Station_StationId(Long stationId);
 
     // Tìm các session đang hoạt động (in_progress) tại trạm theo stationId
     @Query("SELECT cs FROM ChargingSession cs " +
@@ -48,4 +47,32 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     Optional<ChargingSession> findWithOwnerById(@Param("sid") Long sessionId);
 
     List<ChargingSession> findAllByBooking_Station_StationIdOrderByStartTimeDesc(Long stationId);
+
+    @Query("SELECT COALESCE(SUM(s.energyKWh), 0) FROM ChargingSession s")
+    double sumEnergyAll();
+
+    @Query("SELECT COUNT(s) FROM ChargingSession s")
+    long countAll();
+
+    @Query("""
+      SELECT COUNT(s)
+      FROM ChargingSession s
+      JOIN s.booking b
+      WHERE b.station.stationId = :stationId
+        AND s.startTime BETWEEN :from AND :to
+    """)
+    long countByStationBetween(@Param("stationId") Long stationId,
+                               @Param("from") LocalDateTime from,
+                               @Param("to") LocalDateTime to);
+
+    @Query("""
+        SELECT COUNT(cs)
+        FROM ChargingSession cs
+        JOIN cs.booking b
+        JOIN b.vehicle v
+        JOIN v.driver d
+        JOIN d.user u
+        WHERE u.userId = :userId
+    """)
+    long countSessionsByUserId(@Param("userId") Long userId);
 }
