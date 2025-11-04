@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import "./SessionCharging.css";
 import { stationAPI } from "../../api/stationApi";
+import { toast } from "react-toastify";
 
 export default function SessionChargingCreate() {
-  const navigate = useNavigate();
-
   const videoRef = useRef(null);
   const previewStreamRef = useRef(null);
   const codeReaderRef = useRef(null);
@@ -117,11 +115,7 @@ export default function SessionChargingCreate() {
     try {
       const response = await stationAPI.startChargingSession(payload);
       if (!response.success) throw new Error(response.message);
-      navigate("/success", {
-        state: {
-          message: "Phiên sạc đã được khởi động thành công!",
-        },
-      });
+      toast.success("Phiên sạc đã được khởi động thành công!");
     } catch (err) {
       console.error("Start session error", err);
       setStartError(err.message || "Không thể khởi động phiên sạc");

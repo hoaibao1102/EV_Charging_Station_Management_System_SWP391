@@ -8,7 +8,7 @@ export default function BookingQRCode() {
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
-  const bookingId = params?.bookingId;
+  const bookingIdParam = params?.bookingId;
 
   const stateBooking = location?.state?.booking;
   const qrFromState = location?.state?.qrBlobUrl;
@@ -17,13 +17,46 @@ export default function BookingQRCode() {
   const [qrUrl, setQrUrl] = useState(qrFromState || null);
   const [loading, setLoading] = useState(false);
 
+  // Try to restore QR from sessionStorage when needed
   useEffect(() => {
-    // If we don't have QR url but have bookingId, try to fetch booking info
-    if (!booking && bookingId) {
+    if (qrUrl) return;
+
+    // try bookingId from params or booking object
+    const attemptRestore = async () => {
+      try {
+        const id = booking?.bookingId ?? booking?.id ?? bookingIdParam;
+        if (id) {
+          const key = `qr_booking_${id}`;
+          const stored = sessionStorage.getItem(key);
+          if (stored) {
+            setQrUrl(stored);
+            return;
+          }
+        }
+
+        // fallback: if exactly one qr_booking_ key exists, use it
+        const keys = Object.keys(sessionStorage).filter(
+          (k) => k && k.startsWith("qr_booking_")
+        );
+        if (keys.length === 1) {
+          const s = sessionStorage.getItem(keys[0]);
+          if (s) setQrUrl(s);
+        }
+      } catch (e) {
+        console.warn("Could not restore QR from sessionStorage", e);
+      }
+    };
+
+    attemptRestore();
+  }, [qrUrl, booking, bookingIdParam]);
+
+  // If we have a bookingId param but no booking data, fetch it
+  useEffect(() => {
+    if (!booking && bookingIdParam) {
       (async () => {
         try {
           setLoading(true);
-          const res = await stationAPI.getBookingById(bookingId);
+          const res = await stationAPI.getBookingById(bookingIdParam);
           if (!res || res.success === false) {
             toast.error(res?.message || "Không thể lấy booking", {
               position: "top-center",
@@ -38,16 +71,12 @@ export default function BookingQRCode() {
         }
       })();
     }
-
-    // If QR blob isn't provided but server may allow re-fetch, we could call confirm again.
-    // But we avoid calling confirm endpoint twice. If qrUrl absent, show instruction.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingId]);
+  }, [booking, bookingIdParam]);
 
   useEffect(() => {
     return () => {
       // Revoke object URL if we created one to avoid memory leaks
-      if (qrUrl && qrUrl.startsWith("blob:")) {
+      if (qrUrl && typeof qrUrl === "string" && qrUrl.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(qrUrl);
         } catch {
@@ -61,7 +90,7 @@ export default function BookingQRCode() {
     if (!qrUrl) return;
     const a = document.createElement("a");
     a.href = qrUrl;
-    a.download = `booking-${bookingId || "qr"}.png`;
+    a.download = `booking-${booking?.bookingId ?? bookingIdParam ?? "qr"}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -82,7 +111,7 @@ export default function BookingQRCode() {
           <>
             <p className="booking-field">
               <strong>Booking ID:</strong>{" "}
-              {booking?.bookingId ?? booking?.id ?? bookingId ?? "-"}
+              {booking?.bookingId ?? booking?.id ?? bookingIdParam ?? "-"}
             </p>
 
             {qrUrl ? (

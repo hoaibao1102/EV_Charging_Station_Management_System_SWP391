@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import paths from "../../path/paths.jsx";
 import "./BookingDetail.css";
 import { toast } from "react-toastify";
 import { stationAPI } from "../../api/stationApi.js";
@@ -19,6 +20,7 @@ export default function BookingDetail() {
   const [booking, setBooking] = useState(bookingState || null);
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!booking && bookingId) {
@@ -78,16 +80,45 @@ export default function BookingDetail() {
         return;
       }
 
-      // res.data is binary ArrayBuffer (PNG). Create blob URL and navigate to QR page.
+      // res.data is binary ArrayBuffer (PNG). Create blob URL and a data URL (base64)
       const arrayBuffer = res.data;
       const blob = new Blob([arrayBuffer], { type: "image/png" });
       const blobUrl = URL.createObjectURL(blob);
 
+      // Convert blob to data URL so we can persist it across refreshes (sessionStorage)
+      const toDataURL = (blob) =>
+        new Promise((resolve, reject) => {
+          try {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          } catch (e) {
+            reject(e);
+          }
+        });
+
+      let dataUrl = null;
+      try {
+        dataUrl = await toDataURL(blob);
+        if (dataUrl && bookingId) {
+          try {
+            sessionStorage.setItem(`qr_booking_${bookingId}`, dataUrl);
+          } catch (e) {
+            // ignore storage errors
+            console.warn("Could not persist QR to sessionStorage", e);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not convert QR blob to data URL:", err);
+      }
+
       // update booking local state to mark as confirmed
       setBooking((prev) => ({ ...(prev || {}), status: "confirmed" }));
 
-      // Navigate to QR page and pass booking + qr url in state
-      navigate(`/bookings/${bookingId}/qr`, {
+      // Navigate to charging session page and pass booking + qr url in state
+      // We also persisted the data URL to sessionStorage above so ChargingSession can restore it after a refresh.
+      navigate(paths.chargingSession, {
         state: { booking: booking || {}, qrBlobUrl: blobUrl },
       });
     } catch (err) {
@@ -95,6 +126,46 @@ export default function BookingDetail() {
       toast.error("Xác nhận thất bại", { position: "top-center" });
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!bookingId) {
+      toast.error("Không có bookingId để hủy", { position: "top-center" });
+      return;
+    }
+
+    // Confirm with user
+    if (!window.confirm("Bạn có chắc chắn muốn hủy booking này không?")) {
+      return;
+    }
+
+    try {
+      setCancelling(true);
+      const res = await stationAPI.cancelBooking(bookingId);
+
+      if (!res || res.success === false) {
+        console.error("❌ cancelBooking failed:", res);
+        toast.error(res?.message || "Hủy booking thất bại", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      // update booking local state to mark as cancelled
+      setBooking((prev) => ({ ...(prev || {}), status: "cancelled" }));
+
+      toast.success("Hủy booking thành công!", { position: "top-center" });
+
+      // Navigate back to previous page after a short delay
+      setTimeout(() => {
+        navigate(-1);
+      }, 1500);
+    } catch (err) {
+      console.error("❌ Lỗi khi hủy booking:", err);
+      toast.error("Hủy booking thất bại", { position: "top-center" });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -147,7 +218,11 @@ export default function BookingDetail() {
           <div className="booking-actions">
             <button
               onClick={handleConfirm}
-              disabled={confirming || b.status === "confirmed"}
+              disabled={
+                confirming ||
+                b.status === "confirmed" ||
+                b.status === "cancelled"
+              }
               className="btn-primary"
             >
               {b.status === "confirmed"
@@ -155,6 +230,32 @@ export default function BookingDetail() {
                 : confirming
                 ? "Đang xác nhận..."
                 : "Xác nhận"}
+            </button>
+
+            <button
+              onClick={handleCancel}
+              disabled={cancelling || b.status === "cancelled"}
+              className="btn-danger"
+              style={{
+                background:
+                  cancelling || b.status === "cancelled" ? "#ccc" : "#f44336",
+                color: "white",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor:
+                  cancelling || b.status === "cancelled"
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+            >
+              {b.status === "cancelled"
+                ? "Đã hủy"
+                : cancelling
+                ? "Đang hủy..."
+                : "Hủy booking"}
             </button>
 
             <button
