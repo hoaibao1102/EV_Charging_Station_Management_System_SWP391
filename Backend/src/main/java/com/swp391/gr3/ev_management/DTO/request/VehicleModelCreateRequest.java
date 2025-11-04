@@ -32,7 +32,7 @@ public class VehicleModelCreateRequest {
     @NotNull(message = "connectorTypeId is required")
     private Long connectorTypeId;
 
-    @NotBlank(message = "Status is required")
+    @NotNull(message = "Status is required")
     private VehicleModelStatus status;
 
     @JsonAlias({"batteryCapacity", "battery-capacity"})
