@@ -25,7 +25,7 @@ public class BookingSlot {
     private Booking booking;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SlotID", nullable = false, unique = true) // UNIQUE!!!
+    @JoinColumn(name = "SlotID", nullable = false) // UNIQUE!!!
     private SlotAvailability slot;
 
     @CreationTimestamp
