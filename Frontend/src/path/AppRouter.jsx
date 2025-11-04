@@ -17,10 +17,11 @@ import Home from "../pages/home/Home.jsx";
 import Rules from "../pages/inNavigateDriver/Rules.jsx";
 import Stations from "../pages/inNavigateDriver/Stations.jsx";
 import StationDetail from "../pages/inNavigateDriver/StationDetail.jsx";
-import BookingInfo from "../pages/inNavigateDriver/BookingInformation.jsx";
+import ChargingSession from "../pages/inNavigateDriver/ChargingSession.jsx";
 import Booking from "../pages/inNavigateDriver/Booking.jsx";
 import BookingDetail from "../pages/inNavigateDriver/BookingDetail.jsx";
 import BookingQRCode from "../pages/inNavigateDriver/BookingQRCode.jsx";
+import Payment from "../pages/inNavigateDriver/Payment.jsx";
 import Profile from "../pages/inNavigateDriver/Profile.jsx";
 import EditProfile from "../pages/profileDriver/EditProfile.jsx";
 import Information from "../pages/profileDriver/Information.jsx";
@@ -74,7 +75,8 @@ const AppRouter = () => {
             <Route path={paths.booking} element={<Booking />} />
             <Route path={paths.bookingDetail} element={<BookingDetail />} />
             <Route path={paths.bookingQr} element={<BookingQRCode />} />
-            <Route path={paths.bookingInformation} element={<BookingInfo />} />
+            <Route path={paths.chargingSession} element={<ChargingSession />} />
+            <Route path={paths.payment} element={<Payment />} />
             <Route path={paths.profile} element={<Profile />} />
             <Route path={paths.myVehicle} element={<Vehicles />} />
             <Route path={paths.editProfile} element={<EditProfile />} />
