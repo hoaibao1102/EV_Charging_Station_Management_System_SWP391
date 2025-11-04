@@ -167,6 +167,7 @@ export const cancelBooking = (bookingId) => {
   );
 };
 
+
 // ====== Khởi động phiên sạc ======
 export const startChargingSession = (payload) => {
   return handleApiCall(
@@ -195,6 +196,7 @@ export const stopChargingSession = (sessionId) => {
     "Dừng phiên sạc thất bại"
   );
 };
+
 
 // ====== Export default object ======
 export const stationAPI = {
