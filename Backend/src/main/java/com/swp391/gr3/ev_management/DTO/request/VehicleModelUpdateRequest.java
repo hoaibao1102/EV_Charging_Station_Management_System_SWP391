@@ -22,15 +22,6 @@ public class VehicleModelUpdateRequest {
     @NotNull(message = "Year cannot be null")
     @Min(value = 1886, message = "Year must be realistic")
     private Integer year; // optional
-    @NotNull(message = "Seating capacity cannot be null")
-    @Min(value = 1, message = "Seating capacity must be at least 1")
-    private Integer seatingCapacity; // optional
-    @NotNull(message = "Range cannot be null")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Range must be greater than 0")
-    private Double rangeKm; // optional
-    @NotNull(message = "Price cannot be null")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
-    private Double price; // optional
     @NotNull(message = "Fast charging support cannot be null")
     private String imageUrl; // optional
     private String imagePublicId; // optional

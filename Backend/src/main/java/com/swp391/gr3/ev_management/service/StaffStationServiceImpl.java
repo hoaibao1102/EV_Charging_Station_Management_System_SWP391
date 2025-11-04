@@ -60,4 +60,21 @@ public class StaffStationServiceImpl implements StaffStationService {
                         .orElseThrow(() -> new ErrorException("Failed to load staff with id " + ss.getStaff().getStaffId())))
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StationStaffResponse> getByStationStaffUserId(Long userId) {
+        return stationStaffRepository.findStationStaffByUserId(userId).stream()
+                .map(s -> new StationStaffResponse(
+                        s.getStationStaffId(),
+                        s.getStaff().getStaffId(),
+                        s.getStation().getStationId(),
+                        s.getStaff().getUser().getName(),
+                        s.getStaff().getUser().getEmail(),
+                        s.getStaff().getUser().getPhoneNumber(),
+                        s.getStaff().getStatus(),
+                        s.getAssignedAt()
+                ))
+                .toList();
+    }
 }

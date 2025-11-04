@@ -6,6 +6,7 @@ import com.swp391.gr3.ev_management.DTO.response.BookingResponse;
 import com.swp391.gr3.ev_management.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,7 +45,7 @@ public class BookingController {
 
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Create a new booking", description = "Endpoint to create a new booking")
-    public ResponseEntity<BookingResponse> createBooking(@RequestBody CreateBookingRequest request) {
+    public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody CreateBookingRequest request) {
         try {
             BookingResponse response = bookingService.createBooking(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);

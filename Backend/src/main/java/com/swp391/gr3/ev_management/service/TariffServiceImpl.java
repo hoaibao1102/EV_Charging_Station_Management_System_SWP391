@@ -68,27 +68,41 @@ public class TariffServiceImpl implements TariffService {
                 .orElseThrow(() -> new ErrorException("Không tìm thấy tariff với ID: " + tariffId));
 
         // Update ConnectorType nếu có
-        if (request.getConnectorTypeId() != 0) {
+        if (request.getConnectorTypeId() > 0) {
             ConnectorType connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
                     .orElseThrow(() -> new ErrorException("Không tìm thấy connector type với ID: " + request.getConnectorTypeId()));
             tariff.setConnectorType(connectorType);
         }
 
         // Update các field nếu không null/0
-        if (request.getPricePerKWh() != 0) {
+        if (request.getPricePerKWh() > 0) {
             tariff.setPricePerKWh(request.getPricePerKWh());
+        } else {
+            tariff.setPricePerKWh(tariff.getPricePerKWh());
         }
-        if (request.getPricePerMin() != 0) {
-            tariff.setPricePerKWh(request.getPricePerMin());
+
+        if (request.getPricePerMin() > 0) {
+            tariff.setPricePerMin(request.getPricePerMin());
+        } else {
+            tariff.setPricePerMin(tariff.getPricePerMin());
         }
+
         if (request.getCurrency() != null) {
             tariff.setCurrency(request.getCurrency());
+        } else {
+            tariff.setCurrency(tariff.getCurrency());
         }
+
         if (request.getEffectiveFrom() != null) {
             tariff.setEffectiveFrom(request.getEffectiveFrom());
+        } else {
+            tariff.setEffectiveFrom(tariff.getEffectiveFrom());
         }
+
         if (request.getEffectiveTo() != null) {
             tariff.setEffectiveTo(request.getEffectiveTo());
+        } else {
+            tariff.setEffectiveTo(tariff.getEffectiveTo());
         }
 
         // Validate effectiveFrom < effectiveTo sau khi update
