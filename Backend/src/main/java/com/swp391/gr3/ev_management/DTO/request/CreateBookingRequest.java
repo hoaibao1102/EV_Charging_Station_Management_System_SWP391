@@ -1,17 +1,17 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
-import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Data
 public class CreateBookingRequest {
-    @NotNull(message = "Vehicle ID is required")
-  private Long vehicleId;
-    @NotNull(message = "Slot IDs are required")
-  private List<Long> slotIds;
-  private LocalDateTime bookingTime;
+    private Long vehicleId;
+    private List<Long> slotIds;
+    private LocalDateTime bookingTime;
 }
