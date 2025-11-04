@@ -1,10 +1,11 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
+import java.time.LocalDateTime;
+
 import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder

@@ -19,6 +19,8 @@ export const paths = {
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
   stationDetail: "/stations/:id",
+  chargingSession: "/chargingSession",
+  payment: "/payment",
 
   //admin
   adminDashboard: "/admin",
