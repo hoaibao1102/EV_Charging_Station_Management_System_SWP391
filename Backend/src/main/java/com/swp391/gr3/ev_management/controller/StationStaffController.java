@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,5 +38,13 @@ public class StationStaffController {
     public ResponseEntity<List<StationStaffResponse>> getAll() {
         List<StationStaffResponse> list = staffStationService.getAll();
         return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get my assigned station", description = "Staff gets their assigned charging station")
+    public ResponseEntity<List<StationStaffResponse>> getMyStation(HttpServletRequest request) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        List<StationStaffResponse> response = staffStationService.getByStationStaffUserId(userId);
+        return ResponseEntity.ok(response);
     }
 }

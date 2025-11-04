@@ -10,5 +10,6 @@ public interface StaffStationService {
     StationStaffResponse getStaffByUserId(Long userId);
     StationStaffResponse updateStation(Long staffId, Long stationId);
     List<StationStaffResponse> getAll();
+    List<StationStaffResponse> getByStationStaffUserId(Long userId);
 
 }

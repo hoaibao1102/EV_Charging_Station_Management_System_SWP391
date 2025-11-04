@@ -99,4 +99,14 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     Optional<StationStaffResponse> findByStaffId(@Param("staffId") Long staffId);
 
     boolean existsByStaff_StaffIdAndStation_StationIdAndUnassignedAtIsNull(Long staffId, Long stationId);
+
+    @Query("""
+select s from StationStaff s
+join fetch s.staff staff
+join fetch staff.user u
+join fetch s.station st
+where u.userId = :userId
+  and s.unassignedAt is null
+""")
+    List<StationStaff> findStationStaffByUserId(@Param("userId") Long userId);
 }

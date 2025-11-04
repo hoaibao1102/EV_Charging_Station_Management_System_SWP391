@@ -55,59 +55,70 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponse createBooking(CreateBookingRequest request) {
+        // 1️⃣ Lấy thông tin xe
         UserVehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                 .orElseThrow(() -> new ErrorException("Vehicle not found"));
 
+        // 2️⃣ Lấy danh sách slot
         List<SlotAvailability> slots = slotAvailabilityRepository.findAllById(request.getSlotIds());
-        if (slots.isEmpty()) throw new ErrorException("No slots found");
+        if (slots.isEmpty()) {
+            throw new ErrorException("No slots found");
+        }
 
+        // Kiểm tra tất cả đều AVAILABLE và cùng trạm
         for (SlotAvailability slot : slots) {
             if (slot.getStatus() != SlotStatus.AVAILABLE) {
                 throw new ErrorException("Slot " + slot.getSlotId() + " is not available for booking");
             }
         }
 
+        // Giả sử tất cả slot cùng trạm
         ChargingStation station = slots.get(0).getTemplate().getConfig().getStation();
 
+        // 3️⃣ Tạo Booking
         Booking booking = Booking.builder()
                 .vehicle(vehicle)
                 .station(station)
-                .bookingTime(LocalDateTime.now(TENANT_ZONE))
+                .bookingTime(LocalDateTime.now())
                 .scheduledStartTime(slots.get(0).getDate().with(slots.get(0).getTemplate().getStartTime()))
                 .scheduledEndTime(slots.get(slots.size() - 1).getDate().with(slots.get(slots.size() - 1).getTemplate().getEndTime()))
                 .status(BookingStatus.PENDING)
                 .build();
         bookingsRepository.save(booking);
 
+        // 4️⃣ Tạo BookingSlot cho từng slot
         for (SlotAvailability slot : slots) {
             BookingSlot bookingSlot = new BookingSlot();
             bookingSlot.setBooking(booking);
             bookingSlot.setSlot(slot);
-            bookingSlot.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
+            bookingSlot.setCreatedAt(LocalDateTime.now());
             bookingSlotRepository.save(bookingSlot);
 
+            // cập nhật trạng thái slot
             slot.setStatus(SlotStatus.BOOKED);
             slotAvailabilityRepository.save(slot);
         }
 
+        // 5️⃣ Lấy giá và tính tổng (tuỳ bạn muốn theo giờ hay cộng gộp)
         double price = slots.stream()
-                .findFirst()
+                .findFirst() // lấy slot đầu tiên
                 .flatMap(slot -> tariffRepository.findByConnectorType(
                         slot.getChargingPoint().getConnectorType()
                 ).map(Tariff::getPricePerKWh))
                 .orElse(0.0);
 
+        // 6️⃣ Build response
         String timeRanges = slots.stream()
-                .map(slot -> formatTimeRange(
-                        slot.getTemplate().getStartTime(),
-                        slot.getTemplate().getEndTime()))
+                .map(slot -> formatTimeRange(slot.getTemplate().getStartTime(), slot.getTemplate().getEndTime()))
                 .collect(Collectors.joining(", "));
 
         return BookingResponse.builder()
                 .bookingId(booking.getBookingId())
                 .vehicleName(vehicle.getModel().getModel())
                 .stationName(station.getStationName())
-                .slotName("Slots: " + slots.stream().map(s -> s.getSlotId().toString()).collect(Collectors.joining(", ")))
+                .slotName("Slots: " + slots.stream()
+                        .map(s -> s.getSlotId().toString())
+                        .collect(Collectors.joining(", ")))
                 .connectorType(slots.get(0).getChargingPoint().getConnectorType().getDisplayName())
                 .timeRange(timeRanges)
                 .bookingDate(slots.get(0).getDate())

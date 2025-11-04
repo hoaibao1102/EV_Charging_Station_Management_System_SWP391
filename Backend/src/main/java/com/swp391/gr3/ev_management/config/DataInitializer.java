@@ -45,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
     private boolean enabled;
 
     @Override
+    @Transactional
     public void run(String... args) {
         if (!enabled) {
             log.info("Data initializer disabled by property 'app.data.init.enabled'");
@@ -524,8 +525,8 @@ public class DataInitializer implements CommandLineRunner {
                             .build();
 
 //                    // set 2 chiều (tùy thích, để bộ nhớ đồng bộ)
-//                    station.getStationStaffs().add(link);
-//                    currentStaff.getStationStaffs().add(link);
+                    station.getStationStaffs().add(link);
+                    currentStaff.getStationStaffs().add(link);
 
                     // ✅ Lưu TRỰC TIẾP vào bảng station_staff
                     stationStaffRepository.save(link);
