@@ -1,45 +1,57 @@
 import Form from 'react-bootstrap/Form';
-import {getAllStations} from '../../api/stationApi.js';
-import {useEffect, useState} from 'react';
 import {transferStaffApi} from '../../api/admin.js';
 import './AddStaffForm.css';
 import Button from 'react-bootstrap/Button';
 
-export default function SelectStationForm({onClose, onAddSuccess, staff}) {
-  const [stations, setStations] = useState([]);
+export default function SelectStationForm({onClose, onAddSuccess, staff, staffsStationData, stations}) {
 
-  useEffect(() => {
-    const fetchStations = async () => {
-      const response = await getAllStations();
-      if (response.success) {
-        setStations(response.data);
-      }
-    };
-    fetchStations();
-  }, []);
+
+
+  if (!staff) return null;
+  const currentStationEntry = staffsStationData.find(
+    s => (staff.staffId && s.staffId === staff.staffId) || (staff.userId && s.userId === staff.userId)
+  );
+
+  const currentStationId = currentStationEntry?.stationId;
 
   const currentStationName = stations.find(
-    station => station.stationId === staff.stationId 
+    station => station.stationId === currentStationId
   )?.stationName;
+
+  
 
 
   const handleTransferStaff = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const selectedStation = formData.get('station');
+  const selectedStation = formData.get('station');
 
     if (!selectedStation) {
       alert('Vui lòng chọn một trạm sạc.');
       return;
     }
 
-    const response = await transferStaffApi(staff.userId, selectedStation);
+
+    const staffIdToSend = staff.staffId ?? staffsStationData.find(s => s.userId === staff.userId)?.staffId;
+
+    if (!staffIdToSend) {
+      alert('Không xác định được ID nhân viên để chuyển công tác.');
+      return;
+    }
+    console.log("Staff ID to send:", staffIdToSend);
+    console.log("Selected Station ID:", selectedStation);
+    const response = await transferStaffApi(staffIdToSend, selectedStation);
     if (response.success) {
       alert('Chuyển công tác thành công');
-      onAddSuccess();
+      handleClose();
     } else {
       alert('Chuyển công tác thất bại');
     }
+  };
+
+  const handleClose = () => {
+    onClose();
+    onAddSuccess();
   };
 
   return (
@@ -54,12 +66,12 @@ export default function SelectStationForm({onClose, onAddSuccess, staff}) {
           <Form.Select aria-label="select station" name="station" required>
             <option value="">Chọn trạm sạc mới</option>
             {stations
-              .filter(station => station.stationId != staff.stationId) 
-              .map(station => (
-                <option key={station.stationId} value={station.stationId}>
-                  {station.stationName}
-                </option>
-              ))}
+                .filter(station => station.stationId != currentStationId) 
+                .map(station => (
+                  <option key={station.stationId} value={station.stationId}>
+                    {station.stationName}
+                  </option>
+                ))}
           </Form.Select>
           <Form.Text className="text-muted">
             Thay đổi trạm làm việc sẽ áp dụng cho nhân viên này ngay lập tức.
@@ -70,7 +82,7 @@ export default function SelectStationForm({onClose, onAddSuccess, staff}) {
           <Button variant="primary" type="submit" className="me-2">
             XÁC NHẬN CHUYỂN CÔNG TÁC
           </Button>
-          <Button variant="primary" type="button" className="me-2" onClick={onClose}>
+          <Button variant="primary" type="button" className="me-2" onClick={handleClose}>
             Trở về
           </Button>
         </div>

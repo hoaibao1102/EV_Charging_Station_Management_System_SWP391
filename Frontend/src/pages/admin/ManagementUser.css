@@ -244,7 +244,7 @@
   height: 60px;
 }
 .custom-table tbody tr:nth-child(odd) {
-  background-color: #aabbcc !important;
+  background-color: #e1e8ef !important;
 }
 .custom-table tbody tr:nth-child(even) {
   background-color: #ffffff;

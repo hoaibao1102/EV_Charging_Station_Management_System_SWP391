@@ -28,7 +28,6 @@ export const paths = {
   stationManagement: "/admin/manage-stations",
   modelManagement: "/admin/manage-models",
   chargerManagement: "/admin/manage-chargers",
-  businessStatistics: "/admin/business-statistics",
   accidentReports: "/admin/accident-reports",
   chargingPriceConfiguration: "/admin/charging-price-configuration",
   chargingPointManagement: "/admin/manage-charging-points",
