@@ -25,6 +25,23 @@ export const statusStaffApi = (staffId, status) => {
     );
 }
 
+
+//lấy ra bảng nhân viên - user
+export const getStaffs_UserApi = () => {
+    return handleApiCall(
+        () => apiClient.get('/api/admin/all-staffs'),
+        'Lấy danh sách nhân viên thất bại'
+    );
+}
+
+//lấy ra bảng nhân viên - trạm
+export const getStaffs_StationApi = () => {
+    return handleApiCall(
+        () => apiClient.get('/api/station-staff'),
+        'Lấy danh sách nhân viên trạm thất bại'
+    );
+}
+
 //chuyển công tác nhân viên
 export const transferStaffApi = (staffId, newStationId) => {
     return handleApiCall(
@@ -41,4 +58,26 @@ export const unbanDriverApi = (driverId) => {
     );
 }
 
+//lay ra danh sách tai nạn
+export const getAllAccidentsApi = () => {
+    return handleApiCall(
+        () => apiClient.get('/api/incidents'),
+        'Lấy danh sách tai nạn thất bại'
+    );
+}
 
+//đánh dấu tai nạn đã xử lý
+export const markAccidentAsResolvedApi = (incidentId) => {
+    return handleApiCall(
+        () => apiClient.post(`/api/incidents/${incidentId}/status?status=RESOLVED`),
+        'Đánh dấu tai nạn đã xử lý thất bại'
+    );
+}
+
+//lấy dữ liệu thống kê tổng quan
+export const getAdminStatisticsApi = () => {
+    return handleApiCall(
+        () => apiClient.get('/api/statics/dashboard'),
+        'Lấy dữ liệu thống kê tổng quan thất bại'
+    );
+}

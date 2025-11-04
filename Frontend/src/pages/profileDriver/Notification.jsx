@@ -1,21 +1,20 @@
 import { useState, useEffect } from "react";
-import { getNotificationsApi } from "../../api/driverApi.js";
+import { getNotificationsApi, markNotificationAsReadApi } from "../../api/driverApi.js";
 import { toast } from "react-toastify";
 import NotificationCard from "../../components/driver/NotifiationCard.jsx";
-import { markNotificationAsReadApi } from '../../api/driverApi.js';
 import "./Notification.css";
 
 export default function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [readedNotifications, setReadedNotifications] = useState();
+
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       const response = await getNotificationsApi();
       if (response.success) {
-        setNotifications(response.data);
+        setNotifications(response.data.content || []);
         console.log("My notifications:", response.data);
       }
     } catch (error) {
@@ -28,21 +27,48 @@ export default function Notification() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [readedNotifications]);
+  }, []);
 
   const handleReaded = async (notification) => {
+    if (notification.isRead) {
+        console.log("Thông báo này đã đọc rồi.");
+        return; 
+    }
+
+    setNotifications(prevNotifications =>
+      prevNotifications.map(n =>
+        n.notificationId === notification.notificationId
+          ? { ...n, isRead: true }
+          : n
+      )
+    );
+
     try {
       const response = await markNotificationAsReadApi(notification.notificationId);
       if (response.success) {
-        console.log(`Đánh dấu thông báo ${notification.notificationId} là đã đọc thành công`);
-        setReadedNotifications(notification.notificationId);
+        console.log(`Đánh dấu ${notification.notificationId} thành công (server)`);
+      } else {
+        toast.error("Đánh dấu đã đọc thất bại, vui lòng thử lại.");
+        setNotifications(prevNotifications =>
+          prevNotifications.map(n =>
+            n.notificationId === notification.notificationId
+              ? { ...n, isRead: false } 
+              : n
+          )
+        );
       }
     } catch (error) {
-      console.error(`Đánh dấu thông báo ${notification.notificationId} là đã đọc thất bại`, error);
+      console.error(`Lỗi khi đánh dấu đã đọc:`, error);
+      toast.error("Lỗi khi đánh dấu đã đọc.");
+      setNotifications(prevNotifications =>
+        prevNotifications.map(n =>
+          n.notificationId === notification.notificationId
+            ? { ...n, isRead: false }
+            : n
+        )
+      );
     }
-    console.log(`Đánh dấu thông báo ${notification.notificationId} là đã đọc`);
-
-  }
+  };
 
   const sortedNotifications = [...notifications].sort((a, b) => {
     return new Date(b.createdAt) - new Date(a.createdAt);
@@ -58,7 +84,11 @@ export default function Notification() {
       ) : (
         <ul className="notification-list">
           {sortedNotifications.map(notification => (
-            <NotificationCard key={notification.notificationId} notification={notification} onSelect={handleReaded} />
+            <NotificationCard 
+                key={notification.notificationId} 
+                notification={notification} 
+                onSelect={handleReaded} 
+            />
           ))}
         </ul>
       )}

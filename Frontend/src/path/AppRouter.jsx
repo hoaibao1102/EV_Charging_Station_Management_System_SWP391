@@ -34,7 +34,6 @@ import Vehicles from "../pages/profileDriver/Vehicles.jsx";
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import ManagementStation from "../pages/admin/ManagementStation.jsx";
 import ManagementUser from "../pages/admin/ManagementUser.jsx";
-import BusinessStatistics from "../pages/admin/BusinessStatistics.jsx";
 import ManagementAccident from "../pages/admin/ManagementAccident.jsx";
 import ManagementCharger from "../pages/admin/ManagementCharger.jsx";
 import ManagementChargingPoint from "../pages/admin/ManagementChargingPoint.jsx";
@@ -98,10 +97,6 @@ const AppRouter = () => {
             <Route
               path={paths.chargerManagement}
               element={<ManagementCharger />}
-            />
-            <Route
-              path={paths.businessStatistics}
-              element={<BusinessStatistics />}
             />
             <Route
               path={paths.accidentReports}
