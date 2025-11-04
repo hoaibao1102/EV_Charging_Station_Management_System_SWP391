@@ -1,6 +1,13 @@
 import Nav from 'react-bootstrap/Nav';
 import { useEffect, useState, useMemo } from 'react';
-import { getAllUsersApi, statusStaffApi, unbanDriverApi } from '../../api/admin.js';
+import { 
+  getAllUsersApi, 
+  statusStaffApi, 
+  unbanDriverApi, 
+  getStaffs_UserApi, 
+  getStaffs_StationApi // <-- 1. IMPORT THÊM API
+} from '../../api/admin.js';
+import { getAllStations } from '../../api/stationApi.js'; // <-- 2. IMPORT THÊM API
 import Table from 'react-bootstrap/Table';
 import AddStaffForm from '../../components/admin/AddStaffForm.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +15,7 @@ import paths from '../../path/paths.jsx';
 import './ManagementUser.css';
 import Header from '../../components/admin/Header.jsx';
 import SelectStationForm from '../../components/admin/SelectStationForm.jsx';
+import { toast } from 'react-toastify';
 
 export default function ManagementUser() {
   const navigator = useNavigate();
@@ -23,27 +31,72 @@ export default function ManagementUser() {
   const [showSelectStationForm, setShowSelectStationForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [staffsUserData, setStaffsUserData] = useState([]);
+
+  // --- 3. THÊM STATE CHO DỮ LIỆU MỚI ---
+  const [staffsStationData, setStaffsStationData] = useState([]);
+  const [stations, setStations] = useState([]);
+  // ----------------------------------------
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchAllData = async () => {
       try {
-        const response = await getAllUsersApi();
-        if (response.success) {
-          setUsersList(response.data); 
+        console.log('Starting to fetch all data...');
+        // 1. Chạy tất cả các promise song song
+        const [
+          usersResponse,
+          staffsUserResponse,
+          staffsStationResponse,
+          stationsResponse
+        ] = await Promise.all([
+          getAllUsersApi(),
+          getStaffs_UserApi(),
+          getStaffs_StationApi(),
+          getAllStations()
+        ]);
+
+        // 2. Cập nhật TẤT CẢ state cùng một lúc (hoặc gần như cùng lúc)
+        if (usersResponse.success) {
+          setUsersList(usersResponse.data);
+        } else {
+          console.error('Failed to fetch users');
         }
+
+        if (staffsUserResponse.success) {
+          setStaffsUserData(staffsUserResponse.data);
+          // Thêm log để kiểm tra
+          console.log('Fetched staffs-user data:', staffsUserResponse.data);
+        } else {
+          console.error('Failed to fetch staffs-user data');
+        }
+
+        if (staffsStationResponse.success) {
+          setStaffsStationData(staffsStationResponse.data);
+          // Thêm log để kiểm tra
+          console.log('Fetched staffs-station data:', staffsStationResponse.data);
+        } else {
+          console.error('Failed to fetch staffs-station data');
+        }
+
+        if (stationsResponse.success) {
+          setStations(stationsResponse.data);
+          // Thêm log để kiểm tra
+          console.log('Fetched stations data:', stationsResponse.data);
+        } else {
+          console.error('Failed to fetch stations');
+        }
+
+        console.log('All data fetched and state updated.');
+
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching data with Promise.all:', error);
       }
     };
-    fetchUsers();
-  }, [loading]);
+    fetchAllData();
+  }, [loading]); 
 
   const handleSelect = (selectedKey) => {
     setActiveTab(selectedKey);
-  };
-
-  const handleSetLoading = () => {
-    setLoading(pre => !pre);
   };
 
   const handleSearchChange = (e) => {
@@ -58,6 +111,19 @@ export default function ManagementUser() {
     setShowAddStaffForm(false);
     setShowSelectStationForm(false);
     setSelectedStaff(null);
+  };
+
+  // Hàm này ĐÓNG form VÀ TẢI LẠI DỮ LIỆU (dùng khi submit THÀNH CÔNG)
+  const handleActionSuccess = () => {
+    setShowAddStaffForm(false);
+    setShowSelectStationForm(false);
+    setSelectedStaff(null);
+    
+    // 2. THÊM MỘT ĐỘ TRỄ NHỎ để đảm bảo database đã cập nhật
+    setTimeout(() => {
+      setLoading(pre => !pre); // Trigger useEffect refetch
+      console.log('Refetching data after success...');
+    }, 1000); 
   };
 
   // Tính toán thống kê 
@@ -85,6 +151,27 @@ export default function ManagementUser() {
 
     return filtered;
   }, [usersList, activeTab, searchTerm]);
+  
+  // --- 6. HÀM LOGIC ĐỂ LẤY TÊN TRẠM TỪ USERID ---
+  const getStationNameByUserId = (userId) => {
+    try {
+      // 1. Từ userId -> staffId (qua bảng staffsUserData)
+      const staffUser = staffsUserData.find(su => su.userId === userId);
+      if (!staffUser || !staffUser.staffId) return null;
+  
+      // 2. Từ staffId -> stationId (qua bảng staffsStationData)
+      const staffStation = staffsStationData.find(ss => ss.staffId === staffUser.staffId);
+      if (!staffStation || !staffStation.stationId) return null;
+  
+      // 3. Từ stationId -> stationName (qua bảng stations)
+      const station = stations.find(s => s.stationId === staffStation.stationId);
+      return station ? station.stationName : null;
+    } catch (e) {
+      console.error("Error finding station name:", e);
+      return null;
+    }
+  };
+  // -----------------------------------------------
 
   const handleStatusStaff = async (staffId, status) => {
     const confirmed = window.confirm(`Bạn có chắc chắn muốn ${status === 'BANNED' ? 'xóa' : 'kích hoạt lại'} nhân viên này?`);
@@ -100,11 +187,9 @@ export default function ManagementUser() {
   };
 
   const handleTransferStaff = (staff) => {
-    const confirmed = window.confirm('Bạn có chắc chắn muốn chuyển công tác nhân viên này?');
-    if (confirmed) {
-      setSelectedStaff(staff);
-      setShowSelectStationForm(true);
-    }
+    toast.info('Bạn có thể chuyển công tác nhân viên này');
+    setSelectedStaff(staff);
+    setShowSelectStationForm(true);
   }; 
 
   const handleDriverUnblock = async (driverId) => {
@@ -120,11 +205,10 @@ export default function ManagementUser() {
     }
   };
 
-
   return (
     <>
-      {showSelectStationForm && <SelectStationForm onClose={handleCloseForm} onAddSuccess={handleSetLoading} staff={selectedStaff} />}
-      {showAddStaffForm && <AddStaffForm onClose={handleCloseForm} onAddSuccess={handleSetLoading} />}
+      {showSelectStationForm && <SelectStationForm onClose={handleCloseForm} onAddSuccess={handleActionSuccess} staff={selectedStaff} stations={stations} staffsStationData={staffsStationData}/>}
+      {showAddStaffForm && <AddStaffForm onClose={handleCloseForm} onAddSuccess={handleActionSuccess} />}
       {!showAddStaffForm && !showSelectStationForm && (
         <div className="management-user-container">
           {/* Header Section */}
@@ -199,43 +283,60 @@ export default function ManagementUser() {
                 </thead>
                 <tbody> 
                   {displayedUsers.length > 0 ? (
-                    displayedUsers.map((user, index) => (
-                      <tr key={user.phoneNumber || index}>
-                        <td>{user.name}</td>
-                        <td>{user.roleName === 'STAFF'? 'NHÂN VIÊN' : user.roleName === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI XẾ'}</td>
-                        <td>{user.phoneNumber}</td>
-                        <td>{user.email}</td>
-                        <td>{user.address}</td>
-                        <td>{user.dateOfBirth}</td>
-                        <td>{user.gender === 'M' ? 'Nam' : 'Nữ'}</td>
-                        <td>
-                          {user.roleName === 'STAFF' && user.status === 'ACTIVE' &&(
-                            <div className="action-buttons">
-                              <button className="btn-delete" onClick={() => handleStatusStaff(user.userId, 'BANNED')}>
-                                Xóa
-                              </button> 
-                              <button className="btn-transfer" onClick={() => handleTransferStaff(user)}>
-                                Công tác
-                              </button> 
-                            </div>
-                          )}
-                          {user.roleName === 'STAFF' && user.status === 'BANNED' &&(
-                            <div className="action-buttons">
-                              <button className="btn-delete" onClick={() => handleStatusStaff(user.userId , 'ACTIVE')}>
-                                Quay lại làm việc
-                              </button> 
-                            </div>
-                          )}
-                          {user.roleName === 'DRIVER' && user.status === 'BANNED' && (
-                            <div className="action-buttons">
-                              <button className="btn-unblock" onClick={() => handleDriverUnblock(user.userId)}>
-                                Gỡ lệnh khóa tài khoản
-                              </button> 
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )) 
+                    displayedUsers.map((user, index) => {
+                      
+                      // --- 7. GỌI HÀM HELPER TRƯỚC KHI RENDER ---
+                      const stationName = user.roleName === 'STAFF' 
+                                          ? getStationNameByUserId(user.userId) 
+                                          : null;
+
+                      return (
+                        <tr key={user.phoneNumber || index}>
+                          <td>{user.name}</td>
+                          
+                          {/* --- 8. CẬP NHẬT HIỂN THỊ --- */}
+                          <td>
+                            {user.roleName === 'STAFF' 
+                              ? `NHÂN VIÊN ${stationName ? `(${stationName})` : ''}` 
+                              : user.roleName === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI XẾ'
+                            }
+                          </td>
+                          {/* --------------------------- */}
+
+                          <td>{user.phoneNumber}</td>
+                          <td>{user.email}</td>
+                          <td>{user.address}</td>
+                          <td>{user.dateOfBirth}</td>
+                          <td>{user.gender === 'M' ? 'Nam' : 'Nữ'}</td>
+                          <td>
+                            {user.roleName === 'STAFF' && user.status === 'ACTIVE' &&(
+                              <div className="action-buttons">
+                                <button className="btn-delete" onClick={() => handleStatusStaff(user.userId, 'BANNED')}>
+                                  Xóa
+                                </button> 
+                                <button className="btn-transfer" onClick={() => handleTransferStaff(staffsUserData.find(s => s.userId === user.userId))}>
+                                  Công tác
+                                </button> 
+                              </div>
+                            )}
+                            {user.roleName === 'STAFF' && user.status === 'BANNED' &&(
+                              <div className="action-buttons">
+                                <button className="btn-delete" onClick={() => handleStatusStaff(user.userId , 'ACTIVE')}>
+                                  Quay lại làm việc
+                                </button> 
+                              </div>
+                            )}
+                            {user.roleName === 'DRIVER' && user.status === 'BANNED' && (
+                              <div className="action-buttons">
+                                <button className="btn-unblock" onClick={() => handleDriverUnblock(user.userId)}>
+                                  Gỡ lệnh khóa tài khoản
+                                </button> 
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    }) 
                   ) : (
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>
