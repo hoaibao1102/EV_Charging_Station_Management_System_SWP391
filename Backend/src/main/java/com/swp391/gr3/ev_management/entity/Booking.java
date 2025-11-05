@@ -64,4 +64,7 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
     private List<BookingSlot> bookingSlots;
+
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+    private List<BookingSlotLog> bookingSlotsLog;
 }
