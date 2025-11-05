@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
+import com.swp391.gr3.ev_management.DTO.response.PaymentMethodResponse;
 import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.PaymentType;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,5 +62,15 @@ public class PaymentMethodServiceImpl implements PaymentMethodService{
         existing.setExpiryDate(expiryDate);
 
         return paymentMethodRepository.save(existing);
+    }
+
+    @Override
+    public List<PaymentMethodResponse> getAllPaymentMethods() {
+        return paymentMethodRepository.findAll().stream().map(pm -> PaymentMethodResponse.builder()
+                .methodId(pm.getMethodId())
+                .methodType(pm.getMethodType())
+                .provider(pm.getProvider())
+                .accountNo(pm.getAccountNo())
+                .build()).toList();
     }
 }
