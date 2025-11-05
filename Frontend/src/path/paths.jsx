@@ -19,6 +19,8 @@ export const paths = {
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
   stationDetail: "/stations/:id",
+  chargingSession: "/chargingSession",
+  payment: "/payment",
 
   //admin
   adminDashboard: "/admin",
@@ -26,7 +28,6 @@ export const paths = {
   stationManagement: "/admin/manage-stations",
   modelManagement: "/admin/manage-models",
   chargerManagement: "/admin/manage-chargers",
-  businessStatistics: "/admin/business-statistics",
   accidentReports: "/admin/accident-reports",
   chargingPriceConfiguration: "/admin/charging-price-configuration",
   chargingPointManagement: "/admin/manage-charging-points",

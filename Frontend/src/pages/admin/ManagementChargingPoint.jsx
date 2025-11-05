@@ -8,7 +8,7 @@ import {getAllChargingPoints} from '../../api/chargingPointApi.js';
 import { updateChargingPointStatus} from '../../api/chargingPointApi.js';
 import AddChargingPointForm from '../../components/admin/AddChargingPointForm.jsx';
 
-export const statusChargingPoint = {
+const statusChargingPoint = {
     available: 'AVAILABLE', 
     occupied: 'OCCUPIED', 
     out_of_service: 'OUT_OF_SERVICE', 
@@ -237,6 +237,7 @@ export default function ManagementChargingPoint() {
 
                         {/* TRƯỜNG HỢP 2: Đang bảo trì */}
                         {point.status === status.maintenance && (
+                          <>
                           <div className="action-buttons">
                             <button 
                               className="btn-unblock" 
@@ -244,10 +245,19 @@ export default function ManagementChargingPoint() {
                               KÍCH HOẠT
                             </button>
                           </div>
+                          <div className="action-buttons">
+                              <button 
+                                className="btn-delete" 
+                                onClick={() => handleStatusChargingPoint(point.pointId, status.out_of_service)}>
+                                NGƯNG HOẠT ĐỘNG
+                              </button>
+                            </div>
+                            </>
                         )}
 
                         {/* TRƯỜNG HỢP 3: Đang ngưng hoạt động */}
                         {point.status === status.out_of_service && (
+                          <>
                           <div className="action-buttons">
                             <button 
                               className="btn-unblock" 
@@ -255,8 +265,17 @@ export default function ManagementChargingPoint() {
                               KÍCH HOẠT
                             </button>
                           </div>
+                          <div className="action-buttons">
+                              <button 
+                                className="btn-transfer" 
+                                onClick={() => handleStatusChargingPoint(point.pointId, status.maintenance)}>
+                                BẢO TRÌ
+                              </button>
+                            </div>
+                            </>
                         )}
                       </td>
+                      
                     </tr>
                   ))
                 ) : (

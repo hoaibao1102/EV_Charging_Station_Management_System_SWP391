@@ -12,7 +12,11 @@ export const getConnectorTypes = () => {
 //update connector type
 export const updateConnectorTypeApi = (connectorTypeId, connectorTypeData) => {
   return handleApiCall(
-    () => apiClient.put(`/api/connector-types/${connectorTypeId}`, connectorTypeData),
+    () =>
+      apiClient.put(
+        `/api/connector-types/${connectorTypeId}`,
+        connectorTypeData
+      ),
     "Cập nhật thông tin loại cổng sạc thất bại"
   );
 };
@@ -58,7 +62,7 @@ export const updateStationApi = (stationId, stationData) => {
     () => apiClient.put(`/api/charging-stations/${stationId}`, stationData),
     "Cập nhật thông tin trạm sạc thất bại"
   );
-}
+};
 
 //lay het thong tin slot config
 export const getAllSlotConfigs = () => {
@@ -66,7 +70,7 @@ export const getAllSlotConfigs = () => {
     () => apiClient.get("/api/slot-configs"),
     "Lấy danh sách cấu hình slot thất bại"
   );
-}
+};
 
 //them cau hinh moi cho slot
 export const addSlotConfigApi = (slotConfigData) => {
@@ -75,8 +79,6 @@ export const addSlotConfigApi = (slotConfigData) => {
     "Thêm mới cấu hình slot thất bại"
   );
 };
-
-
 
 // ====== Lấy thông tin trạm theo ID ======
 export const getStationById = (id) => {
@@ -157,6 +159,14 @@ export const createBooking = (payload) => {
   );
 };
 
+// ====== Hủy booking ======
+export const cancelBooking = (bookingId) => {
+  return handleApiCall(
+    () => apiClient.put(`/api/bookings/${bookingId}/cancel`),
+    "Hủy booking thất bại"
+  );
+};
+
 // ====== Khởi động phiên sạc ======
 export const startChargingSession = (payload) => {
   return handleApiCall(
@@ -170,6 +180,22 @@ export const startChargingSession = (payload) => {
   );
 };
 
+// ====== Lấy phiên sạc hiện tại ======
+export const getCurrentChargingSession = () => {
+  return handleApiCall(
+    () => apiClient.get("/api/charging-sessions/charging-sessions/current"),
+    "Lấy thông tin phiên sạc hiện tại thất bại"
+  );
+};
+
+// ====== Dừng phiên sạc (driver) ======
+export const stopChargingSession = (sessionId) => {
+  return handleApiCall(
+    () => apiClient.post("/api/charging-sessions/driver-stop", { sessionId }),
+    "Dừng phiên sạc thất bại"
+  );
+};
+
 // ====== Export default object ======
 export const stationAPI = {
   getConnectorTypes,
@@ -180,5 +206,8 @@ export const stationAPI = {
   getTemplate,
   createBooking,
   confirmBooking,
+  cancelBooking,
   startChargingSession,
+  getCurrentChargingSession,
+  stopChargingSession,
 };
