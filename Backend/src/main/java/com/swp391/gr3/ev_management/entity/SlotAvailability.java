@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "SlotAvailability")
@@ -32,8 +33,8 @@ public class SlotAvailability {
     @Enumerated(EnumType.STRING)
     private SlotStatus status;
 
-    @OneToOne(mappedBy = "slot", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private BookingSlot bookingSlot;
+    @OneToMany(mappedBy = "slot", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<BookingSlot> bookingSlots;
 
     @Column(name = "Date")
     private LocalDateTime date;
