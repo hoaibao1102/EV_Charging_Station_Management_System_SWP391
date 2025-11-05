@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
+import com.swp391.gr3.ev_management.DTO.response.PaymentMethodResponse;
 import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.PaymentType;
@@ -9,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/payment-methods")
@@ -37,5 +39,10 @@ public class PaymentMethodController {
                                                 @RequestParam String accountNo,
                                                 @RequestParam(required = false) LocalDate expiryDate) {
         return ResponseEntity.ok(paymentMethodService.updatePaymentMethod(id, methodType, provider, accountNo, expiryDate));
+    }
+
+    @GetMapping()
+    public ResponseEntity<List<PaymentMethodResponse>> getAll() {
+        return ResponseEntity.ok(paymentMethodService.getAllPaymentMethods());
     }
 }

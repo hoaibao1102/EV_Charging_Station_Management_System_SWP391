@@ -20,6 +20,7 @@ public class ViewCharSessionResponse {
     private double energyKWh;
     private int durationMinutes;
     private Integer initialSoc;
+    private Integer finalSoc;
     private double cost;
     private String currency;
     private ChargingSessionStatus status;
