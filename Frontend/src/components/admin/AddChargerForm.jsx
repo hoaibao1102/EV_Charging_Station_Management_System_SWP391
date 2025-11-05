@@ -10,7 +10,7 @@ import {addConnectorTypeApi, updateConnectorTypeApi} from '../../api/stationApi.
 import { toast } from 'react-toastify';
 
 
-export default function AddChargerForm({ onClose, onAddSuccess, charger }) {
+export default function AddChargerForm({ onClose, charger }) {
   const initialFormData = {
   code: charger ? charger.code : '',
   mode: charger ? charger.mode : '',
@@ -84,7 +84,6 @@ const initialFormErrors = {
     const response = await updateConnectorTypeApi(charger.connectorTypeId, formData);
     console.log("DATA:", formData);
     if (response.success) {
-      onAddSuccess();
       onClose();
       toast.success("Cập nhật cổng sạc thành công.");
     } else {
@@ -98,7 +97,6 @@ const initialFormErrors = {
       const response = await addConnectorTypeApi(formData);
       console.log("DATA:", formData);
       if (response.success) {
-        onAddSuccess();
         onClose();
         toast.success("Thêm mới cổng sạc thành công.");
       } else {
@@ -202,8 +200,8 @@ const initialFormErrors = {
           required
         >
           <option value="" disabled>Chọn trạng thái ban đầu...</option>
-          <option selected={charger?.isDeprecated === false} value="false"> Mẫu mới </option>
-          <option selected={charger?.isDeprecated === true} value="true"> Đã lỗi thời </option>
+          <option selected={charger?.isDeprecated === false} value="false"> Đang hoạt động </option>
+          <option selected={charger?.isDeprecated === true} value="true"> Không còn phục vụ </option>
         </Form.Select>
         <Form.Control.Feedback type="invalid">
           {formErrors.isDeprecated}

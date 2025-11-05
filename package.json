@@ -1,4 +1,13 @@
 {
+  "name": "ev-charging-station-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "cd Frontend && npm run dev",
+    "build": "cd Frontend && npm run build",
+    "preview": "cd Frontend && npm run preview",
+    "lint": "cd Frontend && npm run lint"
+  },
   "dependencies": {
     "@zxing/library": "^0.21.3",
     "lucide-react": "^0.546.0"

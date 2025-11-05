@@ -46,9 +46,6 @@ export default function ManagementCharger() {
     // ❌ Đã xóa setCurrentPage(1); 
   };
 
-  const handleSetLoading = () => {
-    setLoading(pre => !pre);
-  };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value.toLowerCase());
@@ -67,7 +64,7 @@ export default function ManagementCharger() {
 
   const handleCloseForm = () => {
     setShowAddChargerForm(false);
-    handleSetLoading();
+    setLoading(pre => !pre);
   };
 
   // Tính toán thống kê 
@@ -103,7 +100,7 @@ export default function ManagementCharger() {
  
   return (
     <>
-      {showAddChargerForm && <AddChargerForm onClose={handleCloseForm} onAddSuccess={handleSetLoading} charger={currentCharger} />}
+      {showAddChargerForm && <AddChargerForm onClose={handleCloseForm} charger={currentCharger} />}
       {!showAddChargerForm && (
         <div className="management-user-container">
           {/* Header Section */}
@@ -124,11 +121,11 @@ export default function ManagementCharger() {
               <strong>{totalChargers}</strong>
             </li>
             <li className="stat-card">
-              Cổng sạc hiện đại
+              Cổng sạc đang hoạt động
               <strong>{totalModern}</strong>
             </li>
             <li className="stat-card">
-              Cổng sạc lỗi thời
+              Cổng sạc không còn phục vụ
               <strong>{totalDeprecated}</strong>
             </li>
           </ul>
@@ -144,10 +141,10 @@ export default function ManagementCharger() {
                     <Nav.Link eventKey="allChargers">Tất cả cổng sạc</Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
-                    <Nav.Link eventKey="true">Cổng sạc hiện đại</Nav.Link>
+                    <Nav.Link eventKey="true">Cổng sạc đang hoạt động</Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
-                    <Nav.Link eventKey="false">Cổng sạc lỗi thời</Nav.Link>
+                    <Nav.Link eventKey="false">Cổng sạc không còn phục vụ</Nav.Link>
                   </Nav.Item>
                 </Nav>
                 
@@ -180,7 +177,7 @@ export default function ManagementCharger() {
                         <td>{charger.code}</td>
                         <td>{charger.mode}</td>
                         <td>{charger.defaultMaxPowerKW} kW</td>
-                        <td>{charger.isDeprecated ? 'Đã lỗi thời' : 'Mới'}</td>
+                        <td>{charger.isDeprecated ? 'Không còn phục vụ' : 'Đang hoạt động'}</td>
                         <td>
                           <button className="btn-edit" onClick={() => handleEditCharger(charger)}>
                             Chỉnh sửa

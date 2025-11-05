@@ -1,6 +1,5 @@
 import userIcon from "../../assets/icon/admin/manage_user.png";
 import modelIcon from "../../assets/icon/admin/model_car.png";
-import statisticIcon from "../../assets/icon/admin/statistic.png";
 import dashBoardIcon from "../../assets/icon/admin/ad_dashboard.png";
 import accident from "../../assets/icon/admin/accident.png";
 import station from "../../assets/icon/admin/ad_charging-station.png";
@@ -62,11 +61,6 @@ export default function AdminNavigate() {
       path: paths.chargingPriceConfiguration,
       icon: price,
       label: "Cấu hình giá sạc",
-    },
-    {
-      path: paths.businessStatistics,
-      icon: statisticIcon,
-      label: "Thống kê doanh thu",
     },
     {
       path: paths.accidentReports,

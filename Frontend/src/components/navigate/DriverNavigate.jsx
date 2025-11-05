@@ -6,7 +6,7 @@ import stationsIcon from "../../assets/logo/chargingStation.png";
 import bookingIcon from "../../assets/logo/booking.png";
 import profileIcon from "../../assets/logo/user.png";
 import paths from "../../path/paths.jsx";
-import {isAuthenticated} from "../../utils/authUtils.js";
+import { isAuthenticated } from "../../utils/authUtils.js";
 import classed from "../../assets/css/Main.module.css";
 import { useSelector } from "react-redux";
 
@@ -32,9 +32,9 @@ export default function AppNavigation() {
       label: "Trạm sạc",
     },
     {
-      path: paths.booking,
+      path: paths.chargingSession,
       icon: bookingIcon,
-      label: "Đặt chỗ",
+      label: "Phiên sạc",
     },
     {
       path: paths.profile,
@@ -66,7 +66,14 @@ export default function AppNavigation() {
             </NavLink>
           );
         })}
-      {!isLoggedIn && <button className={classed.button} onClick={() => navigate(paths.login)}>ĐĂNG NHẬP</button>}
+        {!isLoggedIn && (
+          <button
+            className={classed.button}
+            onClick={() => navigate(paths.login)}
+          >
+            ĐĂNG NHẬP
+          </button>
+        )}
       </div>
     </nav>
   );

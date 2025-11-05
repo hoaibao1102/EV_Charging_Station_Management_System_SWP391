@@ -58,10 +58,10 @@ public class UploadController {
             // Trả về các thông tin cần thiết cho frontend
             Map<String, Object> response = new HashMap<>();
             response.put("signature", signature);
+            response.put("folder", "vehicle_models"); 
             response.put("timestamp", timestamp);
             response.put("api_key", apiKey);
             response.put("cloud_name", cloudName);
-            response.put("folder", "vehicle_models"); 
 
             return ResponseEntity.ok(response);
 
