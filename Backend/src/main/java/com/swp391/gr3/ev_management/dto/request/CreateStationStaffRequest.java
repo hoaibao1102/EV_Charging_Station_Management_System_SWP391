@@ -1,10 +1,8 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
-import com.swp391.gr3.ev_management.enums.StaffStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 
 @Data
 public class CreateStationStaffRequest {

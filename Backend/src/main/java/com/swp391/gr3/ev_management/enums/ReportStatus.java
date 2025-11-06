@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.enums;
 
-public enum IncidentStatus {
+public enum ReportStatus {
     REPORTED,
     RESOLVED
 }
