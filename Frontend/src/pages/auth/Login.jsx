@@ -1,7 +1,7 @@
 import "./Login.css";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogin } from "../../hooks/useAuth";
 
@@ -50,10 +50,10 @@ const Login = () => {
       const updateTimer = () => {
         const now = Date.now();
         const remainingMs = Math.max(0, lockEndTime - now);
-        
+
         const minutes = Math.floor(remainingMs / 60000);
         const seconds = Math.floor((remainingMs % 60000) / 1000);
-        
+
         setCountdown(`${minutes}:${seconds.toString().padStart(2, "0")}`);
 
         if (remainingMs === 0) {
@@ -68,7 +68,7 @@ const Login = () => {
         }
       };
 
-      updateTimer(); 
+      updateTimer();
       intervalId = setInterval(updateTimer, 1000);
     }
 
@@ -110,20 +110,19 @@ const Login = () => {
         `${message || "Đăng nhập thất bại!"} (${newFailedAttempts}/3)`
       );
 
-      
       setFailedAttempts(newFailedAttempts);
       localStorage.setItem("loginFailedAttempts", newFailedAttempts.toString());
 
       if (newFailedAttempts >= 3) {
         setIsLocked(true);
-        const lockEnd = Date.now() + 3 * 60 * 1000; 
-        setLockEndTime(lockEnd); 
+        const lockEnd = Date.now() + 3 * 60 * 1000;
+        setLockEndTime(lockEnd);
         localStorage.setItem("loginLockEndTime", lockEnd.toString());
 
         setTimeout(() => {
           toast.warn("Tài khoản bị khóa trong 3 phút.");
         }, 2000);
-      } 
+      }
     }
   };
 

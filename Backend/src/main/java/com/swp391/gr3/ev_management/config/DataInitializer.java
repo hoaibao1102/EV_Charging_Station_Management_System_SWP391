@@ -65,6 +65,7 @@ public class DataInitializer implements CommandLineRunner {
             initTariffs();            // seed bảng Tariff
             initPaymentMethods();     // seed bảng PaymentMethod
 
+
             log.info("✅ Data initialization completed.");
         } catch (Exception ex) {
             log.error("❌ Data initialization failed: {}", ex.getMessage(), ex);
@@ -330,6 +331,7 @@ public class DataInitializer implements CommandLineRunner {
         createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "vinfast-vfe34",   "CCS2",42, VehicleModelStatus.ACTIVE);
         createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "nissan-leaf",    "CHADEMO",40, VehicleModelStatus.ACTIVE);
         createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "mitsubishi-outlander", "TYPE1",23.8, VehicleModelStatus.ACTIVE);
+
     }
 
     private void createModelIfNotExists(String brand, String model, int year, String img, String imagePublicId, String connectorCode, double batteryCapacityKWh, VehicleModelStatus status) {

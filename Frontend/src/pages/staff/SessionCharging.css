@@ -4,6 +4,10 @@
   --primary: #00bfa6;
   --muted: #6b7280;
   --surface: #f8fafb;
+  --accent: #06b6d4;
+  --danger: #ef4444;
+  --success: #10b981;
+  --card-shadow: 0 8px 28px rgba(2, 6, 23, 0.06);
 }
 
 .session-container {
@@ -29,13 +33,14 @@
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(90deg, var(--accent), var(--primary));
   color: white;
   border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 700;
+  box-shadow: 0 6px 20px rgba(3, 105, 112, 0.12);
 }
 
 .session-section {
@@ -49,9 +54,9 @@
 .table-wrap {
   overflow: auto;
   background: white;
-  padding: 12px;
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
 }
 .session-table {
   width: 100%;
@@ -60,20 +65,81 @@
 }
 .session-table th,
 .session-table td {
-  padding: 10px 12px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid rgba(15, 23, 42, 0.04);
 }
 .session-table thead th {
-  background: #fbfffe;
+  background: linear-gradient(180deg, #fbfffe, #f7fffc);
   font-weight: 700;
   color: #0f172a;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+.session-table thead th:first-child {
+  border-top-left-radius: 8px;
+}
+.session-table thead th:last-child {
+  border-top-right-radius: 8px;
 }
 .row-ongoing {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.04), transparent);
 }
 .row-completed {
   background: transparent;
+}
+
+.session-table tbody tr:hover {
+  transform: translateY(-2px);
+  background: rgba(6, 182, 167, 0.02);
+}
+
+.no-sessions {
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  color: var(--muted);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #04403b;
+}
+.status-in_progress {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+.status-charging {
+  background: rgba(6, 182, 167, 0.12);
+  color: var(--accent);
+}
+.status-active {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+}
+.status-ongoing {
+  background: rgba(99, 102, 241, 0.08);
+  color: #6d28d9;
+}
+.status-completed {
+  background: rgba(107, 114, 128, 0.06);
+  color: var(--muted);
+}
+.status-default {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+.table-meta {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 8px;
 }
 
 .session-card {
