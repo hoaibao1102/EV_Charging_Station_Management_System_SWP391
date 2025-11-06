@@ -1,76 +1,166 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SessionCharging.css";
 import paths from "../../path/paths.jsx";
+import { stationAPI } from "../../api/stationApi.js";
 
-const SAMPLE_SESSIONS = [
-  // ongoing (status: charging)
-  {
-    sessionid: 1001,
-    cost: 12.5,
-    created_at: "2025-10-28T08:00:00",
-    duration_minutes: 25,
-    end_time: null,
-    energykwh: 8.2,
-    final_soc: null,
-    initial_soc: 20,
-    start_time: "2025-10-28T08:05:00",
-    status: "charging",
-    updated_at: "2025-10-28T08:30:00",
-    bookingid: 501,
-  },
-  {
-    sessionid: 1002,
-    cost: 3.0,
-    created_at: "2025-10-28T09:15:00",
-    duration_minutes: 10,
-    end_time: null,
-    energykwh: 2.1,
-    final_soc: null,
-    initial_soc: 60,
-    start_time: "2025-10-28T09:18:00",
-    status: "charging",
-    updated_at: "2025-10-28T09:25:00",
-    bookingid: 502,
-  },
-
-  // completed
-  {
-    sessionid: 9001,
-    cost: 25.0,
-    created_at: "2025-10-27T12:00:00",
-    duration_minutes: 120,
-    end_time: "2025-10-27T14:00:00",
-    energykwh: 45.3,
-    final_soc: 95,
-    initial_soc: 10,
-    start_time: "2025-10-27T12:00:00",
-    status: "completed",
-    updated_at: "2025-10-27T14:05:00",
-    bookingid: 401,
-  },
-  {
-    sessionid: 9002,
-    cost: 7.5,
-    created_at: "2025-10-26T18:30:00",
-    duration_minutes: 30,
-    end_time: "2025-10-26T19:00:00",
-    energykwh: 12.0,
-    final_soc: 80,
-    initial_soc: 55,
-    start_time: "2025-10-26T18:30:00",
-    status: "completed",
-    updated_at: "2025-10-26T19:02:00",
-    bookingid: 402,
-  },
-];
+const POLL_MS = 150000; // 5 minutes
 
 export default function SessionCharging() {
   const navigate = useNavigate();
 
-  // Split sessions: ongoing first (status = charging), then completed
-  const ongoing = SAMPLE_SESSIONS.filter((s) => s.status === "charging");
-  const completed = SAMPLE_SESSIONS.filter((s) => s.status !== "charging");
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [stationId, setStationId] = useState(null);
+  const pollingRef = useRef(null);
+  const isFetchingRef = useRef(false);
+
+  const loadSessionsForStation = async (sid) => {
+    if (!sid) return;
+    try {
+      if (isFetchingRef.current) return; // avoid overlapping
+      isFetchingRef.current = true;
+      setLoading(true);
+      const res = await stationAPI.getChargingSessionsByStation(sid);
+      if (!res || res.success === false) {
+        // only update if different
+        if (sessions.length !== 0) setSessions([]);
+        return;
+      }
+      const data = res.data ?? res;
+      const arr = Array.isArray(data) ? data : [data];
+      // shallow compare lengths and JSON as fallback to avoid unnecessary re-renders
+      const prev = sessions;
+      const sameLength = prev.length === arr.length;
+      const sameContent =
+        sameLength && JSON.stringify(prev) === JSON.stringify(arr);
+      if (!sameContent) setSessions(arr);
+    } catch (err) {
+      console.error("Error loading sessions for station:", err);
+      if (sessions.length !== 0) setSessions([]);
+    } finally {
+      isFetchingRef.current = false;
+      setLoading(false);
+    }
+  };
+
+  // init: find stationId (localStorage or API) and load sessions once
+  useEffect(() => {
+    let mounted = true;
+    const init = async () => {
+      try {
+        const stored = localStorage.getItem("stationId");
+        if (stored) {
+          setStationId(stored);
+          try {
+            setLoading(true);
+            const r = await stationAPI.getChargingSessionsByStation(stored);
+            const d = r?.data ?? r;
+            const arr = Array.isArray(d) ? d : [d];
+            setSessions(arr);
+          } catch {
+            /* ignore init fetch errors */
+          } finally {
+            setLoading(false);
+          }
+          return;
+        }
+
+        const res = await stationAPI.getStationStaffMe();
+        const staff = res?.data?.data ?? res?.data ?? res;
+        const staffObj = Array.isArray(staff) ? staff[0] : staff;
+        const resolved =
+          staffObj?.stationId ??
+          staffObj?.station?.id ??
+          staffObj?.station_id ??
+          staffObj?.id ??
+          undefined;
+        if (resolved && mounted) {
+          localStorage.setItem("stationId", String(resolved));
+          setStationId(String(resolved));
+          try {
+            setLoading(true);
+            const r2 = await stationAPI.getChargingSessionsByStation(
+              String(resolved)
+            );
+            const d2 = r2?.data ?? r2;
+            const arr2 = Array.isArray(d2) ? d2 : [d2];
+            setSessions(arr2);
+          } catch {
+            /* ignore init fetch errors */
+          } finally {
+            setLoading(false);
+          }
+        }
+      } catch {
+        console.warn("Could not init stationStaff in SessionCharging");
+      }
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, []);
+
+  const isOngoingStatus = (s) => {
+    const st = String(s?.status ?? "").toUpperCase();
+    return (
+      st === "IN_PROGRESS" ||
+      st === "CHARGING" ||
+      st === "ACTIVE" ||
+      st === "ONGOING"
+    );
+  };
+
+  const ongoing = sessions.filter((s) => isOngoingStatus(s));
+  const completed = sessions.filter((s) => !isOngoingStatus(s));
+
+  // polling: when there is any ongoing session, poll every POLL_MS to refresh the list
+  // depend only on stationId and number of ongoing sessions to avoid effect churn
+  useEffect(() => {
+    const sid = stationId ?? localStorage.getItem("stationId");
+    if (!sid) return;
+
+    const ongoingCount = ongoing.length;
+
+    if (ongoingCount > 0) {
+      if (!pollingRef.current) {
+        // immediate refresh if not currently fetching
+        if (!isFetchingRef.current) loadSessionsForStation(sid);
+        pollingRef.current = setInterval(() => {
+          if (!isFetchingRef.current) loadSessionsForStation(sid);
+        }, POLL_MS);
+      }
+    } else {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stationId, ongoing.length]);
+
+  const formatDate = (raw) => {
+    if (!raw) return "-";
+    try {
+      return new Date(raw).toLocaleString();
+    } catch {
+      return String(raw);
+    }
+  };
 
   return (
     <div className="session-container">
@@ -90,89 +180,174 @@ export default function SessionCharging() {
         </div>
       </div>
 
+      <div className="table-meta">
+        Danh sách phiên sạc của trạm {stationId ?? "(chưa xác định)"}
+      </div>
+
+      {loading && (
+        <p style={{ marginTop: 8, color: "#666" }}>
+          Đang tải danh sách phiên sạc...
+        </p>
+      )}
+
       <section className="session-section">
         <h2>Đang sạc ({ongoing.length})</h2>
-        <div className="table-wrap">
-          <table className="session-table">
-            <thead>
-              <tr>
-                <th>sessionid</th>
-                <th>cost</th>
-                <th>start_time</th>
-                <th>duration_minutes</th>
-                <th>energykwh</th>
-                <th>initial_soc</th>
-                <th>final_soc</th>
-                <th>status</th>
-                <th>bookingid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ongoing.map((s) => (
-                <tr
-                  key={s.sessionid}
-                  className="row-ongoing"
-                  role="button"
-                  onClick={() =>
-                    navigate(paths.manageSessionChargingCreate, {
-                      state: { openCamera: true, bookingId: s.bookingid },
-                    })
-                  }
-                  style={{ cursor: "pointer" }}
-                  title={`Mở camera để quét/khởi động phiên cho booking ${s.bookingid}`}
-                >
-                  <td>{s.sessionid}</td>
-                  <td>{s.cost}</td>
-                  <td>{s.start_time}</td>
-                  <td>{s.duration_minutes}</td>
-                  <td>{s.energykwh}</td>
-                  <td>{s.initial_soc}</td>
-                  <td>{s.final_soc ?? "-"}</td>
-                  <td>{s.status}</td>
-                  <td>{s.bookingid}</td>
+        {ongoing.length === 0 ? (
+          <div className="no-sessions">Hiện không có phiên đang hoạt động</div>
+        ) : (
+          <div className="table-wrap">
+            <table className="session-table">
+              <thead>
+                <tr>
+                  <th>sessionId</th>
+                  <th>cost</th>
+                  <th>startTime</th>
+                  <th>durationMinutes</th>
+                  <th>energyKWh</th>
+                  <th>initialSoc</th>
+                  <th>finalSoc</th>
+                  <th>status</th>
+                  <th>bookingId</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {ongoing.map((s, idx) => {
+                  const sessionId =
+                    s?.sessionId ??
+                    s?.sessionid ??
+                    s?.session_id ??
+                    s?.id ??
+                    `${idx}`;
+                  const bookingId =
+                    s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
+                  const cost = s?.cost ?? 0;
+                  const startTime = formatDate(s?.startTime ?? s?.start_time);
+                  const durationMinutes =
+                    s?.durationMinutes ??
+                    s?.duration_minutes ??
+                    s?.duration ??
+                    0;
+                  const energyKWh =
+                    s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
+                  const initialSoc =
+                    s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
+                  const finalSoc =
+                    s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
+                  const status = s?.status ?? "";
+                  const statusKey = String(status)
+                    .toLowerCase()
+                    .replace(/\s+/g, "_");
+                  return (
+                    <tr
+                      key={sessionId}
+                      className="row-ongoing"
+                      role="button"
+                      onClick={() =>
+                        navigate(paths.manageSessionChargingCreate, {
+                          state: { openCamera: true, bookingId },
+                        })
+                      }
+                      style={{ cursor: "pointer" }}
+                      title={`Mở camera để quét/khởi động phiên cho booking ${bookingId}`}
+                    >
+                      <td>{sessionId}</td>
+                      <td>
+                        {Number(cost).toLocaleString()} {s?.currency ?? ""}
+                      </td>
+                      <td>{startTime}</td>
+                      <td>{durationMinutes}</td>
+                      <td>{energyKWh}</td>
+                      <td>{initialSoc}</td>
+                      <td>{finalSoc ?? "-"}</td>
+                      <td>
+                        <span className={`status-badge status-${statusKey}`}>
+                          {status}
+                        </span>
+                      </td>
+                      <td>{bookingId}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="session-section">
         <h2>Đã hoàn thành ({completed.length})</h2>
-        <div className="table-wrap">
-          <table className="session-table">
-            <thead>
-              <tr>
-                <th>sessionid</th>
-                <th>cost</th>
-                <th>start_time</th>
-                <th>end_time</th>
-                <th>duration_minutes</th>
-                <th>energykwh</th>
-                <th>initial_soc</th>
-                <th>final_soc</th>
-                <th>status</th>
-                <th>bookingid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {completed.map((s) => (
-                <tr key={s.sessionid} className="row-completed">
-                  <td>{s.sessionid}</td>
-                  <td>{s.cost}</td>
-                  <td>{s.start_time}</td>
-                  <td>{s.end_time ?? "-"}</td>
-                  <td>{s.duration_minutes}</td>
-                  <td>{s.energykwh}</td>
-                  <td>{s.initial_soc}</td>
-                  <td>{s.final_soc}</td>
-                  <td>{s.status}</td>
-                  <td>{s.bookingid}</td>
+        {completed.length === 0 ? (
+          <div className="no-sessions">Chưa có phiên sạc hoàn thành</div>
+        ) : (
+          <div className="table-wrap">
+            <table className="session-table">
+              <thead>
+                <tr>
+                  <th>sessionId</th>
+                  <th>cost</th>
+                  <th>startTime</th>
+                  <th>endTime</th>
+                  <th>durationMinutes</th>
+                  <th>energyKWh</th>
+                  <th>initialSoc</th>
+                  <th>finalSoc</th>
+                  <th>status</th>
+                  <th>bookingId</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {completed.map((s, idx) => {
+                  const sessionId =
+                    s?.sessionId ??
+                    s?.sessionid ??
+                    s?.session_id ??
+                    s?.id ??
+                    `${idx}`;
+                  const bookingId =
+                    s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
+                  const cost = s?.cost ?? 0;
+                  const startTime = formatDate(s?.startTime ?? s?.start_time);
+                  const endTime = formatDate(s?.endTime ?? s?.end_time);
+                  const durationMinutes =
+                    s?.durationMinutes ??
+                    s?.duration_minutes ??
+                    s?.duration ??
+                    0;
+                  const energyKWh =
+                    s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
+                  const initialSoc =
+                    s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
+                  const finalSoc =
+                    s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
+                  const status = s?.status ?? "";
+                  const statusKey = String(status)
+                    .toLowerCase()
+                    .replace(/\s+/g, "_");
+                  return (
+                    <tr key={sessionId} className="row-completed">
+                      <td>{sessionId}</td>
+                      <td>
+                        {Number(cost).toLocaleString()} {s?.currency ?? ""}
+                      </td>
+                      <td>{startTime}</td>
+                      <td>{endTime ?? "-"}</td>
+                      <td>{durationMinutes}</td>
+                      <td>{energyKWh}</td>
+                      <td>{initialSoc}</td>
+                      <td>{finalSoc}</td>
+                      <td>
+                        <span className={`status-badge status-${statusKey}`}>
+                          {status}
+                        </span>
+                      </td>
+                      <td>{bookingId}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
