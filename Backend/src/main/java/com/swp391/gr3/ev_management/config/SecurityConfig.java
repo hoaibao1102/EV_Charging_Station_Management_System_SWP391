@@ -3,11 +3,6 @@ package com.swp391.gr3.ev_management.config;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,6 +29,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.repository.UserRepository;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
