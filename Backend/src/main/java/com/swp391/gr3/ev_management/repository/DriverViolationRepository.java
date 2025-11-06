@@ -38,4 +38,7 @@ public interface DriverViolationRepository extends JpaRepository<DriverViolation
 
      //Lấy vi phạm theo driverId và status
     List<DriverViolation> findByDriver_DriverIdAndStatus(Long driverId, ViolationStatus status);
+
+    boolean existsByDriver_DriverIdAndDescriptionContaining(Long driverId, String description);
+
 }

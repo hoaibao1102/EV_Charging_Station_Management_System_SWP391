@@ -4,21 +4,18 @@ import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
 import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
 import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
+import com.swp391.gr3.ev_management.DTO.response.ChargingSessionBriefResponse;
 import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
+import com.swp391.gr3.ev_management.DTO.response.TransactionBriefResponse;
 import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
+import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
-import com.swp391.gr3.ev_management.entity.Driver;
-import com.swp391.gr3.ev_management.entity.User;
-import com.swp391.gr3.ev_management.entity.UserVehicle;
-import com.swp391.gr3.ev_management.entity.VehicleModel;
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import com.swp391.gr3.ev_management.enums.VehicleModelStatus;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
-import com.swp391.gr3.ev_management.repository.DriverRepository;
-import com.swp391.gr3.ev_management.repository.UserRepository;
-import com.swp391.gr3.ev_management.repository.UserVehicleRepository;
-import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
+import com.swp391.gr3.ev_management.mapper.DriverDataMapper;
+import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,6 +40,8 @@ public class DriverServiceImpl implements DriverService {
     private final VehicleModelRepository vehicleModelRepository;
     private final DriverMapper driverMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ChargingSessionRepository chargingSessionRepository;
+    private final TransactionRepository transactionRepository;
 
     // private static final Pattern PASSWORD_COMPLEXITY =
     //     Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{6,}$");
@@ -413,6 +412,26 @@ public class DriverServiceImpl implements DriverService {
 
         log.info("Vehicle status updated: {} -> {}", old, status);
         return driverMapper.toVehicleResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionBriefResponse> getMyTransactions(Long userId) {
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+
+        List<Transaction> txs = transactionRepository.findAllDeepGraphByDriverUserId(userId);
+        return DriverDataMapper.toTransactionBriefResponseList(txs);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChargingSessionBriefResponse> getMyChargingSessions(Long userId) {
+        Driver driver = driverRepository.findByUserIdWithUser(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+
+        List<ChargingSession> sessions = chargingSessionRepository.findAllByDriverUserIdDeep(userId);
+        return DriverDataMapper.toChargingSessionBriefResponseList(sessions);
     }
 
 }

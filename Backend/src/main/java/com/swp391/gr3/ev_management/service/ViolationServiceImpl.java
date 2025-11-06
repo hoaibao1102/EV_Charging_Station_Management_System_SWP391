@@ -232,7 +232,7 @@ public class ViolationServiceImpl implements ViolationService {
         if (triplet == null || triplet.getCountInGroup() >= 3) {
             triplet = DriverViolationTriplet.builder()
                     .driver(driver)
-                    .status(TripletStatus.OPEN)
+                    .status(TripletStatus.IN_PROGRESS)
                     .countInGroup(0)
                     .totalPenalty(0)
                     .createdAt(LocalDateTime.now(TENANT_ZONE))
@@ -252,7 +252,7 @@ public class ViolationServiceImpl implements ViolationService {
         triplet.setTotalPenalty(triplet.getTotalPenalty() + violation.getPenaltyAmount());
 
         if (triplet.getCountInGroup() == 3) {
-            triplet.setStatus(TripletStatus.CLOSED);
+            triplet.setStatus(TripletStatus.OPEN);
             triplet.setWindowEndAt(violation.getOccurredAt());
             triplet.setClosedAt(LocalDateTime.now(TENANT_ZONE));
         }

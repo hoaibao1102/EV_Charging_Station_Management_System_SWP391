@@ -39,6 +39,8 @@ public class DataInitializer implements CommandLineRunner {
     private final TariffRepository tariffRepository;
     private final StationStaffRepository stationStaffRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final DriverViolationRepository driverViolationRepository;
+    private final DriverViolationTripletRepository driverViolationTripletRepository;
 
 
     @Value("${app.data.init.enabled:true}")
@@ -64,6 +66,9 @@ public class DataInitializer implements CommandLineRunner {
 //            initSlotAvailability();   // seed mẫu slot theo Seed_Data
             initTariffs();            // seed bảng Tariff
             initPaymentMethods();     // seed bảng PaymentMethod
+            initBanDrivers();
+            initBannedDriverViolations();
+            initTwoViolationsFor0987456321();
 
 
             log.info("✅ Data initialization completed.");
@@ -556,12 +561,36 @@ public class DataInitializer implements CommandLineRunner {
                 "Test Driver",
                 "M",
                 LocalDate.of(1995, 5, 15),
-                "Hanoi, Vietnam"
+                "Hanoi, Vietnam",
+                DriverStatus.ACTIVE
         );
     }
 
+    // ================== DEFAULT BAN DRIVER (tùy chọn) ==================
+    private void initBanDrivers() {
+        createDriverIfNotExists(
+                "0902914788", "wangvu05fpt@gmail.com", "123123",
+                "Test Ban Driver 1", "M", LocalDate.of(1995, 5, 15),
+                "Hanoi, Vietnam", DriverStatus.BANNED
+        );
+
+        createDriverIfNotExists(
+                "0321456987", "edwardwright.171198@gmail.com", "123123",
+                "Test Ban Driver 2", "F", LocalDate.of(2005, 3, 6),
+                "Hanoi, Vietnam", DriverStatus.BANNED
+        );
+
+        createDriverIfNotExists(
+                "0987456321", "leekianhong938@gmail.com", "123123",
+                "Test Ban Driver 3", "F", LocalDate.of(2001, 5, 29),
+                "Hanoi, Vietnam", DriverStatus.ACTIVE
+        );
+    }
+
+
     private void createDriverIfNotExists(String phoneNumber, String email, String rawPassword,
-                                         String name, String gender, LocalDate dateOfBirth, String address) {
+                                         String name, String gender, LocalDate dateOfBirth,
+                                         String address, DriverStatus status) {
         try {
             boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
             boolean emailExists = email != null && userRepository.existsByEmail(email);
@@ -589,7 +618,7 @@ public class DataInitializer implements CommandLineRunner {
 
             Driver driver = Driver.builder()
                     .user(savedUser)
-                    .status(DriverStatus.ACTIVE)
+                    .status(status != null ? status : DriverStatus.ACTIVE)
                     .lastActiveAt(LocalDateTime.now())
                     .build();
             driverRepository.save(driver);
@@ -711,5 +740,146 @@ public class DataInitializer implements CommandLineRunner {
             log.warn("Failed to create PaymentMethod ({} / {} / {}): {}",
                     methodType, provider, accountNo, e.getMessage());
         }
+    }
+
+    // ================== DEFAULT BANNED DRIVER VIOLATIONS ==================
+    private void initBannedDriverViolations() {
+        try {
+            // Danh sách số điện thoại 3 driver bị ban
+            String[] bannedPhones = {
+                    "0902914788",
+                    "0321456987"
+            };
+
+            for (String phone : bannedPhones) {
+                var driverOpt = driverRepository.findAll().stream()
+                        .filter(d -> d.getUser() != null && phone.equals(d.getUser().getPhoneNumber()))
+                        .findFirst();
+
+                if (driverOpt.isEmpty()) {
+                    log.warn("Driver with phone {} not found, skip violation seeding", phone);
+                    continue;
+                }
+
+                var driver = driverOpt.get();
+
+                // Tạo 3 vi phạm mẫu cho mỗi driver (sẽ tạo 1 Triplet tự động)
+                for (int i = 1; i <= 3; i++) {
+                    if (driverViolationRepository.existsByDriver_DriverIdAndDescriptionContaining(
+                            driver.getDriverId(), "AutoBan Violation " + i)) {
+                        log.info("Violation #{} already exists for driver {}", i, driver.getDriverId());
+                        continue;
+                    }
+
+                    DriverViolation v = DriverViolation.builder()
+                            .driver(driver)
+                            .status(ViolationStatus.INACTIVE)
+                            .description("AutoBan Violation " + i + " (no-show / misuse)")
+                            .occurredAt(LocalDateTime.now().minusDays(3 - i))
+                            .penaltyAmount(50000.0 * i)
+                            .build();
+                    v = driverViolationRepository.save(v);
+                    log.info("Created AutoBan Violation {} for driver {}", v.getViolationId(), driver.getDriverId());
+
+                    attachViolationToTriplet(driver, v);
+                }
+
+                // Cập nhật status driver sang BANNED nếu chưa
+                if (driver.getStatus() != DriverStatus.BANNED) {
+                    driver.setStatus(DriverStatus.BANNED);
+                    driver.setLastActiveAt(LocalDateTime.now());
+                    driverRepository.save(driver);
+                    log.warn("Updated driver {} ({}) to BANNED due to seeded violations",
+                            driver.getDriverId(), driver.getUser().getPhoneNumber());
+                }
+            }
+
+            log.info("✅ Seeded violations and triplets for banned drivers.");
+
+        } catch (Exception e) {
+            log.error("❌ Failed to seed banned driver violations: {}", e.getMessage(), e);
+        }
+    }
+
+    private void attachViolationToTriplet(Driver driver, DriverViolation violation) {
+        var tripletOpt = driverViolationTripletRepository.findOpenByDriver(driver.getDriverId())
+                .stream().findFirst();
+
+        DriverViolationTriplet triplet = tripletOpt.orElseGet(() -> {
+            var t = DriverViolationTriplet.builder()
+                    .driver(driver)
+                    .status(TripletStatus.IN_PROGRESS)
+                    .countInGroup(0)
+                    .totalPenalty(0)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            return driverViolationTripletRepository.save(t);
+        });
+
+        if (triplet.getCountInGroup() == 0) {
+            triplet.setV1(violation);
+            triplet.setWindowStartAt(violation.getOccurredAt());
+        } else if (triplet.getCountInGroup() == 1) {
+            triplet.setV2(violation);
+        } else {
+            triplet.setV3(violation);
+        }
+
+        triplet.setCountInGroup(triplet.getCountInGroup() + 1);
+        triplet.setTotalPenalty(triplet.getTotalPenalty() + violation.getPenaltyAmount());
+
+        if (triplet.getCountInGroup() >= 3) {
+            triplet.setStatus(TripletStatus.OPEN);
+            triplet.setWindowEndAt(violation.getOccurredAt());
+            triplet.setClosedAt(LocalDateTime.now());
+        }
+
+        driverViolationTripletRepository.save(triplet);
+    }
+
+    // ================== SEED 2 VIOLATIONS CHO 0987456321 ==================
+    private void initTwoViolationsFor0987456321() {
+        final String phone = "0987456321";
+        try {
+            var driverOpt = driverRepository.findAll().stream()
+                    .filter(d -> d.getUser() != null && phone.equals(d.getUser().getPhoneNumber()))
+                    .findFirst();
+
+            if (driverOpt.isEmpty()) {
+                log.warn("Driver with phone {} not found, skip seeding 2 violations", phone);
+                return;
+            }
+
+            var driver = driverOpt.get();
+
+            // Tạo đúng 2 violation (không trùng)
+            createViolationIfNotExists(driver, "Seed Violation A (two-only)", 75_000, 2);
+            createViolationIfNotExists(driver, "Seed Violation B (two-only)", 95_000, 1);
+
+            log.info("✅ Seeded exactly 2 violations for phone {}", phone);
+
+        } catch (Exception e) {
+            log.error("❌ Failed to seed 2 violations for {}: {}", phone, e.getMessage(), e);
+        }
+    }
+
+    private void createViolationIfNotExists(Driver driver, String desc, double penalty, int daysAgo) {
+        if (driverViolationRepository.existsByDriver_DriverIdAndDescriptionContaining(
+                driver.getDriverId(), desc)) {
+            log.info("Violation already exists for driver {} desc contains '{}'", driver.getDriverId(), desc);
+            return;
+        }
+
+        DriverViolation v = DriverViolation.builder()
+                .driver(driver)
+                .status(ViolationStatus.ACTIVE) // hoặc INACTIVE tùy bạn muốn hiển thị
+                .description(desc)
+                .occurredAt(LocalDateTime.now().minusDays(daysAgo))
+                .penaltyAmount(penalty)
+                .build();
+
+        v = driverViolationRepository.save(v);
+//        attachViolationToTriplet(driver, v);
+        log.info("Created violation {} for driver {}", v.getViolationId(), driver.getDriverId());
     }
 }

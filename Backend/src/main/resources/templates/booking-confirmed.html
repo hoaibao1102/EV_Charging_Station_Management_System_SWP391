@@ -1,266 +1,100 @@
-<!-- html -->
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"/>
-    <style>
-        :root{
-            --bg:#f6f9fc;
-            --card:#ffffff;
-            --muted:#64748b;
-            --text:#0f172a;
-            --heading:#0b1220;
-            --accent:#0b63ff;
-            --accent-2:#06b6d4;
-            --danger:#bf2b2b;
+<html lang="vi">
+<body style="margin:0;padding:0;background:#f4f7fb;">
+<!-- Wrapper -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f7fb;padding:24px 12px;">
+    <tr>
+        <td align="center">
+            <!-- Card -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;background:#ffffff;border-radius:12px;border:1px solid #e6eaf2;box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden;">
+                <!-- Header -->
+                <tr>
+                    <td style="padding:20px 24px;background:#0b63ff;background-image:linear-gradient(90deg,#0b63ff,#06b6d4);color:#ffffff;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="vertical-align:middle;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1048/1048313.png"
+                                         alt="EV Logo"
+                                         width="48" height="48"
+                                         style="display:block;border-radius:10px;background:rgba(255,255,255,.15);padding:6px;">
+                                </td>
+                                <td style="padding-left:12px;vertical-align:middle;">
+                                    <div style="font-size:18px;font-weight:800;line-height:1;margin:0;">Xác nhận đặt chỗ</div>
+                                    <div style="font-size:13px;opacity:.95;margin-top:4px;line-height:1.3;">
+                                        Booking #<span style="font-weight:700;" th:text="${bookingId}">0001</span>
+                                    </div>
+                                </td>
+                                <td align="right" style="vertical-align:middle;">
+                                    <div style="font-size:12px;opacity:.9;">EV Management</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
 
-            --pill-bg:#fff5f5;
-            --pill-text:#b42318;
+                <!-- Body -->
+                <tr>
+                    <td style="padding:28px 24px 8px 24px;color:#0f172a;font-family:Segoe UI,Roboto,Arial,sans-serif;">
+                        <p style="margin:0 0 6px 0;font-size:16px;font-weight:700;">
+                            Xin chào <span th:text="${displayName}">bạn</span>,
+                        </p>
+                        <p style="margin:0 0 16px 0;font-size:14px;color:#64748b;">
+                            Cảm ơn bạn đã đặt chỗ tại <strong>EV Management</strong>! Dưới đây là chi tiết:
+                        </p>
 
-            --surface:#f8fafc;
-            --stroke:rgba(15,23,42,.08);
-            --shadow:0 10px 35px rgba(15,23,42,.08);
-            --radius:16px;
-        }
+                        <!-- Station -->
+                        <div style="border:1px solid #e6eaf2;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#f8fafc;">
+                            <div style="font-size:12px;color:#64748b;margin:0 0 4px 0;">TRẠM</div>
+                            <div style="font-size:15px;font-weight:700;color:#071033;" th:text="${station}">VinFast SmartCharge - Quận 1</div>
+                        </div>
 
-        /* Reset nhỏ cho layout ổn định hơn */
-        *,
-        *::before,
-        *::after{ box-sizing:border-box }
-        html,body{
-            height:100%;
-            margin:0;
-            font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-            background:
-                    radial-gradient(1200px 600px at 10% -10%, rgba(11,99,255,.08), transparent 55%),
-                    radial-gradient(1200px 600px at 100% 0%, rgba(6,182,212,.08), transparent 55%),
-                    linear-gradient(180deg,var(--bg),#eef4fb);
-            color:var(--text);
-            -webkit-font-smoothing:antialiased;
-            -moz-osx-font-smoothing:grayscale;
-            padding:28px 16px;
-            line-height:1.5;
-        }
+                        <!-- Time -->
+                        <div style="border:1px solid #e6eaf2;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#ffffff;">
+                            <div style="font-size:12px;color:#64748b;margin:0 0 6px 0;">KHUNG GIỜ</div>
+                            <span style="display:inline-block;padding:8px 12px;border:1px solid rgba(11,99,255,.25);
+                               border-radius:999px;background:linear-gradient(180deg,#f1f5ff,#ffffff);
+                               color:#0b1b3a;font-size:13px;font-weight:800;box-shadow:0 2px 10px rgba(11,99,255,.08);"
+                                  th:text="${timeRange}">19:20 06/11/2025 - 19:30 06/11/2025</span>
+                        </div>
 
-        .container-card{ max-width:760px; margin:24px auto }
+                        <!-- Slot -->
+                        <div style="border:1px solid #e6eaf2;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#f8fafc;">
+                            <div style="font-size:12px;color:#64748b;margin:0 0 4px 0;">VỊ TRÍ</div>
+                            <div style="font-size:15px;font-weight:700;color:#071033;" th:text="${slotName}">Slot 1161</div>
+                        </div>
 
-        .card-clean{
-            background:var(--card);
-            border-radius:var(--radius);
-            box-shadow:var(--shadow);
-            overflow:hidden;
-            border:1px solid var(--stroke);
-            backdrop-filter:saturate(130%) blur(2px);
-        }
+                        <!-- Connector -->
+                        <div style="border:1px solid #e6eaf2;border-radius:10px;padding:12px 14px;margin-bottom:4px;background:#ffffff;">
+                            <div style="font-size:12px;color:#64748b;margin:0 0 4px 0;">LOẠI CỔNG</div>
+                            <div style="font-size:15px;font-weight:700;color:#071033;" th:text="${connectorType}">CCS2</div>
+                        </div>
 
-        .card-header{
-            display:flex;
-            align-items:center;
-            gap:16px;
-            padding:20px 22px;
-            background:linear-gradient(92deg, rgba(11,99,255,.95), rgba(6,182,212,.95));
-            color:#fff;
-        }
+                        <!-- QR (optional) -->
+                        <div style="text-align:center;padding:18px 0 6px 0;">
+                            <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">Mã QR xác thực</div>
+                            <img th:if="${cid != null}" th:src="'cid:' + ${cid}" alt="QR"
+                                 width="160" height="160"
+                                 style="display:inline-block;border:1px solid #e6eaf2;border-radius:8px;box-shadow:0 4px 20px rgba(11,99,255,.08);">
+                        </div>
 
-        .brand{
-            width:56px; height:56px; border-radius:14px;
-            background:rgba(255,255,255,.12);
-            display:flex; align-items:center; justify-content:center;
-            font-weight:700; font-size:18px;
-            box-shadow:inset 0 -6px 18px rgba(255,255,255,.06);
-            user-select:none;
-        }
+                        <p style="margin:14px 0 0 0;font-size:13px;color:#64748b;">
+                            Vui lòng mang mã QR đến trạm để quét khi đến. Booking có thể bị hủy nếu không check-in đúng giờ.
+                        </p>
+                    </td>
+                </tr>
 
-        .header-title{ margin:0; font-weight:800; font-size:18px; letter-spacing:.2px }
-        .header-sub{ margin:0; font-size:13px; opacity:.95 }
-
-        .card-body{ padding:24px }
-
-        /* Trạng thái & cảnh báo */
-        .status-pill{
-            display:inline-flex; align-items:center; gap:8px;
-            padding:6px 12px; border-radius:999px;
-            background:var(--pill-bg); color:var(--pill-text);
-            font-weight:700; font-size:13px;
-            border:1px solid rgba(180,35,24,.15);
-            margin-bottom:12px;
-        }
-
-        .greeting{
-            margin:0 0 10px 0;
-            font-size:16px; color:var(--heading); letter-spacing:.1px;
-        }
-
-        .grid{
-            display:grid; grid-template-columns:1fr 1fr;
-            gap:14px; margin-top:12px;
-        }
-
-        .info{
-            background:linear-gradient(180deg, var(--surface), #ffffff);
-            border-radius:12px; padding:14px;
-            border:1px solid var(--stroke);
-        }
-
-        .label{
-            font-size:12px; color:var(--muted);
-            margin-bottom:6px; display:block; letter-spacing:.3px;
-        }
-
-        .value{
-            font-weight:700; color:#071033;
-            font-size:15px; line-height:1.35; word-break:break-word;
-        }
-
-        /* Badge khung giờ: tương phản cao + dễ đọc trên mobile */
-        .time-badge{
-            display:inline-flex; align-items:center; gap:8px;
-            padding:8px 14px; border-radius:999px;
-            background:linear-gradient(180deg,#f1f5ff,#ffffff);
-            color:#0b1b3a; font-weight:800; font-size:13px;
-            border:1px solid rgba(11,99,255,.20);
-            box-shadow:0 2px 10px rgba(11,99,255,.08);
-            letter-spacing:.2px; white-space:nowrap;
-        }
-        .time-badge::before{
-            content:""; width:8px; height:8px; border-radius:999px;
-            background:linear-gradient(90deg,var(--accent),var(--accent-2));
-            display:inline-block; flex:0 0 8px;
-        }
-
-        /* Văn bản phụ & khu hành động */
-        .muted{ color:var(--muted); font-size:14px }
-        .actions{ margin-top:18px; display:flex; gap:10px; flex-wrap:wrap }
-
-        /* Nút: hover/focus rõ ràng, hỗ trợ bàn phím */
-        .btn-primary{
-            background:linear-gradient(92deg,var(--accent),var(--accent-2));
-            color:#fff; border:0; padding:10px 16px; border-radius:12px;
-            text-decoration:none; font-weight:800;
-            box-shadow:0 6px 16px rgba(11,99,255,.20);
-            transition:transform .05s ease, box-shadow .15s ease, filter .15s ease;
-        }
-        .btn-primary:hover{ filter:brightness(.97) }
-        .btn-primary:active{ transform:translateY(1px); box-shadow:0 4px 12px rgba(11,99,255,.18) }
-        .btn-primary:focus-visible{
-            outline:2px solid #fff; outline-offset:2px;
-            box-shadow:0 0 0 3px rgba(11,99,255,.45);
-        }
-
-        .btn-secondary{
-            background:transparent; color:var(--accent);
-            border:1px solid rgba(11,99,255,.25);
-            padding:10px 16px; border-radius:12px;
-            text-decoration:none; font-weight:700;
-        }
-        .btn-secondary:hover{ background:rgba(11,99,255,.06) }
-        .btn-secondary:focus-visible{
-            outline:2px solid #fff; outline-offset:2px;
-            box-shadow:0 0 0 3px rgba(11,99,255,.35);
-        }
-
-        .footer{ margin-top:18px; font-size:13px; color:var(--muted) }
-
-        /* Mobile cải thiện đọc & tránh tràn */
-        @media (max-width:720px){
-            .grid{ grid-template-columns:1fr }
-            .time-badge{ white-space:normal; line-height:1.4 }
-            .card-body{ padding:18px }
-        }
-
-        /* Hỗ trợ giảm chuyển động cho người nhạy cảm */
-        @media (prefers-reduced-motion:reduce){
-            .btn-primary, .btn-secondary{ transition:none }
-        }
-
-        /* Dark mode nhẹ nhàng, tự động theo hệ thống */
-        @media (prefers-color-scheme:dark){
-            :root{
-                --bg:#0b1220;
-                --card:#0f172a;
-                --text:#e6e8ee;
-                --heading:#f8fafc;
-                --surface:#0b1220;
-                --stroke:rgba(255,255,255,.08);
-                --shadow:0 10px 35px rgba(0,0,0,.55);
-                --pill-bg:#2a0f10;
-                --pill-text:#ffb4a9;
-            }
-            body{
-                background:
-                        radial-gradient(1200px 600px at 10% -10%, rgba(11,99,255,.18), transparent 55%),
-                        radial-gradient(1200px 600px at 100% 0%, rgba(6,182,212,.18), transparent 55%),
-                        linear-gradient(180deg,#0b1220,#0f172a);
-            }
-            .value{ color:#f1f5f9 }
-            .time-badge{
-                background:linear-gradient(180deg,#0f1a3a,#0c122a);
-                color:#cfe0ff; border-color:rgba(99,153,255,.35);
-                box-shadow:none;
-            }
-        }
-
-        /* In ấn gọn gàng */
-        @media print{
-            body{ background:#fff; padding:0 }
-            .card-clean{ box-shadow:none; border:1px solid #ddd }
-            .card-header{ color:#000; background:#e6eefc }
-        }
-    </style>
-</head>
-<body>
-<div class="email-wrap">
-    <div class="card-custom">
-        <div class="card-header">
-            <div class="brand-mark" aria-hidden="true">EV</div>
-            <div>
-                <p class="title">Xác nhận đặt chỗ</p>
-                <div class="booking-id">Booking \# [[${bookingId}]]</div>
-            </div>
-        </div>
-
-        <div class="card-body">
-            <p class="greeting">Xin chào <strong>[[${displayName}]]</strong>, cảm ơn bạn đã đặt chỗ. Thông tin booking của bạn:</p>
-
-            <div class="details">
-                <div class="detail-item">
-                    <div class="detail-label">Trạm</div>
-                    <div class="detail-value">[[${station}]]</div>
-                </div>
-
-                <div class="detail-item">
-                    <div class="detail-label">Khung giờ</div>
-                    <div class="detail-value">
-                        <span class="time-badge">[[${timeRange}]]</span>
-                    </div>
-                </div>
-
-                <div class="detail-item">
-                    <div class="detail-label">Vị trí</div>
-                    <div class="detail-value">[[${slotName}]]</div>
-                </div>
-
-                <div class="detail-item">
-                    <div class="detail-label">Loại cổng</div>
-                    <div class="detail-value">[[${connectorType}]]</div>
-                </div>
-            </div>
-
-            <div class="qr-wrap" role="img" aria-label="QR code">
-                <p style="margin:0;font-size:13px;color:var(--muted)">Mã QR xác thực</p>
-                <div style="margin-top:10px">
-                    <img th:if="${cid != null}" th:src="'cid:' + ${cid}" alt="QR"/>
-                </div>
-            </div>
-
-            <p class="note">Mang mã QR này đến trạm và quét khi đến để bắt đầu phiên sạc. Nếu bạn cần thay đổi, vui lòng truy cập trang quản lý booking.</p>
-
-            <div class="meta">Lưu ý: Vui lòng đến đúng khung giờ. Booking sẽ bị hủy nếu quá thời gian bắt đầu quá lâu.</div>
-        </div>
-    </div>
-</div>
+                <!-- Footer -->
+                <tr>
+                    <td style="background:#f8fafc;color:#94a3b8;text-align:center;padding:16px 18px;font-size:12px;font-family:Segoe UI,Roboto,Arial,sans-serif;">
+                        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.<br>
+                        © 2025 EVMS. All rights reserved.
+                    </td>
+                </tr>
+            </table>
+            <!-- /Card -->
+        </td>
+    </tr>
+</table>
+<!-- /Wrapper -->
 </body>
 </html>
