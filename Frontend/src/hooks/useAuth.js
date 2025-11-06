@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { loginApi, registerApi, logoutApi } from "../api/authApi";
 import { setAuthData, clearAuthData } from "../utils/authUtils";
-import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../redux/slices/authSlice.js';
-import { useNavigate } from 'react-router-dom';
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../redux/slices/authSlice.js";
+import { stationAPI } from "../api/stationApi.js";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { logout as logoutAction } from "../redux/slices/authSlice.js";
 
@@ -12,8 +13,6 @@ const validatePhone = (phone) => {
   const phoneRegex = /^0[0-9]{9}$/;
   return phoneRegex.test(phone);
 };
-
-
 
 const validatePassword = (password) => {
   return password.length >= 6;
@@ -41,24 +40,61 @@ export const useLogin = () => {
       const response = await loginApi(phone, password);
       if (response.success) {
         if (response.data) {
-          const {token, roleName, name, email, phone, gender} = response.data;
+          const { token, roleName, name, email, phone, gender } = response.data;
           console.log("Login successful, role:", roleName);
           //lưu vào localStorage
-          setAuthData({ accessToken: token, role: roleName, userDetails: {name, email, phone, gender} });
+          setAuthData({
+            accessToken: token,
+            role: roleName,
+            userDetails: { name, email, phone, gender },
+          });
           //lưu vào store
-          dispatch(loginSuccess({ accessToken: token, role: roleName, userDetails: {name, email, phone, gender} }));
+          dispatch(
+            loginSuccess({
+              accessToken: token,
+              role: roleName,
+              userDetails: { name, email, phone, gender },
+            })
+          );
+          // If the user is a STAFF, fetch station-staff/me to get the assigned stationId
+          if (roleName === "STAFF") {
+            (async () => {
+              try {
+                const res = await stationAPI.getStationStaffMe();
+                if (res && res.success !== false) {
+                  const staffData = res.data ?? res;
+                  console.log(
+                    "Fetched stationStaff data after login:",
+                    staffData
+                  );
+                  // store stationId and staff info locally for later use
+                  if (staffData?.stationId) {
+                    localStorage.setItem(
+                      "stationId",
+                      String(staffData.stationId)
+                    );
+                  }
+                  localStorage.setItem(
+                    "stationStaff",
+                    JSON.stringify(staffData)
+                  );
+                }
+              } catch {
+                console.warn("Could not fetch stationStaff info after login");
+              }
+            })();
+          }
           // 3. Chuyển hướng theo Vai trò
           toast.success("Đăng nhập thành công!");
           setTimeout(() => {
-            if (roleName === 'ADMIN') {
-                navigate('/admin', { replace: true });
-              } else if (roleName === 'STAFF') {
-                navigate('/staff', { replace: true });
-              } else if (roleName === 'DRIVER') {
-                navigate('/', { replace: true });
+            if (roleName === "ADMIN") {
+              navigate("/admin", { replace: true });
+            } else if (roleName === "STAFF") {
+              navigate("/staff", { replace: true });
+            } else if (roleName === "DRIVER") {
+              navigate("/", { replace: true });
             }
           }, 2000);
-          
         }
         return { success: true };
       }
@@ -93,8 +129,10 @@ export const useRegister = () => {
       const response = await registerApi(formData);
       if (response.success) {
         if (response.data) {
-          if (response.data.token) localStorage.setItem("accessToken", response.data.token);
-          if (response.data.name) localStorage.setItem("userName", response.data.name);
+          if (response.data.token)
+            localStorage.setItem("accessToken", response.data.token);
+          if (response.data.name)
+            localStorage.setItem("userName", response.data.name);
         }
         return { success: true };
       }
@@ -111,37 +149,43 @@ export const useRegister = () => {
 
 // Custom hook đăng xuất
 export const useLogout = () => {
-    const dispatch = useDispatch();
-    const [loading, setLoading] = useState(false);
-    
-    // HÀM logout NÀY SẼ CHỊU TRÁCH NHIỆM HOÀN TẤT MỌI VIỆC từ xóa trong store/ localstorage đến gọi API logout
-    const logout = async () => {
-        setLoading(true);
-        try {
-            const response = await logoutApi(); 
-            if(response.success){
-              // Xóa Redux store
-              dispatch(logoutAction());
-              // Xóa localStorage
-              clearAuthData();
-              toast.success("Đăng xuất thành công!");
-              return { success: true, message: "Đăng xuất thành công" }; 
-            } else {
-              // Nếu API trả về thất bại nhưng vẫn clear client-side
-              dispatch(logoutAction());
-              clearAuthData();
-              return { success: false, message: response.message || "Đăng xuất thất bại" };
-            }
-        } catch (error) {
-            console.error("Logout API failed, continuing client cleanup.", error);
-            // Vẫn clear client-side dù API lỗi
-            dispatch(logoutAction());
-            clearAuthData();
-            return { success: false, message: "Lỗi khi đăng xuất, nhưng đã xóa phiên làm việc" };
-        } finally {
-            setLoading(false);
-        }
-    };
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
 
-    return { logout, loading };
+  // HÀM logout NÀY SẼ CHỊU TRÁCH NHIỆM HOÀN TẤT MỌI VIỆC từ xóa trong store/ localstorage đến gọi API logout
+  const logout = async () => {
+    setLoading(true);
+    try {
+      const response = await logoutApi();
+      if (response.success) {
+        // Xóa Redux store
+        dispatch(logoutAction());
+        // Xóa localStorage
+        clearAuthData();
+        toast.success("Đăng xuất thành công!");
+        return { success: true, message: "Đăng xuất thành công" };
+      } else {
+        // Nếu API trả về thất bại nhưng vẫn clear client-side
+        dispatch(logoutAction());
+        clearAuthData();
+        return {
+          success: false,
+          message: response.message || "Đăng xuất thất bại",
+        };
+      }
+    } catch (error) {
+      console.error("Logout API failed, continuing client cleanup.", error);
+      // Vẫn clear client-side dù API lỗi
+      dispatch(logoutAction());
+      clearAuthData();
+      return {
+        success: false,
+        message: "Lỗi khi đăng xuất, nhưng đã xóa phiên làm việc",
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { logout, loading };
 };

@@ -3,8 +3,12 @@ import { BrowserMultiFormatReader } from "@zxing/library";
 import "./SessionCharging.css";
 import { stationAPI } from "../../api/stationApi";
 import { toast } from "react-toastify";
+import { useNavigate, useLocation } from "react-router-dom";
+import paths from "../../path/paths.jsx";
 
 export default function SessionChargingCreate() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const videoRef = useRef(null);
   const previewStreamRef = useRef(null);
   const codeReaderRef = useRef(null);
@@ -19,8 +23,8 @@ export default function SessionChargingCreate() {
     try {
       const decoded = JSON.parse(atob(text));
       return decoded;
-    } catch (e) {
-      console.debug("Decode error:", e);
+    } catch {
+      console.debug("Decode error:");
       return null;
     }
   };
@@ -36,6 +40,14 @@ export default function SessionChargingCreate() {
   }, []);
 
   useEffect(() => {
+    // If navigated here with a bookingId (e.g. from session list row), use it
+    try {
+      const initialBooking = location?.state?.bookingId;
+      if (initialBooking) setBookingId(String(initialBooking));
+    } catch {
+      // ignore
+    }
+
     let mounted = true;
     const codeReader = new BrowserMultiFormatReader();
     codeReaderRef.current = codeReader;
@@ -105,7 +117,7 @@ export default function SessionChargingCreate() {
         console.debug(e);
       }
     };
-  }, [handleScan]);
+  }, [handleScan, location?.state?.bookingId]);
 
   async function handleStartSession() {
     setStarting(true);
@@ -116,6 +128,12 @@ export default function SessionChargingCreate() {
       const response = await stationAPI.startChargingSession(payload);
       if (!response.success) throw new Error(response.message);
       toast.success("Phiên sạc đã được khởi động thành công!");
+      // navigate to session list / status page for staff
+      try {
+        navigate(paths.manageSessionCharging);
+      } catch {
+        /* ignore navigation failures */
+      }
     } catch (err) {
       console.error("Start session error", err);
       setStartError(err.message || "Không thể khởi động phiên sạc");
@@ -163,49 +181,33 @@ export default function SessionChargingCreate() {
         )}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <label
-          style={{
-            display: "block",
-            marginBottom: 8,
-            fontSize: "1rem",
-            color: "#333",
-          }}
-        >
-          Booking ID
-        </label>
-        <input
-          value={bookingId}
-          onChange={(e) => setBookingId(e.target.value)}
-          style={{
-            padding: 12,
-            width: "100%",
-            border: "1px solid #ccc",
-            borderRadius: 8,
-            fontSize: "1rem",
-            background: "#f7f7f7",
-            color: "#333",
-          }}
-          disabled
-        />
-      </div>
-
-      <button
-        onClick={handleStartSession}
-        disabled={!bookingId || starting}
-        style={{
-          width: "100%",
-          padding: 12,
-          background: starting ? "#ccc" : "#137f4a",
-          color: "#fff",
-          border: "none",
-          borderRadius: 8,
-          fontSize: "1rem",
-          cursor: starting ? "not-allowed" : "pointer",
-        }}
-      >
-        {starting ? "Đang khởi động..." : "Kích hoạt phiên sạc"}
-      </button>
+      {(() => {
+        const isDisabled = !bookingId || starting;
+        const bg = isDisabled ? "#bdbdbd" : "#137f4a";
+        const opacity = isDisabled ? 0.65 : 1;
+        const cursor = isDisabled ? "not-allowed" : "pointer";
+        return (
+          <button
+            onClick={handleStartSession}
+            disabled={isDisabled}
+            aria-disabled={isDisabled}
+            style={{
+              width: "100%",
+              padding: 12,
+              background: bg,
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              fontSize: "1rem",
+              cursor,
+              opacity,
+              transition: "opacity 160ms ease, background 160ms ease",
+            }}
+          >
+            {starting ? "Đang khởi động..." : "Kích hoạt phiên sạc"}
+          </button>
+        );
+      })()}
 
       {startError && (
         <div
