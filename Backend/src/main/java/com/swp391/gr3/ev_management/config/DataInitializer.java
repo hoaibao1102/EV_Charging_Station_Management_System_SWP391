@@ -324,7 +324,6 @@ public class DataInitializer implements CommandLineRunner {
 
     // ================== VEHICLE MODELS (tùy chọn) ==================
     private void initVehicleModels() {
-<<<<<<< Updated upstream
         createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "tesla-model3",   "CCS2",75, VehicleModelStatus.ACTIVE);
         createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "tesla-modely",   "TYPE2",80, VehicleModelStatus.ACTIVE);
         createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "hyundai-kona",   "CCS2", 64, VehicleModelStatus.ACTIVE);
@@ -332,15 +331,7 @@ public class DataInitializer implements CommandLineRunner {
         createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "vinfast-vfe34",   "CCS2",42, VehicleModelStatus.ACTIVE);
         createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "nissan-leaf",    "CHADEMO",40, VehicleModelStatus.ACTIVE);
         createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "mitsubishi-outlander", "TYPE1",23.8, VehicleModelStatus.ACTIVE);
-=======
-        createModelIfNotExists("Tesla",     "Model 3",         2023, "/images/vehicles/tesla-model3.png",   "CCS2",75);
-        createModelIfNotExists("Tesla",     "Model Y",         2023, "/images/vehicles/tesla-modely.png",   "TYPE2",80);
-        createModelIfNotExists("Hyundai",   "Kona Electric",   2022, "/images/vehicles/hyundai-kona.png",   "CCS2", 64);
-        createModelIfNotExists("Kia",       "EV6",             2023, "/images/vehicles/kia-ev6.png",        "CCS2", 77);
-        createModelIfNotExists("VinFast",   "VF e34",          2022, "/images/vehicles/vinfast-vfe34.png",  "CCS2",42);
-        createModelIfNotExists("Nissan",    "Leaf",            2020, "/images/vehicles/nissan-leaf.png",    "CHADEMO",40);
-        createModelIfNotExists("Mitsubishi","Outlander PHEV",  2019, "/images/vehicles/mitsubishi-outlander.png", "TYPE1",23.8);
->>>>>>> Stashed changes
+
     }
 
     private void createModelIfNotExists(String brand, String model, int year, String img, String imagePublicId, String connectorCode, double batteryCapacityKWh, VehicleModelStatus status) {
