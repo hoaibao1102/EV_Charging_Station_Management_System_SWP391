@@ -1,46 +1,98 @@
-<!-- html -->
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f4f7fb; color: #334155; font-family: "Segoe UI", Roboto, Arial, sans-serif; padding:20px; }
-        .email-card { max-width:600px; margin:0 auto; border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(15,23,42,0.06); }
-        .email-header { background: linear-gradient(90deg,#0ea5a4 0%,#2563eb 100%); color:#fff; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; }
-        .brand { font-weight:700; font-size:20px; letter-spacing:0.2px; }
-        .tagline { font-size:13px; opacity:0.95; }
-        .email-body { background:#ffffff; padding:30px 28px; text-align:center; }
-        .greeting { color:#0f172a; margin-bottom:6px; font-size:18px; font-weight:600; }
-        .text-muted-sm { color:#6b7280; font-size:14px; margin-bottom:18px; }
-        .otp-pill { display:inline-block; padding:14px 24px; font-size:30px; font-weight:800; letter-spacing:6px; border-radius:10px; background:linear-gradient(180deg,#eefdfa,#eaf4ff); color:#0f172a; margin:16px 0; box-shadow:0 4px 10px rgba(8,15,36,0.04); }
-        .note { color:#6b7280; font-size:13px; margin-top:12px; }
-        .email-footer { background:#f8fafc; padding:16px 20px; text-align:center; font-size:12px; color:#9ca3af; }
-        @media (max-width:420px){ .otp-pill{font-size:24px;padding:10px 18px;letter-spacing:4px;} .email-body{padding:20px;} }
-    </style>
-</head>
-<body>
-<div class="email-card">
-    <div class="email-header">
-        <div class="brand">EV Management</div>
-        <div class="tagline">Safe · Fast · Green</div>
-    </div>
+<html lang="vi">
+<body style="margin:0;padding:0;background:#f4f7fb;">
+<!-- Wrapper -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f7fb;padding:24px 12px;">
+    <tr>
+        <td align="center">
+            <!-- Card -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:16px;border:1px solid rgba(15,23,42,0.08);box-shadow:0 8px 28px rgba(15,23,42,0.08);overflow:hidden;">
+                <!-- Header -->
+                <tr>
+                    <td style="padding:22px 26px;background:#0b63ff;background-image:linear-gradient(90deg,#0b63ff,#06b6d4);color:#ffffff;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="vertical-align:middle;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td style="vertical-align:middle;">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/1048/1048313.png"
+                                                     alt="EV Logo"
+                                                     width="46" height="46"
+                                                     style="display:block;border-radius:12px;background:rgba(255,255,255,0.15);padding:6px;">
+                                            </td>
+                                            <td style="vertical-align:middle;padding-left:10px;">
+                                                <div style="font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:20px;font-weight:800;letter-spacing:.2px;line-height:1;margin:0;">
+                                                    EV Management
+                                                </div>
+                                                <div style="font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:12px;opacity:.95;margin-top:4px;">
+                                                    Safe · Fast · Green
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td align="right" style="vertical-align:middle;">
+                                    <div style="font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:13px;opacity:.9;margin:0;">
+                                        Xác minh OTP
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
 
-    <div class="email-body">
-        <p class="greeting">Xin chào,</p>
-        <p class="text-muted-sm">Cảm ơn bạn đã đăng ký tài khoản tại <strong>EV Management</strong>.</p>
+                <!-- Body -->
+                <tr>
+                    <td style="padding:34px 28px 8px 28px;color:#0f172a;font-family:Segoe UI,Roboto,Arial,sans-serif;">
+                        <p style="margin:0 0 8px 0;font-size:18px;font-weight:700;color:#0b1220;">Xin chào,</p>
+                        <p style="margin:0 0 10px 0;font-size:14px;color:#64748b;">
+                            Cảm ơn bạn đã đăng ký tài khoản tại <strong>EV Management</strong>.<br>
+                            Dưới đây là mã OTP xác thực của bạn:
+                        </p>
 
-        <p class="text-muted-sm mb-1">Mã OTP của bạn</p>
-        <div class="otp-pill" th:text="${otp}">123456</div>
+                        <!-- OTP -->
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto;">
+                            <tr>
+                                <td style="
+                      background:linear-gradient(180deg,#f0f8ff,#ffffff);
+                      color:#0b1b3a;
+                      font-family:Segoe UI,Roboto,Arial,sans-serif;
+                      font-size:32px;font-weight:800;letter-spacing:8px;
+                      padding:14px 28px;border-radius:14px;
+                      border:1px solid rgba(11,99,255,0.25);
+                      box-shadow:0 8px 22px rgba(11,99,255,0.15);
+                      text-align:center;">
+                                    <span th:text="${otp}">123456</span>
+                                </td>
+                            </tr>
+                        </table>
 
-        <p class="note">Mã có hiệu lực trong <strong>5 phút</strong>.<br>Vui lòng <strong>không chia sẻ</strong> mã này cho bất kỳ ai.</p>
-    </div>
+                        <p style="margin:0;font-size:14px;color:#64748b;line-height:1.6;text-align:center;">
+                            Mã OTP có hiệu lực trong <strong>5 phút</strong>.<br>
+                            Vui lòng <strong>không chia sẻ</strong> mã này cho bất kỳ ai để đảm bảo an toàn tài khoản.
+                        </p>
 
-    <div class="email-footer">
-        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.<br>
-        © 2025 EVMS. All rights reserved.
-    </div>
-</div>
+                        <!-- Divider -->
+                        <div style="height:1px;background:rgba(0,0,0,0.06);margin:24px 0;"></div>
+
+                        <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center;">
+                            Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background:#f8fafc;color:#94a3b8;text-align:center;padding:16px 18px;font-size:12px;font-family:Segoe UI,Roboto,Arial,sans-serif;">
+                        © 2025 EV Management System — All rights reserved.
+                    </td>
+                </tr>
+            </table>
+            <!-- /Card -->
+        </td>
+    </tr>
+</table>
+<!-- /Wrapper -->
 </body>
 </html>

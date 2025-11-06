@@ -1,6 +1,5 @@
 package com.swp391.gr3.ev_management.DTO.response;
 
-import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,9 +1,5 @@
 package com.swp391.gr3.ev_management.DTO.request;
 
-import com.swp391.gr3.ev_management.entity.ChargingStation;
-import com.swp391.gr3.ev_management.entity.SlotAvailability;
-import com.swp391.gr3.ev_management.entity.UserVehicle;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

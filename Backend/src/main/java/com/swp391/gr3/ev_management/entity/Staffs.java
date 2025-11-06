@@ -7,7 +7,7 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "STAFFS")
+@Table(name = "Staffs")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -34,7 +34,7 @@ public class Staffs {
 
     // Quan hệ với Incident (1-nhiều)
     @OneToMany(mappedBy = "staffs", cascade = CascadeType.ALL, orphanRemoval = false)
-    private List<Incident> incidents;
+    private List<Report> reports;
 
     @OneToMany(mappedBy = "staff", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<StationStaff> stationStaffs;

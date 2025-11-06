@@ -75,4 +75,16 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
         WHERE u.userId = :userId
     """)
     long countSessionsByUserId(@Param("userId") Long userId);
+
+    @Query("""
+       select s
+       from ChargingSession s
+         join fetch s.booking b
+         join fetch b.vehicle v
+         join fetch v.driver d
+         join fetch d.user u
+       where u.userId = :userId
+       order by s.startTime desc, s.createdAt desc
+       """)
+    List<ChargingSession> findAllByDriverUserIdDeep(@Param("userId") Long userId);
 }

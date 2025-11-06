@@ -1,13 +1,13 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.IncidentResponse;
-import com.swp391.gr3.ev_management.entity.Incident;
+import com.swp391.gr3.ev_management.DTO.response.ReportResponse;
+import com.swp391.gr3.ev_management.entity.Report;
 import org.springframework.stereotype.Component;
 
 @Component
-public class IncidentMapper {
+public class ReportMapper {
 
-    public IncidentResponse mapToIncident(Incident i) {
+    public ReportResponse mapToReport(Report i) {
         var station = i.getStation();             // luôn đúng kiểu ChargingStation
         var staff   = i.getStaffs();              // kiểu Staffs
 
@@ -19,7 +19,7 @@ public class IncidentMapper {
                 ? staff.getUser().getName()
                 : null;
 
-        return IncidentResponse.builder()
+        return ReportResponse.builder()
                 .incidentId(i.getIncidentId())
                 .stationId(stationId)
                 .stationName(stationName)

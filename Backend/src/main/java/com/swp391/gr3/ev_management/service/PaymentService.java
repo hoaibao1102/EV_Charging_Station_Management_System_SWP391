@@ -2,7 +2,9 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.InvoiceStatus;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
+import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.*;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -19,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -31,6 +35,12 @@ public class PaymentService {
     private final DriverRepository driverRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final ChargingSessionRepository chargingSessionRepository;
+    // ✅ thêm 2 bean sau để gửi thông báo
+    private final NotificationsRepository notificationsRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    // (khuyến nghị) dùng timezone thống nhất
+    private static final ZoneId TENANT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     // Đưa các cấu hình ra application.yml/properties
     @Value("${vnpay.tmnCode}")
@@ -227,19 +237,67 @@ public class PaymentService {
         if ("00".equals(responseCode)) {
             tx.setStatus(TransactionStatus.COMPLETED);
             invoice.setStatus(InvoiceStatus.PAID);
-            invoice.setPaidAt(LocalDateTime.now());
+            invoice.setPaidAt(LocalDateTime.now(TENANT_ZONE));
+            transactionRepository.save(tx);
+            invoiceRepository.save(invoice);
+
+            // ===== ✅ Notify: thanh toán thành công =====
+            // Lấy user để gửi thông báo
+            var driver = invoice.getDriver(); // theo entity Invoice có driver
+            var user = (driver != null) ? driver.getUser() : null;
+
+            // Lấy thêm vài thông tin hiển thị cho “đẹp”
+            var session = invoice.getSession();
+            var booking = (session != null) ? session.getBooking() : null;
+            var station = (booking != null) ? booking.getStation() : null;
+
+            String stationName = station != null ? station.getStationName() : "Trạm sạc";
+            String title = "Thanh toán thành công hóa đơn #" + invoice.getInvoiceId();
+            String content = "Số tiền: " + String.format("%,.0f", invoice.getAmount()) + " " + invoice.getCurrency()
+                    + " | Trạm: " + stationName
+                    + (session != null && session.getStartTime() != null
+                    ? " | Thời gian sạc: " + session.getStartTime()
+                    : "");
+
+            Notification noti = new Notification();
+            noti.setUser(user);
+            noti.setTitle(title);
+            noti.setContentNoti(content);
+            noti.setType(NotificationTypes.PAYMENT_SUCCESS); // nếu enum bạn chưa có, thay bằng loại phù hợp (e.g. NotificationTypes.SYSTEM)
+            noti.setStatus(Notification.STATUS_UNREAD);
+            noti.setTransaction(tx);           // nếu có field transaction
+            noti.setSession(invoice.getSession());
+            noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
+            notificationsRepository.save(noti);
+
+            // bắn event để realtime/websocket xử lý giống confirmBooking
+            eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+
         } else {
             tx.setStatus(TransactionStatus.FAILED);
             if (invoice.getStatus() == InvoiceStatus.PENDING) {
                 invoice.setStatus(InvoiceStatus.FAILED);
             }
-        }
-        transactionRepository.save(tx);
-        invoiceRepository.save(invoice);
+            transactionRepository.save(tx);
+            invoiceRepository.save(invoice);
 
-        System.out.println("[VNPay] URL=" + request.getRequestURL()
-                + " | query=" + request.getQueryString()
-                + " | method=" + request.getMethod());
+            // ===== (tuỳ chọn) Notify: thanh toán thất bại =====
+            var driver = invoice.getDriver();
+            var user = (driver != null) ? driver.getUser() : null;
+
+            Notification noti = new Notification();
+            noti.setUser(user);
+            noti.setTitle("Thanh toán thất bại cho hóa đơn #" + invoice.getInvoiceId());
+            noti.setContentNoti("Mã phản hồi VNPay: " + responseCode + ". Vui lòng thử lại.");
+            noti.setType(NotificationTypes.PAYMENT_FAILED);  // nếu chưa có enum, dùng SYSTEM
+            noti.setStatus(Notification.STATUS_UNREAD);
+            noti.setTransaction(tx);
+            noti.setSession(invoice.getSession());
+            noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
+            notificationsRepository.save(noti);
+
+            eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+        }
     }
 
     // Encode chuẩn RFC3986 (space = %20, giữ ~)
