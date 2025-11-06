@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.entity;
 
-import com.swp391.gr3.ev_management.enums.IncidentStatus;
+import com.swp391.gr3.ev_management.enums.ReportStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table (name = "Incidents")
+@Table (name = "Reports")
 @Data @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Incident {
+public class Report {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,7 +45,7 @@ public class Incident {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "NVARCHAR(20)", nullable = false)
-    private IncidentStatus status;
+    private ReportStatus status;
 
 
     @Column(name = "reported_at", nullable = false)

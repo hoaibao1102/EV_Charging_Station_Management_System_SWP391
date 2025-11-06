@@ -1,9 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.DTO.request.*;
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
+import com.swp391.gr3.ev_management.DTO.response.*;
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import com.swp391.gr3.ev_management.service.DriverService;
@@ -121,4 +119,21 @@ public class DriverController {
         return ResponseEntity.ok(vehicles);
     }
 
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping("/transactions")
+    @Operation(summary = "Get my transactions", description = "Driver retrieves all their transactions")
+    public ResponseEntity<List<TransactionBriefResponse>> myTransactions(HttpServletRequest request) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        List<TransactionBriefResponse> result = driverService.getMyTransactions(userId);
+        return ResponseEntity.ok(result);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping("/sessions")
+    @Operation(summary = "Get my charging sessions", description = "Driver retrieves all their charging sessions")
+    public ResponseEntity<List<ChargingSessionBriefResponse>> mySessions(HttpServletRequest request) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        List<ChargingSessionBriefResponse> result = driverService.getMyChargingSessions(userId);
+        return ResponseEntity.ok(result);
+    }
 }

@@ -4,9 +4,7 @@ import lombok.Data;
 import jakarta.validation.constraints.NotNull;
 
 @Data
-public class CreateIncidentRequest {
-    @NotNull(message = "StaffId cannot be null")
-    private Long StaffId;
+public class CreateReportRequest {
     @NotNull(message = "Title cannot be null")
     private String title;
     @NotNull(message = "Description cannot be null")

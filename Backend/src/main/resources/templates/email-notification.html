@@ -1,56 +1,152 @@
 <!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<body style="margin:0;padding:0;background:#eef2f7;font-family:'Segoe UI',Roboto,Arial,sans-serif;line-height:1.6;">
-<table width="100%" cellpadding="0" cellspacing="0"
-       style="max-width:640px;margin:32px auto;background:#ffffff;
-                  border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);
-                  overflow:hidden;">
+<head>
+    <meta charset="utf-8">
+    <title>EVMS Notification</title>
+    <!-- Preheader (ẩn) -->
+    <meta name="color-scheme" content="light only">
+    <style>
+        /* một số client sẽ bỏ qua <style>, nên đã inline ở bên dưới.
+           Giữ block này chỉ cho preheader */
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:'Segoe UI',Roboto,Arial,sans-serif;line-height:1.6;color:#111827;">
+<!-- Preheader text (ẩn) -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    Bạn có một thông báo mới từ EV Management.
+</div>
+
+<!-- Wrapper -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:24px 12px;">
     <tr>
-        <td style="padding:32px 40px;">
-            <!-- Header -->
-            <div style="text-align:center;margin-bottom:28px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/1048/1048313.png"
-                     alt="EV Logo" width="60" height="60" style="margin-bottom:8px;">
-                <h1 style="margin:0;font-size:22px;color:#1e40af;font-weight:600;">EV Management</h1>
-            </div>
+        <td align="center">
+            <!-- Card -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="max-width:720px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(16,24,40,0.08);">
+                <!-- Header -->
+                <tr>
+                    <td style="background:linear-gradient(135deg,#0ea5e9 0%, #2563eb 100%);padding:28px 28px 24px 28px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="left" style="vertical-align:middle;">
+                                    <div style="display:flex;align-items:center;gap:12px;">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/1048/1048313.png" alt="EV Logo"
+                                             width="40" height="40" style="display:block;border:none;outline:none;">
+                                        <div>
+                                            <div style="font-size:18px;color:#eaf2ff;font-weight:700;letter-spacing:.2px;">EV Management</div>
+                                            <div style="font-size:12px;color:#dbe8ff;opacity:.9;">Thông báo hệ thống</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td align="right" style="vertical-align:middle;">
+                                    <!-- Badge theo type -->
+                                    <span th:text="${type}"
+                                          style="display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;
+                                 color:#0b4a2f;background:#bbf7d0;"
+                                          th:style="${type}=='PAYMENT_SUCCESS' ? 'display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#065f46;background:#a7f3d0;'
+                                   : (${type}=='PAYMENT_FAILED' ? 'display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#7f1d1d;background:#fecaca;'
+                                   : 'display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#1e3a8a;background:#bfdbfe;' )}">
+                      GENERAL
+                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
 
-            <!-- Greeting -->
-            <h2 style="color:#2b2d42;margin-top:0;font-size:20px;">
-                Xin chào <span th:text="${displayName}" style="color:#1d4ed8;">bạn</span>,
-            </h2>
+                <!-- Body -->
+                <tr>
+                    <td style="padding:28px 32px 8px 32px;">
+                        <h2 style="margin:0 0 6px 0;font-size:20px;color:#0f172a;font-weight:800;">
+                            Xin chào <span th:text="${displayName}" style="color:#2563eb;">bạn</span>,
+                        </h2>
+                        <p style="margin:0 0 16px 0;font-size:14px;color:#334155;">
+                            Bạn có một <strong style="color:#2563eb;">thông báo mới</strong> từ <strong>EVMS</strong> 🎉
+                        </p>
 
-            <p style="font-size:15px;color:#333;">
-                Bạn có một <b style="color:#3b82f6;">thông báo mới</b> từ <b>EVMS</b> 🎉
-            </p>
+                        <!-- Title + Body -->
+                        <div style="margin:18px 0;padding:18px 16px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;">
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <span style="font-size:18px;">🔔</span>
+                                </div>
+                                <div>
+                                    <h3 th:text="${title}" style="margin:0 0 6px 0;font-size:16px;color:#0f172a;font-weight:700;">
+                                        Tiêu đề thông báo
+                                    </h3>
+                                    <p th:text="${body}" style="margin:0;color:#334155;font-size:14px;">
+                                        Nội dung chi tiết sẽ hiển thị ở đây.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Box Content -->
-            <div style="margin:20px 0;padding:18px 20px;background:#f0f4ff;
-                      border-left:5px solid #3b82f6;border-radius:6px;">
-                <h3 style="margin:0 0 8px 0;color:#1e3a8a;font-size:17px;font-weight:600;"
-                    th:text="${title}">Tiêu đề thông báo</h3>
-                <p style="margin:0;color:#374151;font-size:14px;"
-                   th:text="${body}">Nội dung chi tiết sẽ hiển thị ở đây.</p>
-            </div>
+                        <!-- Meta -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                               style="margin:8px 0 0 0;border-collapse:separate;border-spacing:0 10px;">
+                            <tr>
+                                <td style="width:33.33%;padding:0;">
+                                    <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">
+                                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">Loại</div>
+                                        <div th:text="${type}" style="font-size:14px;color:#0f172a;font-weight:600;">GENERAL</div>
+                                    </div>
+                                </td>
+                                <td style="width:33.33%;padding:0 12px;">
+                                    <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">
+                                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">Trạng thái</div>
+                                        <div th:text="${status}" style="font-size:14px;color:#0f172a;font-weight:600;">NEW</div>
+                                    </div>
+                                </td>
+                                <td style="width:33.33%;padding:0;">
+                                    <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">
+                                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">Thời gian</div>
+                                        <div th:text="${createdAt}" style="font-size:14px;color:#0f172a;font-weight:600;">2025-10-17 09:00</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
 
-            <!-- Meta info -->
-            <p style="font-size:13px;color:#555;margin-top:24px;background:#f9fafb;
-                    padding:10px 14px;border-radius:6px;border:1px solid #e5e7eb;">
-                📌 <b>Loại:</b> <span th:text="${type}" style="color:#2563eb;">GENERAL</span><br>
-                🔖 <b>Trạng thái:</b> <span th:text="${status}" style="color:#10b981;">NEW</span><br>
-                ⏰ <b>Thời gian:</b> <span th:text="${createdAt}" style="color:#6b7280;">2025-10-17 09:00</span>
-            </p>
+                        <!-- CTA (tùy chọn) -->
+                        <div th:if="${actionUrl}" style="margin:22px 0 8px 0;">
+                            <a th:href="${actionUrl}"
+                               th:text="${actionLabel} ?: 'Xem chi tiết'"
+                               style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;
+                          padding:12px 18px;border-radius:10px;font-weight:700;font-size:14px;">
+                                Xem chi tiết
+                            </a>
+                        </div>
 
-            <!-- Divider -->
-            <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+                        <!-- Note -->
+                        <p style="margin:8px 0 0 0;font-size:12px;color:#6b7280;">
+                            Nếu muốn biết thêm thông tin chi tiết hãy truy cập ứng dụng EVMS để xem thông báo của bạn.
+                        </p>
+                    </td>
+                </tr>
 
-            <!-- Footer -->
-            <p style="font-size:13px;color:#6b7280;text-align:center;margin:0;">
-                Cảm ơn bạn đã đồng hành cùng <b>EV Management</b>.<br>
-                Đây là email tự động, vui lòng không trả lời.<br>
-                © 2025 EVMS. All rights reserved.
-            </p>
+                <!-- Divider -->
+                <tr>
+                    <td style="padding:0 32px;">
+                        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="padding:0 32px 26px 32px;text-align:center;">
+                        <p style="font-size:12px;color:#6b7280;margin:0 0 8px 0;">
+                            Cảm ơn bạn đã đồng hành cùng <strong>EV Management</strong>.
+                        </p>
+                        <p style="font-size:12px;color:#94a3b8;margin:0;">
+                            Đây là email tự động, vui lòng không trả lời.<br>
+                            © <span th:text="${#temporals.createNow().year}">2025</span> EVMS. All rights reserved.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <!-- /Card -->
         </td>
     </tr>
 </table>
+<!-- /Wrapper -->
 </body>
 </html>

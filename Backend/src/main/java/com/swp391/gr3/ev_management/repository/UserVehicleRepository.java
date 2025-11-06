@@ -17,12 +17,4 @@ public interface UserVehicleRepository extends JpaRepository<UserVehicle,Long> {
            "LEFT JOIN FETCH m.connectorType " +
            "WHERE v.driver.driverId = :driverId")
     List<UserVehicle> findByDriverIdWithDetails(@Param("driverId") Long driverId);
-
-    @Query("""
-           SELECT uv FROM UserVehicle uv
-           JOIN FETCH uv.model m
-           JOIN FETCH m.connectorType ct
-           WHERE uv.driver.driverId = :driverId
-           """)
-    List<UserVehicle> findByDriverIdWithModelAndConnector(@Param("driverId") Long driverId);
 }

@@ -11,7 +11,7 @@ public interface DriverViolationTripletRepository extends JpaRepository<DriverVi
 
     @Query("""
         select t from DriverViolationTriplet t
-        where t.driver.driverId = :driverId and t.status = 'OPEN'
+        where t.driver.driverId = :driverId and t.status = 'IN_PROGRESS'
         order by t.createdAt desc
     """)
     List<DriverViolationTriplet> findOpenByDriver(@Param("driverId") Long driverId);
@@ -24,4 +24,26 @@ public interface DriverViolationTripletRepository extends JpaRepository<DriverVi
            or t.v3.violationId = :violationId
     """)
     boolean existsByViolation(@Param("violationId") Long violationId);
+
+    @Query("""
+           SELECT t
+           FROM DriverViolationTriplet t
+             JOIN FETCH t.driver d
+             JOIN FETCH d.user u
+           ORDER BY t.createdAt DESC
+           """)
+    List<DriverViolationTriplet> findAllWithDriverAndUser();
+
+    /**
+     * Lấy các Triplet theo số điện thoại user
+     */
+    @Query("""
+           SELECT t
+           FROM DriverViolationTriplet t
+             JOIN FETCH t.driver d
+             JOIN FETCH d.user u
+           WHERE u.phoneNumber = :phone
+           ORDER BY t.createdAt DESC
+           """)
+    List<DriverViolationTriplet> findByUserPhoneNumber(@Param("phone") String phone);
 }
