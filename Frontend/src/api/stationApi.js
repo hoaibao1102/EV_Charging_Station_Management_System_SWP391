@@ -167,16 +167,10 @@ export const cancelBooking = (bookingId) => {
   );
 };
 
-
 // ====== Khởi động phiên sạc ======
 export const startChargingSession = (payload) => {
   return handleApiCall(
-    () =>
-      apiClient.post("/api/charging-sessions/start", payload, {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      }),
+    () => apiClient.post("/api/charging-sessions/start", payload),
     "Khởi động phiên sạc thất bại"
   );
 };
@@ -197,7 +191,6 @@ export const stopChargingSession = (sessionId) => {
   );
 };
 
-
 // ====== Export default object ======
 export const stationAPI = {
   getConnectorTypes,
@@ -213,3 +206,26 @@ export const stationAPI = {
   getCurrentChargingSession,
   stopChargingSession,
 };
+
+// ====== Lấy thông tin station-staff hiện tại (STAFF) ======
+export const getStationStaffMe = () => {
+  return handleApiCall(
+    () => apiClient.get(`/api/station-staff/me`),
+    "Lấy thông tin station staff thất bại"
+  );
+};
+
+// ====== Lấy danh sách phiên sạc theo stationId (STAFF view) ======
+export const getChargingSessionsByStation = (stationId) => {
+  return handleApiCall(
+    () =>
+      apiClient.get(
+        `/api/charging-sessions/stations/${stationId}/charging-sessions`
+      ),
+    "Lấy danh sách phiên sạc theo trạm thất bại"
+  );
+};
+
+// Mở rộng stationAPI
+stationAPI.getStationStaffMe = getStationStaffMe;
+stationAPI.getChargingSessionsByStation = getChargingSessionsByStation;
