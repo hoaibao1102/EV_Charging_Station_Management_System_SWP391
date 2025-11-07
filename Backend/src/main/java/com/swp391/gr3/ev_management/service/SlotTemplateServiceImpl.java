@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.response.SlotTemplateResponse;
+import com.swp391.gr3.ev_management.dto.response.SlotTemplateResponse;
 import com.swp391.gr3.ev_management.entity.SlotConfig;
 import com.swp391.gr3.ev_management.entity.SlotTemplate;
 import com.swp391.gr3.ev_management.exception.ConflictException;

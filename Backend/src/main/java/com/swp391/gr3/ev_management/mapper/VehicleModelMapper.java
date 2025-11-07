@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
+import com.swp391.gr3.ev_management.dto.response.VehicleModelResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
 import org.springframework.stereotype.Component;

@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.ChargingStationRequest;
-import com.swp391.gr3.ev_management.DTO.response.ChargingStationResponse;
+import com.swp391.gr3.ev_management.dto.request.ChargingStationRequest;
+import com.swp391.gr3.ev_management.dto.response.ChargingStationResponse;
 import com.swp391.gr3.ev_management.enums.ChargingStationStatus;
 import com.swp391.gr3.ev_management.service.ChargingStationService;
 import io.swagger.v3.oas.annotations.Operation;

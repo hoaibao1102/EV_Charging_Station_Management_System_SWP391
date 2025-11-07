@@ -1,4 +1,4 @@
-package com.swp391.gr3.ev_management.DTO.response;
+package com.swp391.gr3.ev_management.dto.response;
 
 import lombok.Builder;
 import lombok.Data;

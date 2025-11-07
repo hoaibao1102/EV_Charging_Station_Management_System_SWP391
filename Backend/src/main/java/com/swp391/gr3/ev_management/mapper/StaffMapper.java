@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.StaffResponse;
+import com.swp391.gr3.ev_management.dto.response.StaffResponse;
 import com.swp391.gr3.ev_management.entity.Staffs;
 import org.springframework.stereotype.Component;
 

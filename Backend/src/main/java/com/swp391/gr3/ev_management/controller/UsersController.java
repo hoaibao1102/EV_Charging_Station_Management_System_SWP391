@@ -2,8 +2,8 @@ package com.swp391.gr3.ev_management.controller;
 
 import java.util.Map;
 
-import com.swp391.gr3.ev_management.DTO.request.*;
-import com.swp391.gr3.ev_management.DTO.response.LoginResponse;
+import com.swp391.gr3.ev_management.dto.request.*;
+import com.swp391.gr3.ev_management.dto.response.LoginResponse;
 import com.swp391.gr3.ev_management.service.AuthService;
 import com.swp391.gr3.ev_management.service.OtpService;
 import com.swp391.gr3.ev_management.service.TokenService;

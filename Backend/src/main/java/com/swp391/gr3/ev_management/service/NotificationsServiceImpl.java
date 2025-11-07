@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
+import com.swp391.gr3.ev_management.dto.response.NotificationResponse;
 import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
@@ -9,7 +9,7 @@ import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.swp391.gr3.ev_management.DTO.response.CreateNotificationResponse;
+import com.swp391.gr3.ev_management.dto.response.CreateNotificationResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;

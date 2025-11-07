@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
+import com.swp391.gr3.ev_management.dto.response.DriverResponse;
+import com.swp391.gr3.ev_management.dto.response.VehicleResponse;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.UserVehicle;
 import com.swp391.gr3.ev_management.entity.VehicleModel;

@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeCreateRequest;
-import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.response.ConnectorTypeResponse;
+import com.swp391.gr3.ev_management.dto.request.ConnectorTypeCreateRequest;
+import com.swp391.gr3.ev_management.dto.request.ConnectorTypeUpdateRequest;
+import com.swp391.gr3.ev_management.dto.response.ConnectorTypeResponse;
 
 import java.util.List;
 

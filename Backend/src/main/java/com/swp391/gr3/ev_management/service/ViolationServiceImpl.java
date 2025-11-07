@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
-import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
+import com.swp391.gr3.ev_management.dto.request.ViolationRequest;
+import com.swp391.gr3.ev_management.dto.response.ViolationResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;

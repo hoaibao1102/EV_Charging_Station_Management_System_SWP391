@@ -1,9 +1,9 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.CreateStationStaffRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdateAdminProfileRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdatePasswordRequest;
-import com.swp391.gr3.ev_management.DTO.response.*;
+import com.swp391.gr3.ev_management.dto.request.CreateStationStaffRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdateAdminProfileRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdatePasswordRequest;
+import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.service.*;
