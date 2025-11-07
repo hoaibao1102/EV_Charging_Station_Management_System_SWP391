@@ -38,6 +38,7 @@ export const paths = {
   manageSessionChargingCreate: "/staff/manage-session-charging/new",
   manageTransaction: "/staff/manage-transaction",
   reportAccidents: "/staff/report-accidents",
+  incidents: "/staff/incidents",
 };
 
 export default paths;

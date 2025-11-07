@@ -21,4 +21,8 @@ public interface ChargingSessionService {
     Optional<ChargingSession> findById(Long sessionId);
     StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId);
     List<ViewCharSessionResponse> getAllSessionsByStation(Long stationId);
+    /**
+     * ✅ Trả về danh sách phiên sạc theo pointId (điểm sạc).
+     */
+    List<ViewCharSessionResponse> getSessionsByPoint(Long pointId);
 }
