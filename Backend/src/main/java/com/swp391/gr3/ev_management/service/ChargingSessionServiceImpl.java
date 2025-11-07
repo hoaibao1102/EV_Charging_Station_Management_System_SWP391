@@ -228,4 +228,15 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .max(LocalDateTime::compareTo)
                 .orElseThrow(() -> new ErrorException("Booking has no slot end time"));
     }
+
+    /**
+     * ✅ Lấy danh sách session theo pointId và map sang response DTO.
+     * - Dùng repo query đã fetch sẵn để hiệu năng tốt.
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public List<ViewCharSessionResponse> getSessionsByPoint(Long pointId) {
+        List<ChargingSession> sessions = sessionRepository.findAllByChargingPointIdDeep(pointId);
+        return sessions.stream().map(mapper::toResponse).toList();
+    }
 }
