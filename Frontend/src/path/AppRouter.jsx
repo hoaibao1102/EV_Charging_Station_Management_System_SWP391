@@ -46,6 +46,7 @@ import ManagementTransaction from "../pages/staff/ManagementTransaction.jsx";
 import SessionCharging from "../pages/staff/SessionCharging.jsx";
 import SessionChargingCreate from "../pages/staff/SessionChargingCreate.jsx";
 import StaffDashboard from "../pages/staff/StaffDashboard.jsx";
+import Triplet from "../pages/staff/Triplet.jsx";
 
 const AppRouter = () => {
   return (
@@ -129,7 +130,12 @@ const AppRouter = () => {
               path={paths.manageTransaction}
               element={<ManagementTransaction />}
             />
+            <Route
+              path={paths.manageTransaction}
+              element={<ManagementTransaction />}
+            />
             <Route path={paths.reportAccidents} element={<ReportAccidents />} />
+            <Route path={paths.incidents} element={<Triplet />} />
           </Route>
         </Route>
 
