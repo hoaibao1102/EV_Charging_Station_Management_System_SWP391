@@ -150,7 +150,21 @@ public class ChargingSessionController {
     }
 
     // =========================================================================
-    // 7) DRIVER: TỰ DỪNG PHIÊN SẠC CỦA CHÍNH MÌNH
+    // 7) STAFF/ADMIN: LẤY TẤT CẢ PHIÊN SẠC THEO POIN ID
+    // =========================================================================
+    @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
+    @GetMapping("/by-point/{pointId}")
+    @Operation(summary = "Get sessions by charging point",
+            description = "Retrieve all charging sessions associated with a specific charging point (via Booking -> Slot -> ChargingPoint)")
+    public ResponseEntity<List<ViewCharSessionResponse>> getSessionsByPoint(
+            @PathVariable Long pointId
+    ) {
+        // ✅ Gọi service để lấy danh sách session theo pointId
+        return ResponseEntity.ok(chargingSessionService.getSessionsByPoint(pointId));
+    }
+
+    // =========================================================================
+    // 8) DRIVER: TỰ DỪNG PHIÊN SẠC CỦA CHÍNH MÌNH
     // =========================================================================
     @PreAuthorize("hasRole('DRIVER')") // 🔒 Chỉ tài xế (DRIVER)
     @PostMapping("/driver-stop") // 🔗 POST /api/charging-sessions/driver-stop
@@ -171,7 +185,7 @@ public class ChargingSessionController {
     }
 
     // =========================================================================
-    // 8) DRIVER: LẤY PHIÊN SẠC ĐANG HOẠT ĐỘNG HIỆN TẠI CỦA CHÍNH MÌNH
+    // 9) DRIVER: LẤY PHIÊN SẠC ĐANG HOẠT ĐỘNG HIỆN TẠI CỦA CHÍNH MÌNH
     // =========================================================================
     @GetMapping("/charging-sessions/current") // 🔗 GET /api/charging-sessions/charging-sessions/current
     @Operation(summary = "Get current active session for driver",
