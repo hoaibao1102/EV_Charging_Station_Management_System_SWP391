@@ -24,10 +24,7 @@ import java.util.List;
 public class DriverController {
 
     private final DriverService driverService;
-
     private final TokenService tokenService;
-
-    private final ChargingSessionService chargingSessionService;
 
     // ✅ Driver cập nhật hồ sơ
     @PreAuthorize("hasRole('DRIVER')")

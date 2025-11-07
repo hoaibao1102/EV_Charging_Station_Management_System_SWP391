@@ -43,7 +43,7 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         point.setUpdatedAt(LocalDateTime.now());
         pointRepository.save(point);
 
-                return chargingPointMapper.toResponse(point);
+        return chargingPointMapper.toResponse(point);
     }
 
     @Override

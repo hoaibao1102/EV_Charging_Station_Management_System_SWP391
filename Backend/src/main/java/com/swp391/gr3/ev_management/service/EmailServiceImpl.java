@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.entity.Notification;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,6 +14,7 @@ import org.thymeleaf.context.Context;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
@@ -51,7 +52,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(html, true);
             mailSender.send(msg);
         } catch (Exception e) {
-            // TODO: logger.error("sendNotificationEmailTpl failed", e);
+            log.error("sendNotificationEmailTpl failed", e);
         }
     }
 

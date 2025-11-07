@@ -1,7 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
 import com.swp391.gr3.ev_management.dto.response.PaymentMethodResponse;
-import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.PaymentType;
 import com.swp391.gr3.ev_management.service.PaymentMethodService;
@@ -24,7 +23,7 @@ public class PaymentMethodController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
-    public ResponseEntity<PaymentMethod> create(@RequestParam PaymentType methodType,
+    public ResponseEntity<PaymentMethodResponse> create(@RequestParam PaymentType methodType,
                                                 @RequestParam PaymentProvider provider,
                                                 @RequestParam String accountNo,
                                                 @RequestParam(required = false) LocalDate expiryDate) {
@@ -33,7 +32,7 @@ public class PaymentMethodController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<PaymentMethod> update(@PathVariable Long id,
+    public ResponseEntity<PaymentMethodResponse> update(@PathVariable Long id,
                                                 @RequestParam PaymentType methodType,
                                                 @RequestParam PaymentProvider provider,
                                                 @RequestParam String accountNo,

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Bookings", description = "APIs for managing bookings")
 public class BookingController {
+
     private final BookingService bookingService;
 
     @PutMapping(value = "/{bookingId}/confirm", produces = MediaType.IMAGE_PNG_VALUE)

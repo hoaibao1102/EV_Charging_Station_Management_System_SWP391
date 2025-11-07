@@ -9,7 +9,6 @@ import java.util.List;
 @Service
 public interface NotificationsService {
     List<CreateNotificationResponse> getNotificationsByUser(Long userId);
-    List<CreateNotificationResponse> getUnreadNotificationsByUser(Long userId);
     Long getUnreadCount(Long userId);
     void markAsRead(Long notificationId, Long userId);
 

@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.mapper.DashboardStatsMapper;
+import com.swp391.gr3.ev_management.mapper.StatisticsResponseMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final UserRepository userRepository;
     private final DriverRepository driverRepository;
     private final StaffsRepository staffsRepository;
+    private final StatisticsResponseMapper statisticsResponseMapper;
 
     @Override
     public DashboardStatsResponse getDashboard() {
@@ -121,13 +123,9 @@ public class StatisticsServiceImpl implements StatisticsService {
         long totalStaffs   = staffsRepository.count();
         long activeStaffs  = staffsRepository.countByStatus(StaffStatus.ACTIVE);
 
-        return UserTotalsResponse.builder()
-                .totalUsers(totalUsers)
-                .totalDrivers(totalDrivers)
-                .activeDrivers(activeDrivers)
-                .totalStaffs(totalStaffs)
-                .activeStaffs(activeStaffs)
-                .build();
+        return statisticsResponseMapper.toUserTotalsResponse(
+                totalUsers, totalDrivers, activeDrivers, totalStaffs, activeStaffs
+        );
     }
 
     // ===== Helpers =====

@@ -7,7 +7,6 @@ import java.util.List;
 
 public interface SlotTemplateService {
     List<SlotTemplateResponse> generateDailyTemplates(Long configId, LocalDateTime forDate, LocalDateTime endDate);
-    List<SlotTemplateResponse> generateTemplatesForRange(Long configId, LocalDateTime startDate, LocalDateTime endDate);
     SlotTemplateResponse getById(Long templateId);
     List<SlotTemplateResponse> getAll();
 }

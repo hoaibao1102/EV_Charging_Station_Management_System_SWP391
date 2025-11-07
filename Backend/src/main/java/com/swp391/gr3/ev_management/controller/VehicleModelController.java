@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 public class VehicleModelController {
 
     private final VehicleModelService vehicleModelService;
-
     private final VehicleModelRepository vehicleModelRepository;
 
     // DELETE /api/admin/vehicle-models/{id}

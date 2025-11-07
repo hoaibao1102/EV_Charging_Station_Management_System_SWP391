@@ -58,12 +58,12 @@ public class DataInitializer implements CommandLineRunner {
             initConnectorTypes();     // seed các loại đầu sạc phổ biến
             initRoles();              // seed các role chuẩn
             initAdmins();             // tạo 1 admin mặc định + map bảng Admin
-            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
             initVehicleModels();      // seed VehicleModel (cần connector types)
             initDrivers();            // seed Driver
             initChargingStations();   // seed trạm sạc theo Seed_Data
             initChargingPoints();     // seed điểm sạc theo Seed_Data
 //            initSlotAvailability();   // seed mẫu slot theo Seed_Data
+            initStaffs();             // tạo 1 staff mặc định + map bảng Staffs
             initTariffs();            // seed bảng Tariff
             initPaymentMethods();     // seed bảng PaymentMethod
             initBanDrivers();
@@ -453,7 +453,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ================== DEFAULT STAFF (do Admin tạo) ==================
-    private void initStaffs() {
+    public void initStaffs() {
         createStaffIfNotExists(
                 "0900000001",
                 "staff1@example.com",
@@ -467,7 +467,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Transactional
-    protected void createStaffIfNotExists(String phoneNumber, String email, String rawPassword,
+    public void createStaffIfNotExists(String phoneNumber, String email, String rawPassword,
                                           String name, String gender, LocalDate dateOfBirth, String address,
                                           String roleAtStation) {
         try {
@@ -532,8 +532,8 @@ public class DataInitializer implements CommandLineRunner {
                             .build();
 
 //                    // set 2 chiều (tùy thích, để bộ nhớ đồng bộ)
-                    station.getStationStaffs().add(link);
-                    currentStaff.getStationStaffs().add(link);
+//                    station.getStationStaffs().add(link);
+//                    currentStaff.getStationStaffs().add(link);
 
                     // ✅ Lưu TRỰC TIẾP vào bảng station_staff
                     stationStaffRepository.save(link);

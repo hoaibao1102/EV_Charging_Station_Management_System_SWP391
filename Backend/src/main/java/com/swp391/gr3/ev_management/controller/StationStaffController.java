@@ -20,7 +20,6 @@ import java.util.List;
 public class StationStaffController {
 
     private final StaffStationService staffStationService;
-
     private final TokenService tokenService;
 
     @PreAuthorize("hasRole('ADMIN')")

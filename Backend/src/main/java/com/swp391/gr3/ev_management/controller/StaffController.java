@@ -22,9 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class StaffController {
 
     private final StaffStationService staffStationService;
-
     private final StaffService staffService;
-
     private final TokenService tokenService;
 
     @PreAuthorize("hasRole('STAFF')")

@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.StopCharSessionResponseMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class ChargingSessionTxHandler {
     private final NotificationsRepository notificationsRepository;
     private final SessionSocCache sessionSocCache;
     private final ApplicationEventPublisher eventPublisher;
+    private final StopCharSessionResponseMapper stopResponseMapper;
 
     @Transactional
     public StopCharSessionResponse stopSessionInternalTx(Long sessionId, Integer finalSocIfAny, LocalDateTime endTime) {
@@ -134,22 +136,7 @@ public class ChargingSessionTxHandler {
         invoice.setDriver(booking.getVehicle().getDriver());
         invoiceRepository.save(invoice);
 
-        return StopCharSessionResponse.builder()
-                .sessionId(cs.getSessionId())
-                .stationName(booking.getStation().getStationName())
-                .pointNumber(pointNumber)
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
-                .startTime(cs.getStartTime())
-                .endTime(cs.getEndTime())
-                .durationMinutes(cs.getDurationMinutes())
-                .energyKWh(cs.getEnergyKWh())
-                .cost(cs.getCost())
-                .status(cs.getStatus())
-                .initialSoc(cs.getInitialSoc())
-                .finalSoc(cs.getFinalSoc())
-                .pricePerKWh(tariff.getPricePerKWh())
-                .currency(tariff.getCurrency())
-                .build();
+        return stopResponseMapper.mapWithTariff(cs, booking, pointNumber, tariff);
     }
 
     /**
@@ -289,21 +276,6 @@ public class ChargingSessionTxHandler {
 
         // Không tạo invoice khi cost=0 (tuỳ chính sách; nếu muốn vẫn tạo, thêm block ở đây)
 
-        return StopCharSessionResponse.builder()
-                .sessionId(cs.getSessionId())
-                .stationName(booking.getStation().getStationName())
-                .pointNumber(pointNumber)
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
-                .startTime(cs.getStartTime())
-                .endTime(cs.getEndTime())
-                .durationMinutes(cs.getDurationMinutes())
-                .energyKWh(cs.getEnergyKWh())
-                .cost(cs.getCost())
-                .status(cs.getStatus())
-                .initialSoc(cs.getInitialSoc())
-                .finalSoc(cs.getFinalSoc())
-                .pricePerKWh(0.0)
-                .currency(null)
-                .build();
+        return stopResponseMapper.mapNoBilling(cs, booking, pointNumber);
     }
 }
