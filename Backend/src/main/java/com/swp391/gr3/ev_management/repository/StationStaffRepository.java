@@ -14,8 +14,9 @@ import java.util.Optional;
 @Repository
 public interface StationStaffRepository extends JpaRepository<StationStaff, Long> {
 
-    // Tìm assignment active theo user ID
-    // (fetch staff + station, KHÔNG fetch "cháu" staff.user)
+    // ✅ Tìm assignment (phân công staff ↔ station) đang ACTIVE theo userId.
+    // - join fetch ss.staff và ss.station để load sẵn Staff & Station (tránh N+1)
+    // - chỉ lấy khi Staff đang ACTIVE
     @Query("""
         select ss from StationStaff ss
         join fetch ss.staff s
@@ -26,7 +27,8 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     """)
     Optional<StationStaff> findActiveByUserId(@Param("userId") Long userId);
 
-    // Tìm assignment theo id (active)
+    // ✅ Tìm assignment theo stationStaffId (chỉ khi staff ACTIVE).
+    // - Lấy chi tiết assignment + staff + station phục vụ hiển thị/kiểm tra quyền
     @Query("""
         select ss from StationStaff ss
         join fetch ss.staff s
@@ -37,7 +39,8 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     """)
     Optional<StationStaff> findActiveByStationStaffId(@Param("stationStaffId") Long stationStaffId);
 
-    // Projection DTO — KHÔNG dùng fetch join nên OK
+    // ✅ Truy vấn projection trực tiếp sang DTO StationStaffResponse (nhẹ, không fetch join).
+    // - Dùng khi chỉ cần dữ liệu hiển thị, không cần entity đầy đủ
     @Query("""
         select new com.swp391.gr3.ev_management.dto.response.StationStaffResponse(
             ss.stationStaffId,
@@ -57,19 +60,25 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     """)
     Optional<StationStaffResponse> findByUserId(@Param("userId") Long userId);
 
-    // (Tuỳ chọn) Nếu muốn luôn load sâu staff.user + station mà không vi phạm fetch-join:
+    // ✅ Ghi đè findById để luôn load sâu các quan hệ "staff", "staff.user", "station".
+    // - @EntityGraph đảm bảo khi gọi findById(id) sẽ fetch kèm các thuộc tính chỉ định
     @EntityGraph(attributePaths = {"staff", "staff.user", "station"})
     Optional<StationStaff> findById(Long id);
 
+    // ✅ Kiểm tra staff hiện đang có assignment ACTIVE hay chưa (unassignedAt IS NULL).
+    // - Tránh gán 1 staff vào nhiều trạm cùng lúc
     boolean existsByStaff_StaffIdAndUnassignedAtIsNull(Long staffId);
 
-    // Tìm assignment đang active (unassignedAt IS NULL) cho 1 staff
+    // ✅ Lấy assignment đang ACTIVE của một staff theo staffId.
+    // - ACTIVE được hiểu là unassignedAt IS NULL
     @Query("""
            SELECT ss FROM StationStaff ss
            WHERE ss.staff.staffId = :staffId AND ss.unassignedAt IS NULL
            """)
     Optional<StationStaff> findActiveByStaffId(Long staffId);
 
+    // ✅ Lấy đầy đủ entity assignment theo staffId, fetch sâu staff.user và station.
+    // - Phù hợp khi cần thao tác logic với đủ quan hệ trong một query
     @Query("""
        select s from StationStaff s
        join fetch s.staff staff
@@ -79,6 +88,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
        """)
     Optional<StationStaff> findEntityByStaffId(Long staffId);
 
+    // ✅ Truy vấn projection DTO theo staffId (nhẹ, chỉ dữ liệu cần thiết).
     @Query("""
     select new com.swp391.gr3.ev_management.dto.response.StationStaffResponse(
         ss.stationStaffId,
@@ -98,8 +108,12 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     """)
     Optional<StationStaffResponse> findByStaffId(@Param("staffId") Long staffId);
 
+    // ✅ Kiểm tra staff đã được gán vào chính station đó và assignment còn ACTIVE hay chưa.
+    // - Dùng để ngăn tạo assignment trùng (staff, station)
     boolean existsByStaff_StaffIdAndStation_StationIdAndUnassignedAtIsNull(Long staffId, Long stationId);
 
+    // ✅ Lấy tất cả assignment ACTIVE (unassignedAt is null) theo userId.
+    // - fetch staff.user và station để hiển thị đầy đủ
     @Query("""
 select s from StationStaff s
 join fetch s.staff staff
