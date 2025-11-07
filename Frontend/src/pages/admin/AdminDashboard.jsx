@@ -15,11 +15,8 @@ import {
   Cell,
 } from 'recharts';
 
-// 1. IMPORT FILE CSS MỚI
-// (Hãy chắc chắn đường dẫn này đúng với cấu trúc dự án của bạn)
 import './Dashboard.css';
 import './ManagementUser.css';
-
 
 // --- Màu sắc cho biểu đồ Donut ---
 const COLORS = {
@@ -55,7 +52,7 @@ export default function AdminDashboard() {
     if (!info || !info.stationRows) return [];
     return [...info.stationRows]
       .sort((a, b) => b.monthRevenue.amount - a.monthRevenue.amount)
-      .slice(0, 5);
+      .slice(0, 4);
   }, [info]);
 
   const utilizationCounts = useMemo(() => {
@@ -81,7 +78,6 @@ export default function AdminDashboard() {
 
   // Trạng thái Loading
   if (!info) {
-    // Sửa đổi trạng thái loading để dùng class mới
     return (
       <div className="dashboard-container">
         <Header />
@@ -91,18 +87,15 @@ export default function AdminDashboard() {
     );
   }
 
-  // --- 3. RENDER GIAO DIỆN (Đã cập nhật class và cấu trúc) ---
+  // --- 3. RENDER GIAO DIỆN (Giữ nguyên) ---
   return (
     <>
-      {/* Thay class container chính */}
       <div className="dashboard-container">
         <Header />
         
-        {/* Thay thế .action-section bằng .dashboard-header */}
         <h1 className="dashboard-header">Tổng quan mạng lưới sạc trong hệ thống</h1>
         
         {/* --- KHU VỰC KPI --- */}
-        {/* Thay <ul>/<li> bằng <div>/.kpi-grid/.kpi-card */}
         <div className="kpi-grid">
           <div className="kpi-card">
             <span className="kpi-title">Tổng doanh thu</span>
@@ -127,7 +120,6 @@ export default function AdminDashboard() {
         </div>
 
         {/* --- KHU VỰC BIỂU ĐỒ VÀ BẢNG --- */}
-        {/* Cấu trúc này chứa cả biểu đồ và bảng */}
         <div className="charts-grid">
           
           {/* Biểu đồ 1: Top 5 Trạm (Bar Chart) */}
@@ -146,7 +138,7 @@ export default function AdminDashboard() {
                 <Bar 
                   dataKey="monthRevenue.amount"
                   name="Doanh thu (VND)"
-                  fill="#20b2aa" // Giữ màu bạn đã đổi
+                  fill="#20b2aa"
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -167,7 +159,44 @@ export default function AdminDashboard() {
                   outerRadius={80}
                   fill="#20b2aa"
                   paddingAngle={5}
-                  label={({ name, value }) => `${name}: ${value} trạm`}
+                  labelLine={true}
+                  label={({
+                    cx,
+                    cy,
+                    midAngle,
+                    outerRadius,
+                    name,
+                    value,
+                  }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 15; // Khoảng cách từ vòng ra
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    // Căn lề dựa trên vị trí (trái/phải)
+                    const textAnchor = x > cx ? 'start' : 'end';
+
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#333"
+                        textAnchor={textAnchor}
+                        dominantBaseline="central"
+                        style={{ fontSize: '12px', fontWeight: 500 }}
+                      >
+                        {/* Dòng 1: Hiển thị name */}
+                        <tspan x={x} dy="0">
+                          {name}
+                        </tspan>
+                        {/* Dòng 2: Hiển thị value (xuống dòng) */}
+                        <tspan x={x} dy="1.2em"> {/* '1.2em' tạo một dòng mới */}
+                          {`${value} trạm`}
+                        </tspan>
+                      </text>
+                    );
+                  }}
+                  // --- KẾT THÚC THAY ĐỔI ---
+                
                 >
                   {utilizationDataForChart.map((entry, index) => {
                     let colorKey = 'low';
@@ -183,11 +212,9 @@ export default function AdminDashboard() {
           </div>
 
           {/* --- KHU VỰC BẢNG DỮ LIỆU --- */}
-          {/* Đã di chuyển vào trong .charts-grid để CSS grid-column hoạt động */}
           <div className="table-container">
             <h2 className="chart-title">Chi Tiết Các Trạm Sạc</h2>
             
-            {/* Thay class .custom-table bằng .stations-table */}
             <table className="custom-table">
               <thead>
                 <tr>

@@ -102,13 +102,14 @@ export default function AddVehicle({ onClose, onSuccess }) {
                     <div> 
                         <h2><FaTachometerAlt style={{ marginRight: '8px' }} /> Chọn mẫu xe</h2>
                         {models.map((model) => (
+                            model.status === 'ACTIVE' && (
                             <ul key={model.id} style={{listStyleType: 'none', padding: 0, cursor: 'pointer'}} 
                                 onClick={() => {setVehicle({ ...vehicle, modelId: model.modelId}); setStep(2);}}>
                                 <li>
                                     <ModelVehicle model={model} />
                                 </li>
                             </ul>
-                            
+                            )
                         ))}
                     </div>
                 )}
