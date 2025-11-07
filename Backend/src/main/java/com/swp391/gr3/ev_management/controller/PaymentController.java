@@ -23,7 +23,6 @@ import java.util.List;
 public class PaymentController {
 
     private final StaffPaymentService paymentService;
-
     private final TokenService tokenService;
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")

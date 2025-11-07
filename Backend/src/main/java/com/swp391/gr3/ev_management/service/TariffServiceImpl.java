@@ -6,6 +6,7 @@ import com.swp391.gr3.ev_management.dto.response.TariffResponse;
 import com.swp391.gr3.ev_management.entity.ConnectorType;
 import com.swp391.gr3.ev_management.entity.Tariff;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.TariffResponseMapper;
 import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import com.swp391.gr3.ev_management.repository.TariffRepository;
 import jakarta.transaction.Transactional;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,19 +21,18 @@ public class TariffServiceImpl implements TariffService {
 
     private final TariffRepository tariffRepository;
     private final ConnectorTypeRepository connectorTypeRepository;
+    private final TariffResponseMapper tariffResponseMapper;
 
     @Override
     public List<TariffResponse> getAllTariffs() {
-        return tariffRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return tariffResponseMapper.toResponseList(tariffRepository.findAll());
     }
 
     @Override
     public TariffResponse getTariffById(long tariffId) {
         Tariff tariff = tariffRepository.findById(tariffId)
                 .orElseThrow(() -> new ErrorException("Không tìm thấy tariff với ID: " + tariffId));
-        return toResponse(tariff);
+        return tariffResponseMapper.toResponse(tariff);
     }
 
     @Override
@@ -58,7 +57,7 @@ public class TariffServiceImpl implements TariffService {
                 .build();
 
         Tariff saved = tariffRepository.save(tariff);
-        return toResponse(saved);
+        return tariffResponseMapper.toResponse(saved);
     }
 
     @Override
@@ -111,23 +110,7 @@ public class TariffServiceImpl implements TariffService {
         }
 
         Tariff updated = tariffRepository.save(tariff);
-        return toResponse(updated);
+        return tariffResponseMapper.toResponse(updated);
     }
 
-    // Helper method to convert Entity to Response DTO
-    private TariffResponse toResponse(Tariff tariff) {
-        return TariffResponse.builder()
-                .tariffId(tariff.getTariffId())
-                .connectorTypeId(tariff.getConnectorType().getConnectorTypeId())
-                .connectorTypeCode(tariff.getConnectorType().getCode())
-                .connectorTypeName(tariff.getConnectorType().getDisplayName())
-                .pricePerKWh(tariff.getPricePerKWh())
-                .pricePerMin(tariff.getPricePerMin())
-                .currency(tariff.getCurrency())
-                .effectiveFrom(tariff.getEffectiveFrom())
-                .effectiveTo(tariff.getEffectiveTo())
-                .createdAt(tariff.getCreatedAt())
-                .updatedAt(tariff.getUpdatedAt())
-                .build();
-    }
 }

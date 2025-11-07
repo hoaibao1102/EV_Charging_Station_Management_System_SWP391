@@ -9,6 +9,7 @@ import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;
 import com.swp391.gr3.ev_management.events.UserRegisteredEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.UserResponseMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,8 @@ public class UserServiceImpl implements UserService{
     private final StationStaffRepository stationStaffRepository;
     private final ChargingStationRepository chargingStationRepository;
     private final ChargingSessionRepository chargingSessionRepository;
+    private final UserResponseMapper userResponseMapper;
+
 
     @Override
     public User getUser(String phoneNumber, String password) {
@@ -281,19 +284,7 @@ public class UserServiceImpl implements UserService{
                 .stream()
                 .map(user -> {
                     long sessionCount = chargingSessionRepository.countSessionsByUserId(user.getUserId());
-
-                    return GetUsersResponse.builder()
-                            .userId(user.getUserId())
-                            .email(user.getEmail())
-                            .phoneNumber(user.getPhoneNumber())
-                            .name(user.getName())
-                            .dateOfBirth(user.getDateOfBirth())
-                            .gender(user.getGender())
-                            .address(user.getAddress())
-                            .status(extractStatus(user))
-                            .roleName(user.getRole() != null ? user.getRole().getRoleName() : null)
-                            .sessionCount(sessionCount)
-                            .build();
+                    return userResponseMapper.toGetUsersResponse(user, sessionCount);
                 })
                 .toList();
     }

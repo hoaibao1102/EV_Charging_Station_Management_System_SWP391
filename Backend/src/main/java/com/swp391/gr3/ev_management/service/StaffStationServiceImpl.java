@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.dto.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.StationStaffResponseMapper;
 import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class StaffStationServiceImpl implements StaffStationService {
 
     private final StationStaffRepository stationStaffRepository;
     private final ChargingStationRepository chargingStationRepository;
+    private final StationStaffResponseMapper stationStaffResponseMapper; // ✅ thêm mapper mới
 
     @Override
     public StationStaffResponse getStaffByUserId(Long userId) {
@@ -56,25 +58,16 @@ public class StaffStationServiceImpl implements StaffStationService {
     public List<StationStaffResponse> getAll() {
         return stationStaffRepository.findAll()
                 .stream()
-                .map(ss -> stationStaffRepository.findByStaffId(ss.getStaff().getStaffId())
-                        .orElseThrow(() -> new ErrorException("Failed to load staff with id " + ss.getStaff().getStaffId())))
+                .map(stationStaffResponseMapper::mapToResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<StationStaffResponse> getByStationStaffUserId(Long userId) {
-        return stationStaffRepository.findStationStaffByUserId(userId).stream()
-                .map(s -> new StationStaffResponse(
-                        s.getStationStaffId(),
-                        s.getStaff().getStaffId(),
-                        s.getStation().getStationId(),
-                        s.getStaff().getUser().getName(),
-                        s.getStaff().getUser().getEmail(),
-                        s.getStaff().getUser().getPhoneNumber(),
-                        s.getStaff().getStatus(),
-                        s.getAssignedAt()
-                ))
+        return stationStaffRepository.findStationStaffByUserId(userId)
+                .stream()
+                .map(stationStaffResponseMapper::mapToResponse)
                 .toList();
     }
 }

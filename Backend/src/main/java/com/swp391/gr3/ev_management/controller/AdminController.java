@@ -29,8 +29,6 @@ public class AdminController {
     private final TokenService tokenService;
     private final DriverService driverService;
     private final StaffService staffService;
-    private final StaffStationService staffStationService;
-    private final ChargingSessionService chargingSessionService;
     private final NotificationsService notificationsService;
     private final AdminService adminService;
 

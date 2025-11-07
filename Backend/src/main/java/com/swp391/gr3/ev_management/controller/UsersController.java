@@ -29,6 +29,7 @@ import jakarta.validation.Valid;
 @Tag(name = "Users", description = "APIs for user registration and authentication")
 @RequiredArgsConstructor
 public class UsersController {
+
     private final UserService userService;
     private final TokenService tokenService;
     private final OtpService otpService;

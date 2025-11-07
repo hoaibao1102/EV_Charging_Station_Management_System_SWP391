@@ -32,14 +32,6 @@ public class NotificationsServiceImpl implements NotificationsService{
     }
 
     @Override
-    public List<CreateNotificationResponse> getUnreadNotificationsByUser(Long userId) {
-        return notificationsRepository.findUnreadByUserId(userId)
-                .stream()
-                .map(mapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public Long getUnreadCount(Long userId) {
         return notificationsRepository.countByUser_UserIdAndStatus(userId, "unread");
     }

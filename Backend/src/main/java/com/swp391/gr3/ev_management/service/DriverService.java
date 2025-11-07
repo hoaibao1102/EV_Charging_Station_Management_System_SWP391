@@ -20,7 +20,6 @@ public interface DriverService {
     // CRUD
     DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
     DriverResponse getByUserId(Long userId);
-    DriverResponse getByDriverId(Long driverId);
     List<DriverResponse> getAllDrivers();
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
@@ -28,7 +27,6 @@ public interface DriverService {
     // UC-04: Vehicle Management
     VehicleResponse addVehicle(Long userId, @Valid AddVehicleRequest request);
     List<VehicleResponse> getMyVehicles(Long userId);
-    void removeVehicle(Long userId, Long vehicleId);
 
     VehicleResponse updateVehicle(Long userId, Long vehicleId, UpdateVehicleRequest request);
     VehicleResponse updateVehicleStatus(Long userId, Long vehicleId, UserVehicleStatus status);

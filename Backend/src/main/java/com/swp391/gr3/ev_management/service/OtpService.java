@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 @Service
 public interface OtpService {
 
-    public String generateOtp(String email);
-    public boolean verifyOtp(String email, String otpCode);
+    String generateOtp(String email);
+    boolean verifyOtp(String email, String otpCode);
 
 }

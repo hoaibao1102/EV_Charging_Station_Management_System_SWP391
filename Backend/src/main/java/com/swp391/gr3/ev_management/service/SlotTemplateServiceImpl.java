@@ -80,19 +80,6 @@ public class SlotTemplateServiceImpl implements SlotTemplateService {
     }
 
     @Override
-    @Transactional
-    public List<SlotTemplateResponse> generateTemplatesForRange(Long configId, LocalDateTime startDate, LocalDateTime endDate) {
-        if (startDate == null || endDate == null || endDate.isBefore(startDate)) {
-            throw new ConflictException("Khoảng ngày không hợp lệ.");
-        }
-        List<SlotTemplateResponse> all = new ArrayList<>();
-        for (LocalDateTime d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
-            all.addAll(generateDailyTemplates(configId, d, endDate)); // sau 23:59 sẽ reset tự nhiên cho ngày kế tiếp
-        }
-        return all;
-    }
-
-    @Override
     public SlotTemplateResponse getById(Long templateId) {
         return  mapper.toResponse(slotTemplateRepository.findById(templateId).orElse(null));
     }
