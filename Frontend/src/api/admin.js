@@ -74,6 +74,7 @@ export const markAccidentAsResolvedApi = (incidentId) => {
     );
 }
 
+
 //lấy dữ liệu thống kê tổng quan
 export const getAdminStatisticsApi = () => {
     return handleApiCall(
@@ -81,3 +82,4 @@ export const getAdminStatisticsApi = () => {
         'Lấy dữ liệu thống kê tổng quan thất bại'
     );
 }
+

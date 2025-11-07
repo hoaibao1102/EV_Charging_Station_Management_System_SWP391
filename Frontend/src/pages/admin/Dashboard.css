@@ -43,7 +43,6 @@
 /* 2. Charts */
 .charts-grid {
   display: grid;
-  /* Đây là bố cục bạn muốn: 2 cột, cột 1 (Top Trạm) gấp đôi cột 2 */
   grid-template-columns: 2fr 1fr;
   gap: 20px;
   margin-bottom: 24px;
