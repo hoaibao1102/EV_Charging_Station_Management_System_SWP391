@@ -41,11 +41,18 @@ public class TokenService {
     public String generateToken(User user) {
         String roleName = "DRIVER";
         try {
+            // Try to use role from passed entity first
             if (user.getRole() != null && user.getRole().getRoleName() != null) {
                 roleName = user.getRole().getRoleName();
+            } else {
+                // If role is not initialized (lazy) or null, reload user with role from repository
+                User fresh = userRepository.findUserByUserId(user.getUserId());
+                if (fresh != null && fresh.getRole() != null && fresh.getRole().getRoleName() != null) {
+                    roleName = fresh.getRole().getRoleName();
+                }
             }
         } catch (Exception e) {
-            // Nếu role bị lazy mà session đã đóng → fallback
+            // Fallback to DRIVER if anything goes wrong
             roleName = "DRIVER";
         }
 

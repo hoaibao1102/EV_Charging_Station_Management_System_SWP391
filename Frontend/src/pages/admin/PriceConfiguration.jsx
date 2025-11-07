@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from 'react';
 import Table from 'react-bootstrap/Table';
 import './ManagementUser.css'; 
 import Header from '../../components/admin/Header.jsx';
-
 import { getAllTariffs} from '../../api/tariffApi.js';
 import {getConnectorTypes} from '../../api/stationApi.js';
 import TariffDetail from '../../components/admin/TariffDetail.jsx';
