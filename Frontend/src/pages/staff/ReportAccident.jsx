@@ -21,6 +21,7 @@ export default function ReportAccidents() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddReportForm, setShowAddReportForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetData, setResetData] = useState(false);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -28,11 +29,12 @@ export default function ReportAccidents() {
       const response = await getAllAccidentReportsApi();
       if (response.success) {
         setReports(response.data);
+        console.log('Fetched reports:', response.data);
       }
       setLoading(false);
     };
     fetchReports();
-  }, [loading]);
+  }, [resetData]);
 
   const handleSelect = (selectedKey) => {
     setActiveTab(selectedKey);
@@ -49,7 +51,7 @@ export default function ReportAccidents() {
 
   const handleCloseForm = () => {
     setShowAddReportForm(false);
-    setLoading(pre => !pre);
+    setResetData(pre => !pre);
   };
 
   const totalReports = reports.length;
@@ -82,6 +84,11 @@ export default function ReportAccidents() {
   return (
     <>
       {showAddReportForm && <AddReportForm onClose={handleCloseForm} />}
+      {loading && (
+        <div className="loading-overlay">
+          Loadding....
+        </div>
+      )}
       {!showAddReportForm && (
         <div className="management-user-container">
           <Header />
@@ -143,6 +150,7 @@ export default function ReportAccidents() {
                 <thead>
                   <tr>
                     <th>TIÊU ĐỀ</th>
+                    <th>TRẠM LIÊN QUAN</th>
                     <th>NỘI DUNG</th>
                     <th>MỨC ĐỘ</th>
                     <th>BÁO CÁO NGÀY</th>
@@ -154,6 +162,7 @@ export default function ReportAccidents() {
                     displayedReports.map((report) => (
                       <tr key={report.incidentId}>
                         <td>{report.title}</td>
+                        <td>{report.stationName}</td>
                         <td>{report.description}</td>
                         <td>{report.severity}</td>
                         <td>{report.reportedAt.split('T')[0]}</td>
