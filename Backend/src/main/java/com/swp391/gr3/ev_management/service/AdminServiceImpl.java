@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.UpdateAdminProfileRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdatePasswordRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdateAdminProfileRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdatePasswordRequest;
 import com.swp391.gr3.ev_management.entity.Admin;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.exception.ConflictException;

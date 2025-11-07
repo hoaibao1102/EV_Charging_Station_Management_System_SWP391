@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.StartCharSessionRequest;
-import com.swp391.gr3.ev_management.DTO.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.DTO.response.*;
+import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
+import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
+import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import com.swp391.gr3.ev_management.exception.ErrorException;

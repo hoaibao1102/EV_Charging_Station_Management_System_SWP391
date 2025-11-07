@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.dto.response.StationStaffResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

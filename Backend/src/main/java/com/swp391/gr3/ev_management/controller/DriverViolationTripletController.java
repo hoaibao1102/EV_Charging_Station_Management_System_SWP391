@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.response.DriverViolationTripletResponse;
+import com.swp391.gr3.ev_management.dto.response.DriverViolationTripletResponse;
 import com.swp391.gr3.ev_management.service.DriverViolationTripletService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

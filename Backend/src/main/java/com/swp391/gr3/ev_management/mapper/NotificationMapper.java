@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.CreateNotificationResponse;
-import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
+import com.swp391.gr3.ev_management.dto.response.CreateNotificationResponse;
+import com.swp391.gr3.ev_management.dto.response.NotificationResponse;
 import com.swp391.gr3.ev_management.entity.Notification;
 import org.springframework.stereotype.Component;
 

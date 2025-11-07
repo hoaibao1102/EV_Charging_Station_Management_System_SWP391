@@ -1,10 +1,10 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.StartCharSessionRequest;
-import com.swp391.gr3.ev_management.DTO.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.DTO.response.StartCharSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.StopCharSessionResponse;
-import com.swp391.gr3.ev_management.DTO.response.ViewCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
+import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
+import com.swp391.gr3.ev_management.dto.response.StartCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.ViewCharSessionResponse;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import com.swp391.gr3.ev_management.entity.Notification;

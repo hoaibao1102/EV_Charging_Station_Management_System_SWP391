@@ -1,8 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.*;
-import com.swp391.gr3.ev_management.DTO.response.*;
-import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
+import com.swp391.gr3.ev_management.dto.request.*;
+import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import com.swp391.gr3.ev_management.service.DriverService;
 import com.swp391.gr3.ev_management.service.TokenService;
@@ -25,10 +24,7 @@ import java.util.List;
 public class DriverController {
 
     private final DriverService driverService;
-
     private final TokenService tokenService;
-
-    private final ChargingSessionService chargingSessionService;
 
     // ✅ Driver cập nhật hồ sơ
     @PreAuthorize("hasRole('DRIVER')")

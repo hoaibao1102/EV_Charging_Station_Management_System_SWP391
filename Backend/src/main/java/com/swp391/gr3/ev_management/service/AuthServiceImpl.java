@@ -38,13 +38,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public boolean verifyResetOtp(String email, String otp) {
-        // gọi thẳng service verify (có mark verified=true nếu hợp lệ)
-        return otpService.verifyOtp(email, otp);
-    }
-
-    @Override
     @Transactional
     public void resetPassword(String email, String otp, String newPassword) {
         // 1) Lấy OTP mới nhất

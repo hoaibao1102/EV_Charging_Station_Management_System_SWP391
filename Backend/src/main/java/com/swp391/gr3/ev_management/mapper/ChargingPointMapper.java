@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.request.CreateChargingPointRequest;
-import com.swp391.gr3.ev_management.DTO.response.ChargingPointResponse;
+import com.swp391.gr3.ev_management.dto.request.CreateChargingPointRequest;
+import com.swp391.gr3.ev_management.dto.response.ChargingPointResponse;
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.ConnectorType;

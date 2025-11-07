@@ -1,13 +1,13 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
-import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
-import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
-import com.swp391.gr3.ev_management.DTO.response.ChargingSessionBriefResponse;
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.DTO.response.TransactionBriefResponse;
-import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
+import com.swp391.gr3.ev_management.dto.request.AddVehicleRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdateVehicleRequest;
+import com.swp391.gr3.ev_management.dto.response.ChargingSessionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.DriverResponse;
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.VehicleResponse;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import jakarta.validation.Valid;
@@ -20,7 +20,6 @@ public interface DriverService {
     // CRUD
     DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
     DriverResponse getByUserId(Long userId);
-    DriverResponse getByDriverId(Long driverId);
     List<DriverResponse> getAllDrivers();
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
@@ -28,7 +27,6 @@ public interface DriverService {
     // UC-04: Vehicle Management
     VehicleResponse addVehicle(Long userId, @Valid AddVehicleRequest request);
     List<VehicleResponse> getMyVehicles(Long userId);
-    void removeVehicle(Long userId, Long vehicleId);
 
     VehicleResponse updateVehicle(Long userId, Long vehicleId, UpdateVehicleRequest request);
     VehicleResponse updateVehicleStatus(Long userId, Long vehicleId, UserVehicleStatus status);

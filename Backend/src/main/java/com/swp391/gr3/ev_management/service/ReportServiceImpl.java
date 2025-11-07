@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.CreateReportRequest;
-import com.swp391.gr3.ev_management.DTO.response.ReportResponse;
+import com.swp391.gr3.ev_management.dto.request.CreateReportRequest;
+import com.swp391.gr3.ev_management.dto.response.ReportResponse;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.entity.Report;
 import com.swp391.gr3.ev_management.entity.Staffs;

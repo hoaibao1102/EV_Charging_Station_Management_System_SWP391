@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
+import com.swp391.gr3.ev_management.dto.request.ViolationRequest;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.enums.BookingStatus;

@@ -1,13 +1,13 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.AddVehicleRequest;
-import com.swp391.gr3.ev_management.DTO.request.DriverRequest;
-import com.swp391.gr3.ev_management.DTO.request.DriverUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdateVehicleRequest;
-import com.swp391.gr3.ev_management.DTO.response.ChargingSessionBriefResponse;
-import com.swp391.gr3.ev_management.DTO.response.DriverResponse;
-import com.swp391.gr3.ev_management.DTO.response.TransactionBriefResponse;
-import com.swp391.gr3.ev_management.DTO.response.VehicleResponse;
+import com.swp391.gr3.ev_management.dto.request.AddVehicleRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdateVehicleRequest;
+import com.swp391.gr3.ev_management.dto.response.ChargingSessionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.DriverResponse;
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.VehicleResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-// import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.swp391.gr3.ev_management.mapper.DriverMapper;
@@ -42,9 +41,6 @@ public class DriverServiceImpl implements DriverService {
     private final PasswordEncoder passwordEncoder;
     private final ChargingSessionRepository chargingSessionRepository;
     private final TransactionRepository transactionRepository;
-
-    // private static final Pattern PASSWORD_COMPLEXITY =
-    //     Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{6,}$");
 
     /**
      * Tạo driver profile cho 1 user (nâng cấp thành Driver)
@@ -88,17 +84,6 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponse getByUserId(Long userId) {
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
-    return driverMapper.toDriverResponse(driver);
-    }
-
-    /**
-     * Lấy driver theo driverId (dùng khi admin thao tác theo PK driver)
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public DriverResponse getByDriverId(Long driverId) {
-        Driver driver = driverRepository.findByDriverIdWithUser(driverId)
-                .orElseThrow(() -> new ErrorException("Driver not found with driverId " + driverId));
     return driverMapper.toDriverResponse(driver);
     }
 
@@ -293,33 +278,6 @@ public class DriverServiceImpl implements DriverService {
         return vehicles.stream()
                 .map(driverMapper::toVehicleResponse)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Xóa xe khỏi hồ sơ driver
-     * BR-02: Chỉ được xóa xe thuộc về driver đang đăng nhập
-     */
-    //Todo: check nếu xe đang có lịch sạc thì không được xóa, soft delete, v.v.
-    @Override
-    @Transactional
-    public void removeVehicle(Long userId, Long vehicleId) {
-        log.info("Removing vehicle {} for userId: {}", vehicleId, userId);
-
-        // Lấy driver từ userId
-        Driver driver = driverRepository.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
-
-        // Lấy vehicle
-        UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new ErrorException("Vehicle not found with ID: " + vehicleId));
-
-        // Kiểm tra xe có thuộc về driver này không
-        if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {
-            throw new ConflictException("Vehicle does not belong to this driver");
-        }
-
-        userVehicleRepository.delete(vehicle);
-        log.info("Vehicle removed successfully: {}", vehicleId);
     }
 
     @Override

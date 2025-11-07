@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.TariffCreateRequest;
-import com.swp391.gr3.ev_management.DTO.request.TariffUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.response.TariffResponse;
+import com.swp391.gr3.ev_management.dto.request.TariffCreateRequest;
+import com.swp391.gr3.ev_management.dto.request.TariffUpdateRequest;
+import com.swp391.gr3.ev_management.dto.response.TariffResponse;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.response.NotificationResponse;
+import com.swp391.gr3.ev_management.dto.response.NotificationResponse;
 import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
@@ -9,7 +9,7 @@ import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.swp391.gr3.ev_management.DTO.response.CreateNotificationResponse;
+import com.swp391.gr3.ev_management.dto.response.CreateNotificationResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,14 +26,6 @@ public class NotificationsServiceImpl implements NotificationsService{
     @Override
     public List<CreateNotificationResponse> getNotificationsByUser(Long userId) {
         return notificationsRepository.findByUser_UserId(userId)
-                .stream()
-                .map(mapper::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<CreateNotificationResponse> getUnreadNotificationsByUser(Long userId) {
-        return notificationsRepository.findUnreadByUserId(userId)
                 .stream()
                 .map(mapper::mapToResponse)
                 .collect(Collectors.toList());

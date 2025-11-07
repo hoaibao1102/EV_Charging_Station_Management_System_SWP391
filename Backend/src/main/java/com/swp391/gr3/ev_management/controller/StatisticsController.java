@@ -1,8 +1,8 @@
 // src/main/java/com/swp391/gr3/ev_management/controller/StatisticsController.java
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.response.DashboardStatsResponse;
-import com.swp391.gr3.ev_management.DTO.response.UserTotalsResponse;
+import com.swp391.gr3.ev_management.dto.response.DashboardStatsResponse;
+import com.swp391.gr3.ev_management.dto.response.UserTotalsResponse;
 import com.swp391.gr3.ev_management.service.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

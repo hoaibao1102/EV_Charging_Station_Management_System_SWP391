@@ -1,11 +1,12 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
-import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
+import com.swp391.gr3.ev_management.dto.request.ViolationRequest;
+import com.swp391.gr3.ev_management.dto.response.ViolationResponse;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.ViolationResponseMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class ViolationServiceImpl implements ViolationService {
     private final ChargingSessionRepository chargingSessionRepository;
     private final DriverViolationTripletRepository driverViolationTripletRepository;
     private final TariffRepository tariffRepository;
-    private final UserVehicleRepository userVehicleRepository;
+    private final ViolationResponseMapper violationResponseMapper;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -130,7 +131,7 @@ public class ViolationServiceImpl implements ViolationService {
         attachViolationToTriplet(driver, savedViolation);
 
         boolean wasAutoBanned = autoCheckAndBanDriver(driver);
-        return buildViolationResponse(savedViolation, wasAutoBanned);
+        return violationResponseMapper.toResponse(savedViolation, wasAutoBanned);
     }
 
     private Tariff resolveActiveTariff(Long connectorTypeId) {
@@ -188,7 +189,7 @@ public class ViolationServiceImpl implements ViolationService {
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
         return violationRepository.findByDriver_DriverId(driver.getDriverId())
-                .stream().map(v -> buildViolationResponse(v, false))
+                .stream().map(v -> violationResponseMapper.toResponse(v, false))
                 .collect(Collectors.toList());
     }
 
@@ -196,7 +197,7 @@ public class ViolationServiceImpl implements ViolationService {
     @Transactional(readOnly = true)
     public List<ViolationResponse> getViolationsByUserIdAndStatus(Long userId, ViolationStatus status) {
         return violationRepository.findByUserIdAndStatus(userId, status)
-                .stream().map(v -> buildViolationResponse(v, false))
+                .stream().map(v -> violationResponseMapper.toResponse(v, false))
                 .collect(Collectors.toList());
     }
 
@@ -204,21 +205,6 @@ public class ViolationServiceImpl implements ViolationService {
     @Transactional(readOnly = true)
     public int countActiveViolations(Long userId) {
         return violationRepository.countByUserIdAndStatus(userId, ViolationStatus.ACTIVE);
-    }
-
-    private ViolationResponse buildViolationResponse(DriverViolation violation, boolean wasAutoBanned) {
-        Driver driver = violation.getDriver();
-        return ViolationResponse.builder()
-                .violationId(violation.getViolationId())
-                .driverId(driver.getDriverId())
-                .userId(driver.getUser().getUserId())
-                .driverName(driver.getUser().getName())
-                .status(violation.getStatus())
-                .description(violation.getDescription())
-                .occurredAt(violation.getOccurredAt())
-                .driverAutoBanned(wasAutoBanned)
-                .message(wasAutoBanned ? "Driver has been AUTO-BANNED due to 3 or more violations" : null)
-                .build();
     }
 
     @Override
