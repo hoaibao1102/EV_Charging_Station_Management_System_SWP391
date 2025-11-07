@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.response.*;
+import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.entity.ChargingStation;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.StaffStatus;

@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.response.PaymentMethodResponse;
+import com.swp391.gr3.ev_management.dto.response.PaymentMethodResponse;
 import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.PaymentType;

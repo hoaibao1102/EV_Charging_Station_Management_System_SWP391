@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.dto.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;

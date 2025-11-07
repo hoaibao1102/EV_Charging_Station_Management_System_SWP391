@@ -1,8 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.LoginRequest;
-import com.swp391.gr3.ev_management.DTO.request.RegisterRequest;
-import com.swp391.gr3.ev_management.DTO.response.GetUsersResponse;
+import com.swp391.gr3.ev_management.dto.request.RegisterRequest;
+import com.swp391.gr3.ev_management.dto.response.GetUsersResponse;
 import com.swp391.gr3.ev_management.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;

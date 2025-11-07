@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.BookingRequest;
-import com.swp391.gr3.ev_management.DTO.request.CreateBookingRequest;
-import com.swp391.gr3.ev_management.DTO.response.BookingResponse;
+import com.swp391.gr3.ev_management.dto.request.BookingRequest;
+import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
+import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

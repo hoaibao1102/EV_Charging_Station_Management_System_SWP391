@@ -1,9 +1,9 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.UpdatePasswordRequest;
-import com.swp391.gr3.ev_management.DTO.request.UpdateStaffProfileRequest;
-import com.swp391.gr3.ev_management.DTO.response.StaffResponse;
-import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.dto.request.UpdatePasswordRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdateStaffProfileRequest;
+import com.swp391.gr3.ev_management.dto.response.StaffResponse;
+import com.swp391.gr3.ev_management.dto.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.service.StaffService;
 import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;

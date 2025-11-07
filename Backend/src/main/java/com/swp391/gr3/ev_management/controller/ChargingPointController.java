@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.*;
-import com.swp391.gr3.ev_management.DTO.response.*;
+import com.swp391.gr3.ev_management.dto.request.*;
+import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.service.ChargingPointService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

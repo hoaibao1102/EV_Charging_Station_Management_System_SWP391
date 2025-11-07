@@ -1,4 +1,4 @@
-package com.swp391.gr3.ev_management.DTO.request;
+package com.swp391.gr3.ev_management.dto.request;
 
 import com.swp391.gr3.ev_management.enums.PaymentType;
 import jakarta.validation.constraints.NotNull;

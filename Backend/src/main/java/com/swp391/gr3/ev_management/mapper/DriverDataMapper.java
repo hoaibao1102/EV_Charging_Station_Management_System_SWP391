@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.ChargingSessionBriefResponse;
-import com.swp391.gr3.ev_management.DTO.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.ChargingSessionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
 import com.swp391.gr3.ev_management.entity.*;
 
 import java.util.List;
