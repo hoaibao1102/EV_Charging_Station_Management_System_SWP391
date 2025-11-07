@@ -188,6 +188,61 @@
   cursor: not-allowed;
 }
 
+/* Payment Methods Styles */
+.method-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.method-btn {
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.method-btn:hover:not(:disabled) {
+  border-color: #00bfa6;
+  background: #e8f5f3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 191, 166, 0.2);
+}
+
+.method-btn.selected {
+  border-color: #00bfa6;
+  background: linear-gradient(135deg, #e8f5f3 0%, #d0f0ea 100%);
+  box-shadow: 0 4px 16px rgba(0, 191, 166, 0.3);
+}
+
+.method-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.method-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.method-btn.selected .method-name {
+  color: #00bfa6;
+}
+
+.method-description {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .payment-container {
@@ -215,5 +270,9 @@
 
   .info-value {
     text-align: left;
+  }
+
+  .method-list {
+    grid-template-columns: 1fr;
   }
 }

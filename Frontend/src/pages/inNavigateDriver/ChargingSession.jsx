@@ -1,9 +1,280 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import paths from "../../path/paths.jsx";
 import { toast } from "react-toastify";
 import { stationAPI } from "../../api/stationApi.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
+
+// Add responsive styles to document
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @media (max-width: 768px) {
+    .charging-session-container {
+      padding: 10px !important;
+    }
+    .battery-progress-circle {
+      width: 180px !important;
+      height: 180px !important;
+    }
+    .battery-progress-circle svg {
+      width: 180px !important;
+      height: 180px !important;
+    }
+    .battery-progress-circle .center-text {
+      font-size: 36px !important;
+    }
+    .info-card-grid {
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    }
+    .quick-info-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+`;
+if (!document.head.querySelector("style[data-charging-session-styles]")) {
+  styleSheet.setAttribute("data-charging-session-styles", "true");
+  document.head.appendChild(styleSheet);
+}
+
+// Battery Progress Circle Component - Enhanced with Smooth Animation
+function BatteryProgressCircle({
+  initialSoc,
+  energyKWh,
+  capacity,
+  isCharging,
+  virtualSoc, // Virtual SOC from physics-based estimation
+}) {
+  // Use virtual SOC if available (for smooth animation), otherwise calculate from energy
+  const deltaPercent = (energyKWh / capacity) * 100;
+  const calculatedSoc = Math.min(initialSoc + deltaPercent, 100);
+  const currentSoc = virtualSoc ?? calculatedSoc;
+  const isComplete = currentSoc >= 100;
+
+  // ✨ Smooth SOC animation (interpolation from old to new value)
+  const [animatedSoc, setAnimatedSoc] = useState(currentSoc);
+
+  useEffect(() => {
+    const diff = currentSoc - animatedSoc;
+    if (Math.abs(diff) < 0.1) {
+      setAnimatedSoc(currentSoc);
+      return;
+    }
+
+    const step = diff / 20; // 20 frames for smooth transition
+    const interval = setInterval(() => {
+      setAnimatedSoc((prev) => {
+        const next = prev + step;
+        if (
+          (diff > 0 && next >= currentSoc) ||
+          (diff < 0 && next <= currentSoc)
+        ) {
+          clearInterval(interval);
+          return currentSoc;
+        }
+        return next;
+      });
+    }, 50); // Update every 50ms
+
+    return () => clearInterval(interval);
+  }, [currentSoc, animatedSoc]);
+
+  // SVG circle parameters - using animatedSoc for smooth fill
+  const size = 240;
+  const strokeWidth = 16;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (animatedSoc / 100) * circumference;
+
+  // Colors
+  const progressColor = isComplete ? "#2196f3" : "#00BFA6";
+  const trackColor = "#e0e0e0";
+
+  return (
+    <div
+      className="battery-progress-circle"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "30px 20px",
+        background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+        borderRadius: "20px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        margin: "0 auto 30px",
+        maxWidth: "400px",
+      }}
+    >
+      {/* Battery Icon Header */}
+      <div
+        style={{
+          fontSize: "48px",
+          marginBottom: "15px",
+          animation:
+            isCharging && !isComplete
+              ? "pulse 2s ease-in-out infinite"
+              : "none",
+        }}
+      >
+        🔋
+      </div>
+
+      {/* SVG Circle */}
+      <div style={{ position: "relative", marginBottom: "20px" }}>
+        <svg
+          width={size}
+          height={size}
+          style={{
+            transform: "rotate(-90deg)",
+            filter: "drop-shadow(0 2px 8px rgba(0,191,166,0.3))",
+          }}
+        >
+          {/* Background track */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={trackColor}
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          {/* Progress arc */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={progressColor}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{
+              transition:
+                "stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease",
+            }}
+          />
+        </svg>
+
+        {/* Center text */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "48px",
+              fontWeight: "800",
+              color: progressColor,
+              lineHeight: "1",
+              marginBottom: "5px",
+            }}
+          >
+            {animatedSoc.toFixed(1)}%
+          </div>
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#666",
+              fontWeight: "500",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Pin hiện tại
+          </div>
+        </div>
+      </div>
+
+      {/* Caption */}
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "15px",
+          color: isComplete ? "#2196f3" : isCharging ? "#00BFA6" : "#666",
+          fontWeight: "600",
+          padding: "10px 20px",
+          background: isComplete
+            ? "rgba(33, 150, 243, 0.1)"
+            : isCharging
+            ? "rgba(0, 191, 166, 0.1)"
+            : "rgba(0, 0, 0, 0.05)",
+          borderRadius: "20px",
+        }}
+      >
+        {isComplete
+          ? "✅ Hoàn tất sạc"
+          : isCharging
+          ? "⚡ Đang sạc..."
+          : "Dung lượng pin (ước tính)"}
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Info Card Component
+function InfoCard({ icon, label, value, color = "#00BFA6", unit = "" }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        padding: "20px",
+        borderRadius: "12px",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        textAlign: "center",
+        border: `2px solid ${color}15`,
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-3px)";
+        e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)";
+      }}
+    >
+      <div style={{ fontSize: "32px", marginBottom: "8px" }}>{icon}</div>
+      <div
+        style={{
+          fontSize: "13px",
+          color: "#666",
+          marginBottom: "8px",
+          fontWeight: "500",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: "24px",
+          fontWeight: "700",
+          color: color,
+        }}
+      >
+        {value}
+        {unit && (
+          <span
+            style={{ fontSize: "16px", fontWeight: "500", marginLeft: "4px" }}
+          >
+            {unit}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ChargingSession() {
   const navigate = useNavigate();
@@ -13,6 +284,7 @@ export default function ChargingSession() {
   const [currentSession, setCurrentSession] = useState(null);
   const [loading, setLoading] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [autoRedirected, setAutoRedirected] = useState(false);
 
   // QR / booking state (merged behavior)
   const qrFromState = location?.state?.qrBlobUrl;
@@ -23,8 +295,67 @@ export default function ChargingSession() {
   const [booking, setBooking] = useState(stateBooking || null);
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  // Battery capacity constant (used by BatteryProgressCircle)
+  const DEFAULT_BATTERY_CAPACITY = 60; // kWh
+
+  // 🎨 Status color mapping for cleaner code
+  const statusColors = {
+    IN_PROGRESS: "#4caf50",
+    COMPLETED: "#2196f3",
+    FAILED: "#f44336",
+    PENDING: "#ff9800",
+  };
+
   // Helper to build sessionStorage key
   const qrStorageKey = (id) => (id ? `qr_booking_${id}` : null);
+
+  // 🔋 Simulation state persistence helpers
+  const getSimulationKey = (sessionId) =>
+    sessionId ? `chargingSession_simulation_${sessionId}` : null;
+
+  const saveSimState = (session) => {
+    if (!session || !session.sessionId) return;
+    try {
+      const key = getSimulationKey(session.sessionId);
+      if (!key) return;
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          sessionId: session.sessionId,
+          virtualSoc: session.virtualSoc,
+          energyKWh: session.energyKWh,
+          durationMinutes: session.durationMinutes,
+          lastUpdated: Date.now(),
+          status: session.status,
+        })
+      );
+    } catch (err) {
+      console.debug("Failed to save simulation state:", err);
+    }
+  };
+
+  const loadSimState = useCallback((sessionId) => {
+    if (!sessionId) return null;
+    try {
+      const key = getSimulationKey(sessionId);
+      if (!key) return null;
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (err) {
+      console.debug("Failed to load simulation state:", err);
+      return null;
+    }
+  }, []);
+
+  const clearSimState = useCallback((sessionId) => {
+    if (!sessionId) return;
+    try {
+      const key = getSimulationKey(sessionId);
+      if (key) localStorage.removeItem(key);
+    } catch (err) {
+      console.debug("Failed to clear simulation state:", err);
+    }
+  }, []);
 
   // If navigation state didn't include qrBlobUrl, try to restore from sessionStorage (data URL)
   useEffect(() => {
@@ -107,8 +438,8 @@ export default function ChargingSession() {
     }
   };
 
-  // Polling: check current session periodically so the UI updates automatically
-  // e.g., when an external staff action marks the session IN_PROGRESS.
+  // ⚡ Polling: check current session periodically (mainly for status changes)
+  // During IN_PROGRESS, frontend handles all calculations via virtualSoc
   useEffect(() => {
     let intervalId = null;
 
@@ -122,10 +453,27 @@ export default function ChargingSession() {
         }
         const session = response.data ?? response;
         setCurrentSession((prev) => {
-          // Only update if something changed to avoid extra renders
           if (!prev) return session;
-          if (prev.sessionId !== session.sessionId || prev.status !== session.status) return session;
-          return prev;
+
+          // If session changed or status changed, update
+          if (prev.sessionId !== session.sessionId) return session;
+          if (prev.status !== session.status) {
+            // Status changed (e.g., backend marked as COMPLETED)
+            // Preserve virtualSoc if we had it
+            return {
+              ...session,
+              virtualSoc: prev.virtualSoc,
+            };
+          }
+
+          // If IN_PROGRESS, keep using frontend calculations (virtualSoc)
+          // Don't overwrite with backend data as it doesn't update during charging
+          if (prev.status === "IN_PROGRESS") {
+            return prev; // Keep frontend simulation
+          }
+
+          // For other statuses, update normally
+          return session;
         });
       } catch (err) {
         // don't spam console on intermittent network issues
@@ -142,6 +490,135 @@ export default function ChargingSession() {
     };
   }, []);
 
+  // 🔋 Virtual SOC simulation - ALIGNED WITH BACKEND (ChargingSessionTxHandler.java)
+  // Backend formula: efficiency=0.90, estEnergy = hours × ratedKW × 0.90
+  // finalSoc = clamp(initial + (estEnergy / capacity) × 100, 0-100), +1% if charging but no change
+  // energyKWh = ((finalSoc - initialSoc) / 100) × capacity
+  useEffect(() => {
+    if (!currentSession || currentSession.status !== "IN_PROGRESS") {
+      // Clean up simulation state if session is not in progress
+      if (currentSession?.sessionId) {
+        clearSimState(currentSession.sessionId);
+      }
+      return;
+    }
+
+    // Get parameters from session or use defaults (one-time retrieval)
+    const capacity =
+      currentSession.vehicle?.model?.batteryCapacityKWh ??
+      DEFAULT_BATTERY_CAPACITY;
+    const ratedKW = currentSession.chargingPoint?.maxPowerKW ?? 11.0; // Default 11 kW charger
+    const efficiency = 0.9; // ✅ Match backend exactly (ChargingSessionTxHandler)
+    const initialSoc = currentSession.initialSoc ?? 20;
+
+    // Try to restore previous simulation state (for page reload)
+    let accumulatedMinutes = currentSession.durationMinutes ?? 0;
+    const savedState = loadSimState(currentSession.sessionId);
+
+    if (savedState && savedState.sessionId === currentSession.sessionId) {
+      // Restore from saved state
+      accumulatedMinutes = savedState.durationMinutes ?? accumulatedMinutes;
+
+      // Update current session with restored values
+      setCurrentSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              virtualSoc: savedState.virtualSoc ?? initialSoc,
+              energyKWh: savedState.energyKWh ?? prev.energyKWh,
+              durationMinutes: accumulatedMinutes,
+            }
+          : prev
+      );
+    } else if (!currentSession.virtualSoc) {
+      // Initialize virtual SOC for first time
+      setCurrentSession((prev) =>
+        prev ? { ...prev, virtualSoc: initialSoc } : prev
+      );
+    }
+
+    const virtualChargeInterval = setInterval(() => {
+      accumulatedMinutes += 2 / 60; // +0.0333 minutes per tick (2 seconds)
+      const hours = accumulatedMinutes / 60; // Convert to hours
+
+      // ⚡ Apply backend formula: estEnergy = hours × ratedKW × efficiency
+      const estEnergy = +(hours * ratedKW * efficiency).toFixed(2);
+      let estFinalSoc = Math.round(initialSoc + (estEnergy / capacity) * 100);
+
+      // ⚡ Clamp SOC to valid range [0, 100]
+      estFinalSoc = Math.min(100, Math.max(initialSoc, estFinalSoc));
+
+      // ⚡ Ensure at least +1% if charging >0 min but SOC hasn't changed
+      if (accumulatedMinutes > 0 && estFinalSoc === initialSoc) {
+        estFinalSoc = initialSoc + 1;
+      }
+
+      // ⚡ Calculate energyKWh identical to backend: ((finalSoc - initialSoc) / 100) × capacity
+      const deltaSoc = estFinalSoc - initialSoc;
+      const energyKWh = +(capacity * (deltaSoc / 100)).toFixed(2);
+
+      // Auto-complete when reaching 100%
+      if (estFinalSoc >= 100) {
+        clearInterval(virtualChargeInterval);
+        clearSimState(currentSession.sessionId);
+        setCurrentSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                virtualSoc: 100,
+                finalSoc: 100,
+                energyKWh,
+                durationMinutes: Math.round(accumulatedMinutes),
+                status: "COMPLETED",
+              }
+            : prev
+        );
+        return;
+      }
+
+      // Continuous update + persist state
+      const updatedSession = {
+        ...currentSession,
+        virtualSoc: estFinalSoc,
+        energyKWh,
+        durationMinutes: Math.round(accumulatedMinutes),
+      };
+      setCurrentSession(updatedSession);
+      saveSimState(updatedSession);
+    }, 2000); // Update every 2 seconds
+
+    return () => {
+      clearInterval(virtualChargeInterval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSession?.status, currentSession?.sessionId]);
+
+  // 🧭 Auto redirect to payment page when charging completes
+  useEffect(() => {
+    if (!currentSession) return;
+
+    // Khi trạng thái chuyển sang COMPLETED và chưa redirect
+    if (currentSession.status === "COMPLETED" && !autoRedirected) {
+      setAutoRedirected(true);
+
+      toast.info(
+        "⚡ Phiên sạc đã hoàn tất. Đang chuyển sang trang thanh toán...",
+        {
+          position: "top-center",
+          autoClose: 2000,
+        }
+      );
+
+      // Clear simulation state
+      clearSimState(currentSession.sessionId);
+
+      // Chuyển sang trang thanh toán sau 2s
+      setTimeout(() => {
+        navigate(paths.payment, { state: { sessionResult: currentSession } });
+      }, 2000);
+    }
+  }, [currentSession, autoRedirected, navigate, clearSimState]);
+
   const handleStopSession = async () => {
     if (!currentSession?.sessionId) {
       toast.error("Không có sessionId để dừng", { position: "top-center" });
@@ -152,17 +629,52 @@ export default function ChargingSession() {
 
     try {
       setStopping(true);
+
+      // Stop virtual animation immediately by changing status
+      // This triggers useEffect cleanup and clears the interval
+      setCurrentSession((prev) =>
+        prev ? { ...prev, status: "STOPPING" } : prev
+      );
+
       const response = await stationAPI.stopChargingSession(
         currentSession.sessionId
       );
       if (!response || response.success === false) {
+        // Revert status if stop failed
+        setCurrentSession((prev) =>
+          prev ? { ...prev, status: "IN_PROGRESS" } : prev
+        );
         toast.error(response?.message || "Dừng phiên sạc thất bại", {
           position: "top-center",
         });
         return;
       }
+
       const sessionResult = response.data ?? response;
+
+      // Update UI with real data from backend
+      setCurrentSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: sessionResult.status ?? "COMPLETED",
+              finalSoc:
+                sessionResult.finalSoc ?? prev.virtualSoc ?? prev.initialSoc,
+              energyKWh: sessionResult.energyKWh ?? prev.energyKWh,
+              cost: sessionResult.cost ?? prev.cost,
+              durationMinutes:
+                sessionResult.durationMinutes ?? prev.durationMinutes,
+              actualEndTime:
+                sessionResult.actualEndTime ?? new Date().toISOString(),
+            }
+          : prev
+      );
+
       toast.success("Dừng phiên sạc thành công!", { position: "top-center" });
+
+      // Clear simulation state from localStorage
+      clearSimState(currentSession.sessionId);
+
       // cleanup persisted QR for this booking (if any)
       try {
         const key = qrStorageKey(
@@ -176,9 +688,16 @@ export default function ChargingSession() {
         // ignore
       }
 
-      navigate(paths.payment, { state: { sessionResult } });
+      // Navigate to payment after a short delay to show final state
+      setTimeout(() => {
+        navigate(paths.payment, { state: { sessionResult } });
+      }, 1500);
     } catch (err) {
       console.error("Lỗi khi dừng phiên sạc:", err);
+      // Revert status if error occurred
+      setCurrentSession((prev) =>
+        prev ? { ...prev, status: "IN_PROGRESS" } : prev
+      );
       toast.error("Dừng phiên sạc thất bại", { position: "top-center" });
     } finally {
       setStopping(false);
@@ -297,7 +816,10 @@ export default function ChargingSession() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
+    <div
+      className="charging-session-container"
+      style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}
+    >
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -411,14 +933,7 @@ export default function ChargingSession() {
                 style={{
                   padding: "4px 12px",
                   borderRadius: "20px",
-                  background:
-                    currentSession.status === "IN_PROGRESS"
-                      ? "#4caf50"
-                      : currentSession.status === "COMPLETED"
-                      ? "#2196f3"
-                      : currentSession.status === "FAILED"
-                      ? "#f44336"
-                      : "#ff9800",
+                  background: statusColors[currentSession.status] || "#9e9e9e",
                   color: "white",
                   fontSize: "14px",
                   fontWeight: "600",
@@ -435,81 +950,263 @@ export default function ChargingSession() {
             </p>
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <h3 style={{ color: "#00BFA6", marginBottom: "10px" }}>
-              🚗 Thông tin xe
-            </h3>
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Biển số xe:</strong> {currentSession.vehiclePlate ?? "-"}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <h3 style={{ color: "#00BFA6", marginBottom: "10px" }}>
-              🏢 Thông tin trạm
-            </h3>
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Trạm sạc:</strong> {currentSession.stationName ?? "-"}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <h3 style={{ color: "#00BFA6", marginBottom: "10px" }}>
-              ⏰ Thời gian
-            </h3>
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Bắt đầu:</strong>{" "}
-              {currentSession.startTime
-                ? new Date(currentSession.startTime).toLocaleString("vi-VN")
-                : "-"}
-            </p>
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Kết thúc:</strong>{" "}
-              {currentSession.endTime
-                ? new Date(currentSession.endTime).toLocaleString("vi-VN")
-                : "Đang sạc..."}
-            </p>
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Thời lượng:</strong> {currentSession.durationMinutes ?? 0}{" "}
-              phút
-            </p>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <h3 style={{ color: "#00BFA6", marginBottom: "10px" }}>
-              ⚡ Năng lượng & Chi phí
-            </h3>
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Năng lượng đã sạc:</strong>{" "}
-              <span
+          {/* Quick Info Cards */}
+          <div
+            className="quick-info-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "15px",
+              marginBottom: "25px",
+            }}
+          >
+            <div
+              style={{
+                background: "#f8f9fa",
+                padding: "15px",
+                borderRadius: "10px",
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              <div
                 style={{
-                  color: "#4caf50",
-                  fontSize: "18px",
-                  fontWeight: "600",
+                  fontSize: "14px",
+                  color: "#666",
+                  marginBottom: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                {currentSession.energyKWh ?? 0} kWh
-              </span>
-            </p>
-            {currentSession.initialSoc != null && (
-              <p style={{ marginBottom: "10px" }}>
-                <strong>SOC ban đầu:</strong> {currentSession.initialSoc}%
-              </p>
-            )}
-            <p style={{ marginBottom: "10px" }}>
-              <strong>Chi phí:</strong>{" "}
-              <span
+                🚗 Thông tin xe
+              </div>
+              <div
+                style={{ fontSize: "18px", fontWeight: "600", color: "#333" }}
+              >
+                {currentSession.vehiclePlate ?? "-"}
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "#f8f9fa",
+                padding: "15px",
+                borderRadius: "10px",
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              <div
                 style={{
-                  color: "#ff9800",
-                  fontSize: "18px",
-                  fontWeight: "600",
+                  fontSize: "14px",
+                  color: "#666",
+                  marginBottom: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                {(currentSession.cost ?? 0).toLocaleString("vi-VN")}{" "}
-                {currentSession.currency ?? "VND"}
-              </span>
-            </p>
+                🏢 Thông tin trạm
+              </div>
+              <div
+                style={{ fontSize: "18px", fontWeight: "600", color: "#333" }}
+              >
+                {currentSession.stationName ?? "-"}
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "#f8f9fa",
+                padding: "15px",
+                borderRadius: "10px",
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "14px",
+                  color: "#666",
+                  marginBottom: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                ⏰ Bắt đầu
+              </div>
+              <div
+                style={{ fontSize: "16px", fontWeight: "600", color: "#333" }}
+              >
+                {currentSession.startTime
+                  ? new Date(currentSession.startTime).toLocaleString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      day: "2-digit",
+                      month: "2-digit",
+                    })
+                  : "-"}
+              </div>
+            </div>
           </div>
+
+          {/* Battery Progress Circle */}
+          {currentSession.initialSoc != null && (
+            <BatteryProgressCircle
+              initialSoc={currentSession.initialSoc}
+              energyKWh={currentSession.energyKWh ?? 0}
+              capacity={DEFAULT_BATTERY_CAPACITY}
+              isCharging={currentSession.status === "IN_PROGRESS"}
+              virtualSoc={currentSession.virtualSoc}
+            />
+          )}
+
+          {/* Key Metrics Grid */}
+          <div
+            className="info-card-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: "15px",
+              marginBottom: "30px",
+            }}
+          >
+            <InfoCard
+              icon="⚡"
+              label="Năng lượng đã sạc"
+              value={(currentSession.energyKWh ?? 0).toFixed(2)}
+              unit="kWh"
+              color="#4caf50"
+            />
+            <InfoCard
+              icon="⏱️"
+              label="Thời lượng"
+              value={Math.round(currentSession.durationMinutes ?? 0)}
+              unit=""
+              color="#2196f3"
+            />
+            <InfoCard
+              icon="⚙️"
+              label="Công suất TB"
+              value={
+                currentSession.durationMinutes > 0
+                  ? (
+                      (currentSession.energyKWh ?? 0) /
+                      (currentSession.durationMinutes / 60)
+                    ).toFixed(1)
+                  : "0"
+              }
+              unit="kW"
+              color="#9c27b0"
+            />
+            <InfoCard
+              icon="💰"
+              label="Chi phí"
+              value={(currentSession.cost ?? 0).toLocaleString("vi-VN")}
+              unit={currentSession.currency ?? "VND"}
+              color="#ff9800"
+            />
+          </div>
+
+          {/* SOC Info */}
+          {currentSession.initialSoc != null && (
+            <div
+              style={{
+                background: "#f8f9fa",
+                padding: "20px",
+                borderRadius: "12px",
+                marginBottom: "30px",
+                display: "flex",
+                justifyContent: "space-around",
+                flexWrap: "wrap",
+                gap: "20px",
+              }}
+            >
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#666",
+                    marginBottom: "5px",
+                  }}
+                >
+                  SOC Ban đầu
+                </div>
+                <div
+                  style={{ fontSize: "28px", fontWeight: "700", color: "#666" }}
+                >
+                  {currentSession.initialSoc}%
+                </div>
+              </div>
+              <div
+                style={{
+                  width: "2px",
+                  background: "#ddd",
+                  margin: "0 10px",
+                }}
+              />
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#666",
+                    marginBottom: "5px",
+                  }}
+                >
+                  SOC Hiện tại
+                </div>
+                <div
+                  style={{
+                    fontSize: "28px",
+                    fontWeight: "700",
+                    color: "#00BFA6",
+                  }}
+                >
+                  {(
+                    currentSession.virtualSoc ??
+                    Math.min(
+                      currentSession.initialSoc +
+                        ((currentSession.energyKWh ?? 0) /
+                          DEFAULT_BATTERY_CAPACITY) *
+                          100,
+                      100
+                    )
+                  ).toFixed(1)}
+                  %
+                </div>
+              </div>
+              {currentSession.finalSoc != null && (
+                <>
+                  <div
+                    style={{
+                      width: "2px",
+                      background: "#ddd",
+                      margin: "0 10px",
+                    }}
+                  />
+                  <div style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        color: "#666",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      SOC Cuối
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "28px",
+                        fontWeight: "700",
+                        color: "#2196f3",
+                      }}
+                    >
+                      {currentSession.finalSoc}%
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <div style={{ marginTop: "30px", display: "flex", gap: "15px" }}>
             <button
