@@ -85,18 +85,19 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 10px;
 }
 
 .auth-logo-icon {
   width: 64px;
   height: 64px;
+  padding-bottom: 20px;
   background: var(--login-teal-gradient);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 30px;
   box-shadow: 0 4px 16px rgba(0, 188, 212, 0.2);
   animation: pulse 2s ease-in-out infinite;
 }
@@ -571,7 +572,7 @@ body {
 
 /* ===== SOCIAL SECTION ===== */
 .auth-social-section {
-  margin-top: 20px;
+  margin-top: 0px;
 }
 
 .auth-divider {
@@ -657,7 +658,7 @@ body {
 /* ===== SMALL MOBILE (max 360px) ===== */
 @media (max-width: 360px) {
   .auth-container {
-    padding: 28px 20px;
+    padding: 0px 20px;
   }
 
   .auth-logo-icon {
@@ -750,6 +751,7 @@ body {
 /* ===== DESKTOP SPLIT-SCREEN (992px+) ===== */
 @media (min-width: 992px) {
   .auth-page {
+    height: 95%;
     position: relative;
   }
 
@@ -798,6 +800,7 @@ body {
   /* Desktop: Show Welcome Section */
   .auth-welcome-section {
     display: flex;
+    height: 66%;
     align-items: center;
     justify-content: center;
     background: var(--login-teal-gradient);
@@ -806,7 +809,7 @@ body {
     position: relative;
     overflow: hidden;
     width: 500px;
-    min-height: 600px;
+    min-height: 356px;
     border-radius: 20px 0 0 20px;
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
     z-index: 1;
@@ -819,11 +822,7 @@ body {
     right: -50%;
     width: 150%;
     height: 150%;
-    background: radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.1) 0%,
-      transparent 70%
-    );
+            background: radial-gradient(circle at center, rgb(135 107 107 / 10%) 0%, #f8f9fa 70%);
     animation: rotate 20s linear infinite;
   }
 
@@ -889,7 +888,7 @@ body {
   }
 
   .auth-logo {
-    margin-bottom: 32px;
+    margin-bottom: 10px;
   }
 
   .auth-logo-icon {
@@ -915,16 +914,17 @@ body {
   }
 
   .auth-input-wrapper {
-    min-height: 52px;
+    min-height: 30px;
   }
 
   .auth-button {
     max-width: 200px;
     height: 50px;
-    margin: 12px auto 0;
+    margin: 0px auto 0;
   }
 
   .auth-options {
+    height: 16px;
     font-size: 13px;
     flex-wrap: nowrap;
   }
