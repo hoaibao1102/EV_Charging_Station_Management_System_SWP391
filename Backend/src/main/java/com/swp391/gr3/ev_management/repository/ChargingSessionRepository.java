@@ -13,14 +13,20 @@ import java.util.Optional;
 @Repository
 public interface ChargingSessionRepository extends JpaRepository<ChargingSession,Long> {
 
-    // Tìm các session đang hoạt động (in_progress) tại trạm theo stationId
+    // ✅ Tìm các phiên sạc đang hoạt động (status = 'in_progress') tại một trạm theo stationId
+    //    Lọc theo khóa ngoại: cs.booking.station.stationId
     @Query("SELECT cs FROM ChargingSession cs " +
             "WHERE cs.booking.station.stationId = :stationId " +
             "AND cs.status = 'in_progress'")
     List<ChargingSession> findActiveSessionsByStation(@Param("stationId") Long stationId);
 
+    // ✅ Tìm phiên sạc theo bookingId (dùng quan hệ lồng: ChargingSession.booking.bookingId)
     Optional<ChargingSession> findByBooking_BookingId(Long bookingId);
 
+    // ✅ Lấy 1 phiên sạc kèm theo toàn bộ thông tin liên quan để hiển thị/logic:
+    //    booking -> vehicle -> driver -> user
+    //    + bookingSlots -> slot -> chargingPoint -> connectorType
+    //    Dùng join fetch để tránh N+1 và LazyInitializationException
     @Query("""
     select cs
     from ChargingSession cs
@@ -36,6 +42,8 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
 """)
     Optional<ChargingSession> findByIdWithBookingVehicleDriverUser(Long sessionId);
 
+    // ✅ Lấy 1 phiên sạc và "chủ sở hữu" (user) của nó (đi sâu qua booking→vehicle→driver→user)
+    //    Phù hợp để kiểm tra quyền sở hữu, hiển thị lịch sử, v.v.
     @Query("""
         select s from ChargingSession s
           join fetch s.booking b
@@ -46,14 +54,18 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     """)
     Optional<ChargingSession> findWithOwnerById(@Param("sid") Long sessionId);
 
+    // ✅ Lấy tất cả phiên sạc của một trạm (theo stationId) sắp xếp theo startTime giảm dần
     List<ChargingSession> findAllByBooking_Station_StationIdOrderByStartTimeDesc(Long stationId);
 
+    // ✅ Tổng năng lượng (kWh) đã sạc của toàn hệ thống (COALESCE để tránh null)
     @Query("SELECT COALESCE(SUM(s.energyKWh), 0) FROM ChargingSession s")
     double sumEnergyAll();
 
+    // ✅ Tổng số phiên sạc trong hệ thống
     @Query("SELECT COUNT(s) FROM ChargingSession s")
     long countAll();
 
+    // ✅ Đếm số phiên sạc tại một trạm trong khoảng thời gian [from, to] dựa trên startTime
     @Query("""
       SELECT COUNT(s)
       FROM ChargingSession s
@@ -65,6 +77,8 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
                                @Param("from") LocalDateTime from,
                                @Param("to") LocalDateTime to);
 
+    // ✅ Đếm số phiên sạc gắn với một người dùng (userId) cụ thể
+    //    Đi sâu qua quan hệ: session → booking → vehicle → driver → user
     @Query("""
         SELECT COUNT(cs)
         FROM ChargingSession cs
@@ -76,6 +90,8 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     """)
     long countSessionsByUserId(@Param("userId") Long userId);
 
+    // ✅ Lấy toàn bộ phiên sạc của một user (theo userId) kèm thông tin liên quan (fetch sâu)
+    //    Sắp xếp theo startTime desc, rồi createdAt desc (ổn định thứ tự)
     @Query("""
        select s
        from ChargingSession s

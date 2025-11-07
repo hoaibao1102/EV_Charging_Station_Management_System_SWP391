@@ -1,9 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.*;
-import com.swp391.gr3.ev_management.enums.InvoiceStatus;
-import com.swp391.gr3.ev_management.enums.NotificationTypes;
-import com.swp391.gr3.ev_management.enums.TransactionStatus;
+import com.swp391.gr3.ev_management.enums.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ConflictException;
 import com.swp391.gr3.ev_management.exception.ErrorException;
@@ -305,5 +303,91 @@ public class PaymentService {
         return URLEncoder.encode(s, StandardCharsets.UTF_8)
                 .replace("+", "%20")
                 .replace("%7E", "~");
+    }
+
+    @Transactional
+    public String processEvmPayment(Long userId, Long sessionId, Long paymentMethodId) {
+        // 1) Resolve các entity cần thiết
+        Driver driver = driverRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found for current user"));
+
+        ChargingSession session = chargingSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ErrorException("Session not found"));
+
+        PaymentMethod method = paymentMethodRepository.findById(paymentMethodId)
+                .orElseThrow(() -> new ErrorException("Payment method not found"));
+
+        // 2) Lấy invoice UNPAID
+        Invoice invoice = invoiceRepository.findBySession_SessionId(sessionId)
+                .orElseThrow(() -> new ErrorException(
+                        "No invoice found for session " + sessionId + ". Stop session must create an UNPAID invoice first."));
+
+        if (invoice.getStatus() != InvoiceStatus.UNPAID) {
+            throw new ConflictException("Invoice #" + invoice.getInvoiceId() + " is not UNPAID (current: " + invoice.getStatus() + ")");
+        }
+
+        double amount = invoice.getAmount();
+        String currency = invoice.getCurrency();
+
+        // 3) Tạo transaction COMPLETED ngay (vì EVM xử lý nội bộ)
+        Transaction tx = Transaction.builder()
+                .amount(amount)
+                .currency(currency)
+                .description("Thanh toán hóa đơn #" + invoice.getInvoiceId() + " qua EVM")
+                .status(TransactionStatus.COMPLETED)
+                .driver(driver)
+                .invoice(invoice)
+                .paymentMethod(method)
+                .build();
+        tx = transactionRepository.save(tx);
+
+        // 4) Cập nhật invoice sang PAID
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setPaidAt(LocalDateTime.now(TENANT_ZONE));
+        invoiceRepository.save(invoice);
+
+        // 5) Gửi notification (giống logic VNPAY thành công)
+        var user = driver.getUser();
+        var booking = (session != null) ? session.getBooking() : null;
+        var station = (booking != null) ? booking.getStation() : null;
+
+        String stationName = station != null ? station.getStationName() : "Trạm sạc";
+        String title = "Thanh toán thành công hóa đơn #" + invoice.getInvoiceId();
+        String content = "Số tiền: " + String.format("%,.0f", invoice.getAmount()) + " " + invoice.getCurrency()
+                + " | Trạm: " + stationName
+                + (session != null && session.getStartTime() != null
+                ? " | Thời gian sạc: " + session.getStartTime()
+                : "");
+
+        Notification noti = new Notification();
+        noti.setUser(user);
+        noti.setTitle(title);
+        noti.setContentNoti(content);
+        noti.setType(NotificationTypes.PAYMENT_SUCCESS);
+        noti.setStatus(Notification.STATUS_UNREAD);
+        noti.setTransaction(tx);
+        noti.setSession(invoice.getSession());
+        noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
+        notificationsRepository.save(noti);
+
+        eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+
+        return "Payment successful (EVM)";
+    }
+
+    /**
+     * ✅ Helper lấy PaymentMethod và phân biệt VNPAY / EVM
+     */
+    public boolean isVnPayMethod(Long paymentMethodId) {
+        PaymentMethod method = paymentMethodRepository.findById(paymentMethodId)
+                .orElseThrow(() -> new ErrorException("Payment method not found"));
+        // tuỳ bạn định nghĩa, có thể dựa vào provider hoặc type
+        return method.getProvider() == PaymentProvider.VNPAY;
+    }
+
+    public boolean isEvmMethod(Long paymentMethodId) {
+        PaymentMethod method = paymentMethodRepository.findById(paymentMethodId)
+                .orElseThrow(() -> new ErrorException("Payment method not found"));
+        return method.getMethodType() == PaymentType.CASH;
     }
 }

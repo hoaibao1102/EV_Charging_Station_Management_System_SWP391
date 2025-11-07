@@ -15,14 +15,18 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/upload")
+@RestController // ✅ Đánh dấu đây là REST Controller — trả dữ liệu JSON cho client
+@RequestMapping("/api/upload") // ✅ Tất cả endpoint trong controller này bắt đầu bằng /api/upload
 @Tag(name = "Upload Controller", description = "APIs for handling file uploads (e.g., getting signatures)")
+// ✅ Swagger: nhóm các API phục vụ chức năng upload (lấy chữ ký, xác thực,...)
 public class UploadController {
 
     @Autowired
     private Cloudinary cloudinary;
+    // ✅ Inject Cloudinary client (được cấu hình sẵn trong ứng dụng)
+    //    Dùng để tạo chữ ký hoặc thực hiện các thao tác upload file qua Cloudinary API
 
+    // ✅ Đọc các giá trị Cloudinary config từ file application.properties (hoặc .env)
     @Value("${cloudinary.api_key}")
     private String apiKey;
 
@@ -33,39 +37,47 @@ public class UploadController {
     private String cloudName;
 
     /**
-     * Endpoint 1: Cung cấp chữ ký cho frontend
-     * (Bảo vệ endpoint này giống như các endpoint 'create' của Admin)
+     * ✅ Endpoint 1: Cung cấp chữ ký upload cho frontend (chữ ký Cloudinary)
+     *    - Mục đích: Cho phép frontend (ví dụ: React hoặc Angular) upload trực tiếp lên Cloudinary
+     *    - Quyền hạn: Chỉ ADMIN mới được phép gọi API này (để tránh bị lạm dụng)
      */
-    @GetMapping("/signature")
-    @PreAuthorize("hasRole('ADMIN')") 
-    @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Get Cloudinary Upload Signature (Admin)", 
-             description = "Admin only - Get a signature to upload a file directly to Cloudinary")
+    @GetMapping("/signature") // 🔗 Endpoint: GET /api/upload/signature
+    @PreAuthorize("hasRole('ADMIN')")  // 🔒 Chỉ người có role ADMIN mới được phép lấy chữ ký upload
+    @SecurityRequirement(name = "bearerAuth") // 🔐 Swagger yêu cầu xác thực bằng Bearer Token
+    @Operation(
+            summary = "Get Cloudinary Upload Signature (Admin)",
+            description = "Admin only - Get a signature to upload a file directly to Cloudinary"
+    )
     public ResponseEntity<Map<String, Object>> getSignature() {
-        // Tạo timestamp (tính bằng giây)
+        // 🕒 Tạo timestamp hiện tại (đơn vị: giây)
+        //     → Cloudinary yêu cầu tham số "timestamp" khi tạo chữ ký upload
         long timestamp = System.currentTimeMillis() / 1000;
 
-        // Tạo Map chứa các tham số cần ký (nếu bạn muốn ký thêm các tham số khác)
+        // 🧾 Tạo một map chứa các tham số sẽ được ký (tùy theo quy tắc upload của Cloudinary)
         Map<String, Object> paramsToSign = new HashMap<>();
         paramsToSign.put("timestamp", timestamp);
-        // Ví dụ: nếu bạn muốn ép upload vào 1 folder cụ thể:
-        paramsToSign.put("folder", "vehicle_models"); 
+
+        // 💡 Ví dụ: ép các file upload vào folder cụ thể trong Cloudinary
+        paramsToSign.put("folder", "vehicle_models");
 
         try {
-            // Dùng apiSecret để tạo chữ ký
+            // 🔑 Tạo chữ ký (signature) dựa trên tham số và apiSecret
+            //     → Đây là phần xác thực giúp Cloudinary biết yêu cầu upload là hợp lệ
             String signature = cloudinary.apiSignRequest(paramsToSign, apiSecret);
 
-            // Trả về các thông tin cần thiết cho frontend
+            // 🟢 Tạo response chứa toàn bộ thông tin cần thiết cho frontend để upload trực tiếp lên Cloudinary
             Map<String, Object> response = new HashMap<>();
-            response.put("signature", signature);
-            response.put("folder", "vehicle_models"); 
-            response.put("timestamp", timestamp);
-            response.put("api_key", apiKey);
-            response.put("cloud_name", cloudName);
+            response.put("signature", signature);  // ✅ Chữ ký upload hợp lệ
+            response.put("folder", "vehicle_models"); // ✅ Folder Cloudinary được chỉ định
+            response.put("timestamp", timestamp); // ✅ Thời gian tạo chữ ký
+            response.put("api_key", apiKey); // ✅ API key Cloudinary (frontend cần để xác thực)
+            response.put("cloud_name", cloudName); // ✅ Tên Cloudinary (frontend cần khi upload)
 
+            // ✅ Trả về HTTP 200 OK cùng với thông tin upload
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            // ❌ Nếu có lỗi khi tạo chữ ký → Trả về HTTP 500 cùng thông tin lỗi
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
