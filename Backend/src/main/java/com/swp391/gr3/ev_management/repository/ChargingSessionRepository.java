@@ -103,4 +103,25 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
        order by s.startTime desc, s.createdAt desc
        """)
     List<ChargingSession> findAllByDriverUserIdDeep(@Param("userId") Long userId);
+
+    /**
+     * ✅ Lấy tất cả session gắn với một ChargingPoint cụ thể (qua Booking -> BookingSlot -> Slot -> ChargingPoint).
+     * - Dùng DISTINCT để tránh trùng do join nhiều bảng.
+     * - FETCH JOIN sâu để tránh N+1 (lấy luôn các quan hệ cần hiển thị).
+     * - Sắp xếp session mới nhất lên trước.
+     */
+    @Query("""
+        select distinct cs
+        from ChargingSession cs
+          join fetch cs.booking b
+          join fetch b.vehicle v
+          join fetch v.driver d
+          join fetch d.user u
+          left join fetch b.bookingSlots bs
+          left join fetch bs.slot s
+          left join fetch s.chargingPoint cp
+        where cp.pointId = :pointId
+        order by cs.startTime desc, cs.createdAt desc
+    """)
+    List<ChargingSession> findAllByChargingPointIdDeep(@Param("pointId") Long pointId);
 }

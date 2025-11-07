@@ -1,4 +1,4 @@
-/* Navigation Component Styles - Increased Specificity */
+/* Navigation Component Styles - Flip Card Effect */
 nav.navigationBar {
   border: 3px solid #20b2aa !important;
   border-radius: 40px !important;
@@ -25,101 +25,184 @@ nav.navigationBar {
   nav.navigationBar {
     position: static !important;
     margin: 12px !important;
-    height: auto !important;
+    height: 80px !important;
     border-radius: 20px !important;
   }
 }
 
 nav.navigationBar .navContainer {
   display: flex !important;
-  justify-content: space-around !important;
+  justify-content: center !important;
   align-items: center !important;
+  gap: 20px !important;
   max-width: 600px !important;
   margin: 0 auto !important;
   padding: 0 20px !important;
   flex-direction: row !important;
+  height: 100% !important;
 }
 
+/* Nav Item - Flip Card Container */
 nav.navigationBar .navItem {
   display: flex !important;
-  flex-direction: column !important;
   align-items: center !important;
-  text-decoration: none !important;
-  padding: 8px 12px !important;
-  transition: all 0.3s ease !important;
-  border-radius: 12px !important; /* Bo góc nhẹ, không phải hình tròn */
-  min-width: 60px !important;
   justify-content: center !important;
+  text-decoration: none !important;
+  width: 56px !important;
+  height: 56px !important;
+  perspective: 1000px !important;
+  position: relative !important;
   background-color: transparent !important;
+  flex-shrink: 0 !important;
 }
 
-nav.navigationBar .navItem:hover {
-  transform: translateY(-2px) !important;
-  background-color: rgba(32, 178, 170, 0.1) !important;
+/* Flip Card Inner */
+nav.navigationBar .navItem::before {
+  content: '' !important;
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  transition: transform 0.6s !important;
+  transform-style: preserve-3d !important;
+  pointer-events: none !important;
 }
 
-nav.navigationBar .navItemActive {
-  background-color: rgba(32, 178, 170, 0.15) !important;
-}
-
+/* Icon Container - Front Side */
 nav.navigationBar .navIcon {
-  margin-bottom: 4px !important;
-  width: 40px !important;
-  height: 40px !important;
+  width: 56px !important;
+  height: 56px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border-radius: 50% !important;
-  background-color: #20b2aa !important;
-  transition: all 0.3s ease !important;
+  border-radius: 12px !important;
+  background-color: transparent !important;
+  transition: all 0.6s !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
 }
 
 nav.navigationBar .navIcon img {
-  width: 24px !important;
-  height: 24px !important;
+  width: 32px !important;
+  height: 32px !important;
   object-fit: contain !important;
-  filter: brightness(0) invert(1) !important;
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%) !important;
+  transition: all 0.3s ease !important;
 }
 
+/* Label - Back Side */
+nav.navigationBar .navLabel {
+  width: 56px !important;
+  height: 56px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: white !important;
+  background-color: #20b2aa !important;
+  border-radius: 12px !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  opacity: 0 !important;
+  transform: rotateY(180deg) !important;
+  transition: all 0.6s !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden !important;
+  text-align: center !important;
+  padding: 6px !important;
+  box-sizing: border-box !important;
+  line-height: 1.2 !important;
+}
+
+/* Hover Effect - Flip Card */
+nav.navigationBar .navItem:hover .navIcon {
+  transform: rotateY(180deg) !important;
+  opacity: 0 !important;
+}
+
+nav.navigationBar .navItem:hover .navLabel {
+  transform: rotateY(0deg) !important;
+  opacity: 1 !important;
+}
+
+/* Active State */
 nav.navigationBar .navItemActive .navIcon {
-  background-color: white !important;
-  transform: scale(1.1) !important;
+  background-color: rgba(32, 178, 170, 0.1) !important;
 }
 
 nav.navigationBar .navItemActive .navIcon img {
   filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%) !important;
+  transform: scale(1.1) !important;
 }
 
-nav.navigationBar .navLabel {
-  font-size: 12px !important;
-  margin-top: 4px !important;
-  font-weight: 500 !important;
-  color: #333 !important;
+/* Active State Hover */
+nav.navigationBar .navItemActive:hover .navIcon {
+  transform: rotateY(180deg) !important;
+  opacity: 0 !important;
 }
 
-nav.navigationBar .navItemActive .navLabel {
-  color: #20b2aa !important;
-  font-weight: 600 !important;
+nav.navigationBar .navItemActive:hover .navLabel {
+  transform: rotateY(0deg) !important;
+  opacity: 1 !important;
+  background-color: #20b2aa !important;
 }
 
 /* Mobile responsiveness */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   nav.navigationBar .navContainer {
-    padding: 0 10px !important;
+    gap: 15px !important;
   }
   
-  nav.navigationBar .navIcon {
-    font-size: 20px !important;
-    width: 35px !important;
-    height: 35px !important;
+  nav.navigationBar .navItem {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  nav.navigationBar .navIcon,
+  nav.navigationBar .navLabel {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  nav.navigationBar .navIcon img {
+    width: 28px !important;
+    height: 28px !important;
   }
   
   nav.navigationBar .navLabel {
-    font-size: 11px !important;
+    font-size: 10px !important;
+    padding: 5px !important;
   }
+}
 
+@media (max-width: 480px) {
+  nav.navigationBar .navContainer {
+    padding: 0 10px !important;
+    gap: 12px !important;
+  }
+  
   nav.navigationBar .navItem {
-    padding: 6px 8px !important;
-    min-width: 50px !important;
+    width: 42px !important;
+    height: 42px !important;
+  }
+  
+  nav.navigationBar .navIcon,
+  nav.navigationBar .navLabel {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  
+  nav.navigationBar .navIcon img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
+  nav.navigationBar .navLabel {
+    font-size: 9px !important;
+    padding: 4px !important;
   }
 }

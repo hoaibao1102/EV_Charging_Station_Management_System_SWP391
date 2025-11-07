@@ -2,6 +2,7 @@ import dashboard from "../../assets/icon/staff/dashboard.png";
 import charging from "../../assets/icon/staff/charging-station.png";
 import accident from "../../assets/icon/staff/incident-report.png";
 import transition from "../../assets/icon/staff/payment-method.png";
+import incident from "../../assets/icon/admin/incident.png";
 import { NavLink, useLocation } from "react-router-dom";
 import "./AdminNavigate.css";
 import classed from "../../assets/css/Main.module.css";
@@ -42,6 +43,11 @@ export default function AdminNavigate() {
       path: paths.reportAccidents,
       icon: accident,
       label: "Báo cáo sự cố",
+    },
+    {
+      path: paths.incidents,
+      icon: incident,
+      label: "Xử lý phạt",
     },
   ];
 
