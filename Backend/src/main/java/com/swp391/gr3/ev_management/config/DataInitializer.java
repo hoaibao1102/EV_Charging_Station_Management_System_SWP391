@@ -710,7 +710,17 @@ public class DataInitializer implements CommandLineRunner {
 
     // ================== PAYMENT METHODS ==================
     private void initPaymentMethods() {
-        createPaymentMethodIfNotExists(PaymentType.EWALLET, PaymentProvider.VNPAY, "411111******1111", LocalDate.of(2030,10,28));
+        createPaymentMethodIfNotExists(
+                PaymentType.EWALLET,
+                PaymentProvider.VNPAY,
+                "411111******1111",
+                LocalDate.of(2030,10,28));
+
+        createPaymentMethodIfNotExists(
+                PaymentType.CASH,
+                PaymentProvider.EVM,
+                "CASH-0001",
+                LocalDate.of(2030,10,28));
     }
 
     private void createPaymentMethodIfNotExists(PaymentType methodType,
