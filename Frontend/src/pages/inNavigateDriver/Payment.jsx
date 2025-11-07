@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import apiClient from "../../api/apiUrls.js";
 import "./Payment.css";
 
 export default function Payment() {
@@ -9,6 +10,10 @@ export default function Payment() {
   const sessionResult = location?.state?.sessionResult;
 
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [loadingMethods, setLoadingMethods] = useState(true);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   useEffect(() => {
     if (!sessionResult) {
@@ -17,21 +22,81 @@ export default function Payment() {
     }
   }, [sessionResult, navigate]);
 
+  // Fetch payment methods from API
+  useEffect(() => {
+    const fetchMethods = async () => {
+      try {
+        const response = await apiClient.get("/api/payment-methods");
+        const data = response.data;
+
+        // Handle both direct array response or response with data property
+        const methods = Array.isArray(data) ? data : data.data || [];
+        setPaymentMethods(methods);
+      } catch (err) {
+        console.error("❌ Lỗi khi tải phương thức thanh toán:", err);
+        toast.error("Không thể tải phương thức thanh toán", {
+          position: "top-center",
+        });
+      } finally {
+        setLoadingMethods(false);
+      }
+    };
+    fetchMethods();
+  }, []);
+
   const handlePayment = async () => {
+    // Check if payment method is selected
+    if (!selectedMethod) {
+      toast.warning("Vui lòng chọn phương thức thanh toán", {
+        position: "top-center",
+      });
+      return;
+    }
+
     try {
       setPaymentProcessing(true);
 
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Lấy thông tin phương thức hiện tại
+      const method = paymentMethods.find((m) => m.methodId === selectedMethod);
 
-      toast.success("Thanh toán thành công!", { position: "top-center" });
+      if (!method) {
+        toast.error("Không tìm thấy phương thức thanh toán!", {
+          position: "top-center",
+        });
+        return;
+      }
 
-      // Navigate to home or success page
-      setTimeout(() => {
-        navigate("/");
-      }, 1500);
+      // Xử lý thanh toán VNPay / E-Wallet
+      if (method.provider === "VNPAY" || method.methodType === "EWALLET") {
+        const response = await apiClient.post(
+          `/api/payment/vnpay/create?sessionId=${session.sessionId}&paymentMethodId=${selectedMethod}`
+        );
+
+        if (response.data?.paymentUrl) {
+          // Redirect to VNPay payment page
+          window.location.href = response.data.paymentUrl;
+          return;
+        } else {
+          toast.error("Không nhận được liên kết thanh toán từ server!", {
+            position: "top-center",
+          });
+        }
+      }
+      // Xử lý thanh toán tiền mặt
+      else if (method.methodType === "CASH") {
+        toast.success("Thanh toán tiền mặt sẽ được xác nhận tại trạm!", {
+          position: "top-center",
+        });
+        setTimeout(() => setPaymentCompleted(true), 1500);
+      }
+      // Phương thức chưa hỗ trợ
+      else {
+        toast.warning("Phương thức thanh toán chưa được hỗ trợ!", {
+          position: "top-center",
+        });
+      }
     } catch (error) {
-      console.error("❌ Lỗi khi thanh toán:", error);
+      console.error("❌ Lỗi khi gọi API thanh toán:", error);
       toast.error("Thanh toán thất bại", { position: "top-center" });
     } finally {
       setPaymentProcessing(false);
@@ -149,22 +214,58 @@ export default function Payment() {
           </div>
         </div>
 
-        <div className="payment-actions">
-          <button
-            className="btn-payment"
-            onClick={handlePayment}
-            disabled={paymentProcessing}
-          >
-            {paymentProcessing ? "Đang xử lý..." : "💳 Thanh toán ngay"}
-          </button>
+        {/* Payment Methods Section */}
+        {!paymentCompleted && (
+          <div className="payment-section">
+            <h3 className="section-title">💳 Phương thức thanh toán</h3>
+            {loadingMethods ? (
+              <p style={{ textAlign: "center", color: "#666" }}>
+                Đang tải phương thức thanh toán...
+              </p>
+            ) : paymentMethods.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#f44336" }}>
+                Không có phương thức thanh toán khả dụng
+              </p>
+            ) : (
+              <div className="method-list">
+                {paymentMethods.map((method) => (
+                  <button
+                    key={method.methodId}
+                    className={`method-btn ${
+                      selectedMethod === method.methodId ? "selected" : ""
+                    }`}
+                    onClick={() => setSelectedMethod(method.methodId)}
+                    disabled={paymentProcessing}
+                  >
+                    <div className="method-name">
+                      💳 {method.provider} ({method.methodType})
+                    </div>
+                    {method.accountNo && (
+                      <div className="method-description">
+                        Tài khoản: {method.accountNo}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-          <button
-            className="btn-cancel"
-            onClick={() => navigate("/")}
-            disabled={paymentProcessing}
-          >
-            Về trang chủ
-          </button>
+        <div className="payment-actions">
+          {!paymentCompleted ? (
+            <button
+              className="btn-payment"
+              onClick={handlePayment}
+              disabled={paymentProcessing || !selectedMethod}
+            >
+              {paymentProcessing ? "Đang xử lý..." : "💳 Thanh toán ngay"}
+            </button>
+          ) : (
+            <button className="btn-payment" onClick={() => navigate("/")}>
+              ✅ Về trang chủ
+            </button>
+          )}
         </div>
       </div>
     </div>
