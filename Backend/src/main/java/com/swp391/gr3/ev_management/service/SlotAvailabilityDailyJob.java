@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SlotAvailabilityDailyJob {
 
     private final SlotConfigRepository slotConfigRepository;
@@ -23,7 +25,7 @@ public class SlotAvailabilityDailyJob {
         LocalDate today = LocalDate.now();
         for (var cfg : actives) {
             int created = schedulerService.resetAndCreateForConfigInDate(cfg.getConfigId(), today);
-            // log.info("Regenerated {} availabilities for config {}", created, cfg.getConfigId());
+             log.info("Regenerated {} availabilities for config {}", created, cfg.getConfigId());
         }
     }
 }

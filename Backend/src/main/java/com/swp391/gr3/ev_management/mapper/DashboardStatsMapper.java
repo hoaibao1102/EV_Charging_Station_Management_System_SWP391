@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.mapper;
 
-import com.swp391.gr3.ev_management.DTO.response.*;
+import com.swp391.gr3.ev_management.dto.response.*;
 import lombok.experimental.UtilityClass;
 
 import java.time.LocalDateTime;

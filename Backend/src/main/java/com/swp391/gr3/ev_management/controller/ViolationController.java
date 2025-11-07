@@ -1,7 +1,7 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.ViolationRequest;
-import com.swp391.gr3.ev_management.DTO.response.ViolationResponse;
+import com.swp391.gr3.ev_management.dto.request.ViolationRequest;
+import com.swp391.gr3.ev_management.dto.response.ViolationResponse;
 import com.swp391.gr3.ev_management.enums.ViolationStatus;
 import com.swp391.gr3.ev_management.service.ViolationService;
 import io.swagger.v3.oas.annotations.Operation;

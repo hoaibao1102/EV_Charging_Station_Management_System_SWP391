@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.ConfirmPaymentRequest;
-import com.swp391.gr3.ev_management.DTO.response.ConfirmPaymentResponse;
-import com.swp391.gr3.ev_management.DTO.response.UnpaidInvoiceResponse;
+import com.swp391.gr3.ev_management.dto.request.ConfirmPaymentRequest;
+import com.swp391.gr3.ev_management.dto.response.ConfirmPaymentResponse;
+import com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse;
 import com.swp391.gr3.ev_management.service.StaffPaymentService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +23,6 @@ import java.util.List;
 public class PaymentController {
 
     private final StaffPaymentService paymentService;
-
     private final TokenService tokenService;
 
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")

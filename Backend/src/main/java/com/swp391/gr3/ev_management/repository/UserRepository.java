@@ -10,14 +10,14 @@ import java.util.List;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    public User findUsersByPhoneNumberAndPasswordHash(String phoneNumber , String password);
-    public User findUsersByPhoneNumber(String phoneNumber);
-    public User findUserByUserId(Long userId);
-    public boolean existsByPhoneNumber(String phoneNumber);
-    public boolean existsByEmail(String email);
+    User findUsersByPhoneNumberAndPasswordHash(String phoneNumber , String password);
+    User findUsersByPhoneNumber(String phoneNumber);
+    User findUserByUserId(Long userId);
+    boolean existsByPhoneNumber(String phoneNumber);
+    boolean existsByEmail(String email);
 
     @EntityGraph(attributePaths = "role")
-    public User findByEmail(String email);
+    User findByEmail(String email);
 
     @EntityGraph(attributePaths = "role")
     User findByPhoneNumber(String phone);

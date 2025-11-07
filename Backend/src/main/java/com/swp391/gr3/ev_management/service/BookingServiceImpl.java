@@ -5,30 +5,27 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.swp391.gr3.ev_management.DTO.request.BookingRequest;
-import com.swp391.gr3.ev_management.DTO.request.CreateBookingRequest;
-import com.swp391.gr3.ev_management.DTO.response.BookingResponse;
+import com.swp391.gr3.ev_management.dto.request.BookingRequest;
+import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
+import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 import com.swp391.gr3.ev_management.entity.*;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.BookingResponseMapper;
 import com.swp391.gr3.ev_management.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,7 +47,7 @@ public class BookingServiceImpl implements BookingService {
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
     private final ObjectMapper mapper;
     private final BookingSlotLogRepository bookingSlotLogRepository;
-    private final BookingOverdueHandler overdueHandler;
+    private final BookingResponseMapper bookingResponseMapper;
 
     @Override
     @Transactional
@@ -112,19 +109,7 @@ public class BookingServiceImpl implements BookingService {
                 .map(slot -> formatTimeRange(slot.getTemplate().getStartTime(), slot.getTemplate().getEndTime()))
                 .collect(Collectors.joining(", "));
 
-        return BookingResponse.builder()
-                .bookingId(booking.getBookingId())
-                .vehicleName(vehicle.getModel().getModel())
-                .stationName(station.getStationName())
-                .slotName("Slots: " + slots.stream()
-                        .map(s -> s.getSlotId().toString())
-                        .collect(Collectors.joining(", ")))
-                .connectorType(slots.get(0).getChargingPoint().getConnectorType().getDisplayName())
-                .timeRange(timeRanges)
-                .bookingDate(slots.get(0).getDate())
-                .price(price)
-                .status(booking.getStatus())
-                .build();
+        return bookingResponseMapper.forCreate(booking, slots, price);
     }
 
     @Override
@@ -202,20 +187,8 @@ public class BookingServiceImpl implements BookingService {
 
         eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
 
-        return BookingResponse.builder()
-                .bookingId(booking.getBookingId())
-                .vehicleName(booking.getVehicle().getModel().getModel())
-                .stationName(stationName)
-                .slotName("Slot " + slot.getSlotId())
-                .connectorType(slot.getChargingPoint().getConnectorType().getDisplayName())
-                .timeRange(timeRange)
-                .bookingDate(slot.getDate())
-                .price(price)
-                .status(booking.getStatus())
-                .build();
+        return bookingResponseMapper.forConfirm(booking, slot, price, timeRange);
     }
-
-    // ❌ BỎ scheduler trùng ở đây
 
     private String formatTimeRange(LocalDateTime start, LocalDateTime end) {
         var f = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
@@ -274,11 +247,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse getBookingById(Long bookingId) {
-        return mapper.convertValue(
-                bookingsRepository.findById(bookingId)
-                        .orElseThrow(() -> new ErrorException("Booking not found")),
-                BookingResponse.class
-        );
+        Booking b = bookingsRepository.findById(bookingId)
+                .orElseThrow(() -> new ErrorException("Booking not found"));
+        return bookingResponseMapper.view(b);
     }
 
     @Override
@@ -340,7 +311,7 @@ public class BookingServiceImpl implements BookingService {
                     + booking.getStation().getStationName()
                     + " đã được hủy thành công.");
             noti.setType(NotificationTypes.BOOKING_CANCELED);
-            noti.setStatus("UNREAD");
+            noti.setStatus(Notification.STATUS_UNREAD);
             noti.setBooking(booking);
             notificationsRepository.save(noti);
 
@@ -353,17 +324,6 @@ public class BookingServiceImpl implements BookingService {
                 .map(Tariff::getPricePerKWh)
                 .orElse(0.0);
 
-        return BookingResponse.builder()
-                .bookingId(booking.getBookingId())
-                .vehicleName(booking.getVehicle().getModel().getModel())
-                .stationName(booking.getStation().getStationName())
-                .slotName("Slots: " + booking.getBookingSlots().stream()
-                        .map(bs -> bs.getSlot().getSlotId().toString())
-                        .collect(Collectors.joining(", ")))
-                .connectorType(firstSlot.getChargingPoint().getConnectorType().getDisplayName())
-                .bookingDate(firstSlot.getDate())
-                .price(price)
-                .status(booking.getStatus())
-                .build();
+        return bookingResponseMapper.forCancel(booking, booking.getBookingSlots(), firstSlot, price);
     }
 }

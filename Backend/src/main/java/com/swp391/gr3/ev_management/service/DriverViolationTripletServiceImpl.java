@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.response.DriverViolationTripletResponse;
+import com.swp391.gr3.ev_management.dto.response.DriverViolationTripletResponse;
 import com.swp391.gr3.ev_management.enums.TripletStatus;
 import com.swp391.gr3.ev_management.mapper.DriverViolationTripletMapper;
 import com.swp391.gr3.ev_management.repository.DriverViolationTripletRepository;

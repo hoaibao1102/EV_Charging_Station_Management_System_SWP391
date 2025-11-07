@@ -1,9 +1,9 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.VehicleModelCreateRequest;
-import com.swp391.gr3.ev_management.DTO.request.VehicleModelUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.response.UpdateStatusRequest;
-import com.swp391.gr3.ev_management.DTO.response.VehicleModelResponse;
+import com.swp391.gr3.ev_management.dto.request.VehicleModelCreateRequest;
+import com.swp391.gr3.ev_management.dto.request.VehicleModelUpdateRequest;
+import com.swp391.gr3.ev_management.dto.response.UpdateStatusRequest;
+import com.swp391.gr3.ev_management.dto.response.VehicleModelResponse;
 import com.swp391.gr3.ev_management.repository.VehicleModelRepository;
 import com.swp391.gr3.ev_management.service.VehicleModelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 public class VehicleModelController {
 
     private final VehicleModelService vehicleModelService;
-
     private final VehicleModelRepository vehicleModelRepository;
 
     // DELETE /api/admin/vehicle-models/{id}

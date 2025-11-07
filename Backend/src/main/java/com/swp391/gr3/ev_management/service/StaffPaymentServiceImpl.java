@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.DTO.request.ConfirmPaymentRequest;
-import com.swp391.gr3.ev_management.DTO.response.ConfirmPaymentResponse;
-import com.swp391.gr3.ev_management.DTO.response.UnpaidInvoiceResponse;
+import com.swp391.gr3.ev_management.dto.request.ConfirmPaymentRequest;
+import com.swp391.gr3.ev_management.dto.response.ConfirmPaymentResponse;
+import com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse;
 import com.swp391.gr3.ev_management.entity.Invoice;
 import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.entity.StationStaff;
@@ -11,6 +11,7 @@ import com.swp391.gr3.ev_management.enums.InvoiceStatus;
 import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.ConfirmPaymentResponseMapper;
 import com.swp391.gr3.ev_management.mapper.UnpaidInvoiceMapper;
 import com.swp391.gr3.ev_management.repository.InvoiceRepository;
 import com.swp391.gr3.ev_management.repository.PaymentMethodRepository;
@@ -33,6 +34,7 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final StationStaffRepository stationStaffRepository;
     private final UnpaidInvoiceMapper mapper;
+    private final ConfirmPaymentResponseMapper confirmPaymentResponseMapper; // <— thêm dòng này
 
     @Override
     @Transactional
@@ -82,19 +84,7 @@ public class StaffPaymentServiceImpl implements StaffPaymentService {
         invoice.setPaidAt(LocalDateTime.now());
         invoiceRepository.save(invoice);
 
-        return ConfirmPaymentResponse.builder()
-                .transactionId(tx.getTransactionId())
-                .invoiceId(invoice.getInvoiceId())
-                .sessionId(invoice.getSession().getSessionId())
-                .amount(tx.getAmount())
-                .currency(tx.getCurrency())
-                .paymentMethod(method.getMethodType())
-                .status(tx.getStatus())
-                .paidAt(invoice.getPaidAt())
-                .staffId(stationStaff.getStaff().getUser().getUserId())
-                .staffName(stationStaff.getStaff().getUser().getName())
-                .message("Payment confirmed successfully")
-                .build();
+        return confirmPaymentResponseMapper.map(invoice, tx, stationStaff);
     }
 
     @Override

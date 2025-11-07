@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeCreateRequest;
-import com.swp391.gr3.ev_management.DTO.request.ConnectorTypeUpdateRequest;
-import com.swp391.gr3.ev_management.DTO.response.ConnectorTypeResponse;
+import com.swp391.gr3.ev_management.dto.request.ConnectorTypeCreateRequest;
+import com.swp391.gr3.ev_management.dto.request.ConnectorTypeUpdateRequest;
+import com.swp391.gr3.ev_management.dto.response.ConnectorTypeResponse;
 import com.swp391.gr3.ev_management.service.ConnectorTypeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

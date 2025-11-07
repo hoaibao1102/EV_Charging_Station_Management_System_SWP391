@@ -1,6 +1,6 @@
 package com.swp391.gr3.ev_management.repository;
 
-import com.swp391.gr3.ev_management.DTO.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.dto.response.StationStaffResponse;
 import com.swp391.gr3.ev_management.entity.StationStaff;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,7 +39,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
 
     // Projection DTO — KHÔNG dùng fetch join nên OK
     @Query("""
-        select new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
+        select new com.swp391.gr3.ev_management.dto.response.StationStaffResponse(
             ss.stationStaffId,
             stf.staffId,    
             s.stationId,
@@ -80,7 +80,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     Optional<StationStaff> findEntityByStaffId(Long staffId);
 
     @Query("""
-    select new com.swp391.gr3.ev_management.DTO.response.StationStaffResponse(
+    select new com.swp391.gr3.ev_management.dto.response.StationStaffResponse(
         ss.stationStaffId,
         stf.staffId,
         s.stationId,
