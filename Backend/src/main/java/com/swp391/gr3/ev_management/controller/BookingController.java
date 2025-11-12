@@ -3,9 +3,13 @@ package com.swp391.gr3.ev_management.controller;
 import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
+import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.service.BookingService;
+import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController // Đánh dấu đây là REST controller (trả về JSON, hình ảnh, dữ liệu...)
 @RequestMapping("/api/bookings") // Prefix chung cho tất cả endpoint của controller này
 @RequiredArgsConstructor // Lombok: tự sinh constructor cho field final (dependency injection)
@@ -21,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class BookingController {
 
     private final BookingService bookingService; // Inject BookingService để xử lý nghiệp vụ đặt chỗ (booking)
+    private final TokenService tokenService;
 
     // ====================== CONFIRM BOOKING (XÁC NHẬN ĐẶT CHỖ) ====================== //
     @PutMapping(value = "/{bookingId}/confirm", produces = MediaType.IMAGE_PNG_VALUE)
@@ -97,5 +104,18 @@ public class BookingController {
 
         // ✅ Nếu tìm thấy, trả về HTTP 200 cùng dữ liệu booking
         return ResponseEntity.ok(response);
+    }
+
+    // ====================== GET CONFIRMED BOOKINGS FOR STAFF (LẤY BOOKING ĐÃ XÁC NHẬN THEO NHÂN VIÊN) ====================== //
+    @GetMapping("/confirmed/compact")
+    @Operation(summary = "Get confirmed bookings by staff",
+            description = "Get all CONFIRMED bookings in stations where current staff is assigned")
+    public ResponseEntity<List<ConfirmedBookingView>> getConfirmedBookingsByStaff(HttpServletRequest request) {
+        // 🟢 Lấy userId từ token đăng nhập
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        // 🟢 Gọi service
+        List<ConfirmedBookingView> list = bookingService.getConfirmedBookingsForStaff(userId);
+
+        return ResponseEntity.ok(list);
     }
 }

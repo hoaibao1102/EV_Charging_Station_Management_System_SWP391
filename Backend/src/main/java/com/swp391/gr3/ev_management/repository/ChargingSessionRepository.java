@@ -1,5 +1,7 @@
 package com.swp391.gr3.ev_management.repository;
 
+import com.swp391.gr3.ev_management.dto.response.ActiveSessionView;
+import com.swp391.gr3.ev_management.dto.response.CompletedSessionView;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -124,4 +126,91 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
         order by cs.startTime desc, cs.createdAt desc
     """)
     List<ChargingSession> findAllByChargingPointIdDeep(@Param("pointId") Long pointId);
+
+    /**
+     * ✅ Danh sách phiên sạc đang hoạt động, nhưng CHỈ ở các trạm mà staff (staffId) đang được assign.
+     * - DISTINCT để tránh nhân bản do Booking có nhiều BookingSlot → nhiều ChargingPoint.
+     * - EXISTS kiểm tra nhân viên này có assignment active ở trạm của phiên sạc:
+     *   + ss.station = st
+     *   + ss.staff.staffId = :staffId
+     *   + ss.assignedAt <= CURRENT_TIMESTAMP
+     *   + (ss.unassignedAt IS NULL OR ss.unassignedAt > CURRENT_TIMESTAMP)
+     */
+    @Query("""
+        select distinct new com.swp391.gr3.ev_management.dto.response.ActiveSessionView(
+            s.sessionId,
+            ct.displayName,
+            cp.pointNumber,
+            st.stationName,
+            u.name,
+            v.vehiclePlate,
+            s.startTime,
+            b.scheduledEndTime
+        )
+        from ChargingSession s
+            join s.booking b
+            join b.vehicle v
+            join v.model vm
+            join vm.connectorType ct
+            join b.bookingSlots bs
+            join bs.slot sl
+            join sl.chargingPoint cp
+            join cp.station st
+            join v.driver d
+            join d.user u
+        where s.status = com.swp391.gr3.ev_management.enums.ChargingSessionStatus.IN_PROGRESS
+          and exists (
+                select 1
+                from StationStaff ss
+                where ss.station = st
+                  and ss.staff.staffId = :staffId
+                  and ss.assignedAt <= CURRENT_TIMESTAMP
+                  and (ss.unassignedAt is null or ss.unassignedAt > CURRENT_TIMESTAMP)
+          )
+        order by s.startTime desc
+    """)
+    List<ActiveSessionView> findActiveSessionCompactByStaff(@Param("staffId") Long staffId);
+
+    /**
+     * ✅ Danh sách phiên sạc ĐÃ KẾT THÚC (COMPLETED), CHỈ ở các trạm mà staff (staffId) đang được assign.
+     * - DISTINCT để tránh nhân bản do Booking có nhiều BookingSlot.
+     * - EXISTS bảo đảm staff này đang active ở trạm của phiên sạc.
+     * - Lấy thêm s.cost và s.endTime (thời gian kết thúc thực tế).
+     * - Sắp xếp theo endTime mới nhất trước.
+     */
+    @Query("""
+    select distinct new com.swp391.gr3.ev_management.dto.response.CompletedSessionView(
+        s.sessionId,
+        ct.displayName,
+        cp.pointNumber,
+        st.stationName,
+        u.name,
+        v.vehiclePlate,
+        s.startTime,
+        s.endTime,
+        s.cost
+    )
+        from ChargingSession s
+            join s.booking b
+            join b.vehicle v
+            join v.model vm
+            join vm.connectorType ct
+            join b.bookingSlots bs
+            join bs.slot sl
+            join sl.chargingPoint cp
+            join cp.station st
+            join v.driver d
+            join d.user u
+        where s.status = com.swp391.gr3.ev_management.enums.ChargingSessionStatus.COMPLETED
+          and exists (
+                select 1
+                from StationStaff ss
+                where ss.station = st
+                  and ss.staff.staffId = :staffId
+                  and ss.assignedAt <= CURRENT_TIMESTAMP
+                  and (ss.unassignedAt is null or ss.unassignedAt > CURRENT_TIMESTAMP)
+          )
+        order by s.endTime desc
+    """)
+    List<CompletedSessionView> findCompletedSessionCompactByStaff(@Param("staffId") Long staffId);
 }
