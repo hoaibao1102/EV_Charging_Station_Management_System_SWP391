@@ -8,6 +8,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
+import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
@@ -50,6 +51,7 @@ public class BookingServiceImpl implements BookingService {
     private final ObjectMapper mapper;                                   // Serialize/deserialize JSON
     private final BookingSlotLogRepository bookingSlotLogRepository;     // Lưu log các slot đã confirm
     private final BookingResponseMapper bookingResponseMapper;           // Map entity -> DTO response
+    private final StaffsRepository staffsRepository;                     // Lấy staff theo userId
 
     @Override
     @Transactional // Gộp tất cả bước tạo booking vào một transaction để đảm bảo toàn vẹn
@@ -358,5 +360,13 @@ public class BookingServiceImpl implements BookingService {
 
         // Trả về DTO hủy booking
         return bookingResponseMapper.forCancel(booking, booking.getBookingSlots(), firstSlot, price);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ConfirmedBookingView> getConfirmedBookingsForStaff(Long userId) {
+        Long staffId = staffsRepository.findIdByUserId(userId)
+                .orElseThrow(() -> new ErrorException("Staff not found for current user"));
+        return bookingsRepository.findConfirmedBookingsByStaff(staffId);
     }
 }

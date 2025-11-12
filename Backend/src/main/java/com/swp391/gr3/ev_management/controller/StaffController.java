@@ -1,9 +1,12 @@
 package com.swp391.gr3.ev_management.controller;
 
+import com.swp391.gr3.ev_management.dto.request.StopSessionForStaffRequest;
 import com.swp391.gr3.ev_management.dto.request.UpdatePasswordRequest;
 import com.swp391.gr3.ev_management.dto.request.UpdateStaffProfileRequest;
 import com.swp391.gr3.ev_management.dto.response.StaffResponse;
 import com.swp391.gr3.ev_management.dto.response.StationStaffResponse;
+import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
+import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import com.swp391.gr3.ev_management.service.StaffService;
 import com.swp391.gr3.ev_management.service.StaffStationService;
 import com.swp391.gr3.ev_management.service.TokenService;
@@ -25,6 +28,7 @@ public class StaffController {
     private final StaffStationService staffStationService; // ✅ Service quản lý mối quan hệ Staff - Station
     private final StaffService staffService; // ✅ Service xử lý logic liên quan đến hồ sơ và tài khoản staff
     private final TokenService tokenService; // ✅ Dùng để trích xuất userId từ JWT token
+    private final ChargingSessionService chargingSessionService;
 
     // =========================================================================
     // ✅ 1. STAFF: CẬP NHẬT THÔNG TIN CÁ NHÂN (PROFILE)
@@ -84,5 +88,25 @@ public class StaffController {
 
         // 🟢 Trả về HTTP 200 cùng dữ liệu hồ sơ staff
         return ResponseEntity.ok(staff);
+    }
+
+    // =========================================================================
+    // ✅ 4. STAFF: DỪNG PHIÊN SẠC
+    // =========================================================================
+
+    @PostMapping("/staff-stop-session") // 🔗 POST /api/charging-sessions/driver-stop
+    @Operation(summary = "Staff stops the charging session", description = "Staff stops the charging session using session ID and user ID")
+    public ResponseEntity<StopCharSessionResponse> staffStopSession(
+            @RequestBody StopSessionForStaffRequest body // ✅ Chứa sessionId và userId
+    ) {
+        // 🟢 Lấy userId từ body thay vì token
+        Long userId = body.getUserId();
+
+        // 🟢 Gọi service để dừng phiên sạc thuộc về chính userId này
+        StopCharSessionResponse res =
+                chargingSessionService.staffStopSession(body.getSessionId(), userId);
+
+        // 🟢 Trả về 200 OK + thông tin sau khi dừng
+        return ResponseEntity.ok(res);
     }
 }

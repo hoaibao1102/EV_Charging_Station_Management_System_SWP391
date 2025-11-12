@@ -212,4 +212,30 @@ public class ChargingSessionController {
         ViewCharSessionResponse res = chargingSessionService.getCharSessionById(current.getSessionId());
         return ResponseEntity.ok(res);
     }
+
+    // =========================================================================
+    // 10) STAFF: XEM DANH SÁCH PHIÊN SẠC Ở CHẾ ĐỘ COMPACT
+    // =========================================================================
+
+    @GetMapping("/active/compact")
+    @Operation(summary = "Get active sessions in compact view",
+            description = "Only sessions at stations where the current staff is actively assigned")
+    public ResponseEntity<List<ActiveSessionView>> getActiveCompact(HttpServletRequest request) {
+        // 🟢 Lấy userId từ token đăng nhập
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        return ResponseEntity.ok(chargingSessionService.getActiveSessionsCompact(userId));
+    }
+
+    // =========================================================================
+    // 11) STAFF: XEM DANH SÁCH PHIÊN SẠC HOÀN THÀNH Ở CHẾ ĐỘ COMPACT
+    // =========================================================================
+
+    @GetMapping("/completed/compact")
+    @Operation(summary = "Get completed sessions in compact view",
+            description = "Only sessions at stations where the current staff is actively assigned")
+    public ResponseEntity<List<CompletedSessionView>> getCompletedCompact(HttpServletRequest request) {
+        // 🟢 Lấy userId từ token đăng nhập
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        return ResponseEntity.ok(chargingSessionService.getCompletedSessionsCompactByStaff(userId));
+    }
 }

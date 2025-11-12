@@ -69,7 +69,7 @@ public class UsersController {
     // =========================================================================
     // ✅ 2. XÁC THỰC OTP VÀ HOÀN TẤT ĐĂNG KÝ
     // =========================================================================
-    @PostMapping(value="/register/verify", produces=MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value="/register/verify", produces=MediaType.APPLICATION_JSON_VALUE, consumes=MediaType.APPLICATION_JSON_VALUE)
     @Operation(
             summary = "Verify OTP and complete registration",
             description = "Verifies the OTP sent to the user's email and completes the registration process"
@@ -206,9 +206,10 @@ public class UsersController {
             summary = "Reset password",
             description = "Đặt lại mật khẩu bằng OTP còn hạn"
     )
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
-        // 🟢 Gọi service xác thực OTP và cập nhật mật khẩu mới
-        authService.resetPassword(req.getEmail(), req.getOtp(), req.getNewPassword());
+    public ResponseEntity<?> resetPassword(
+            @RequestParam("otp") String otp,                // ✅ OTP truyền riêng
+            @Valid @RequestBody ResetPasswordRequest req) { // ✅ Body chỉ có email + newPassword
+        authService.resetPassword(req.getEmail(), otp, req.getNewPassword());
         return ResponseEntity.ok("Đổi mật khẩu thành công.");
     }
 
