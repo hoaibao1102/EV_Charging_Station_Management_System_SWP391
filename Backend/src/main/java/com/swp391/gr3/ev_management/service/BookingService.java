@@ -3,7 +3,10 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
+import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public interface BookingService {
@@ -20,4 +23,6 @@ public interface BookingService {
     BookingResponse getBookingById(Long bookingId);
 
     BookingResponse cancelBooking(Long bookingId);
+
+    List<ConfirmedBookingView> getConfirmedBookingsForStaff(Long userId);
 }

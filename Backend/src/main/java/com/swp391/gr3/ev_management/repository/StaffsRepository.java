@@ -75,4 +75,11 @@ public interface StaffsRepository extends JpaRepository<Staffs, Long> {
      * @return số lượng nhân viên khớp với trạng thái đó
      */
     long countByStatus(StaffStatus status);
+
+    @Query("""
+        select s.staffId
+        from Staffs s
+        where s.user.userId = :userId
+    """)
+    Optional<Long> findIdByUserId(@Param("userId") Long userId);
 }

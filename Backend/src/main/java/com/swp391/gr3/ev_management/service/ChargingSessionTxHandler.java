@@ -31,6 +31,7 @@ public class ChargingSessionTxHandler {
     private final SessionSocCache sessionSocCache;                 // Cache SOC tạm thời theo session
     private final ApplicationEventPublisher eventPublisher;        // Publish event (vd: gửi email)
     private final StopCharSessionResponseMapper stopResponseMapper;// Map entity -> DTO phản hồi
+    private final SlotAvailabilityRepository slotAvailabilityRepository; // thêm repo này để giải phóng slot
 
     /**
      * DỪNG PHIÊN SẠC (TX độc lập):
@@ -42,13 +43,16 @@ public class ChargingSessionTxHandler {
      * - Trả về DTO kết quả
      */
     @Transactional
-    public StopCharSessionResponse stopSessionInternalTx(Long sessionId, Integer finalSocIfAny, LocalDateTime endTime) {
-        // 1) Tải session kèm booking/vehicle/driver/user để có đủ thông tin tính toán & thông báo
+    public StopCharSessionResponse stopSessionInternalTx(
+            Long sessionId,
+            Integer finalSocIfAny,
+            LocalDateTime endTime,
+            StopInitiator initiator // 🆕
+    ) {
         ChargingSession cs = sessionRepository
                 .findByIdWithBookingVehicleDriverUser(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
 
-        // 2) Chỉ dừng khi session đang hoạt động
         if (cs.getStatus() != ChargingSessionStatus.IN_PROGRESS) {
             throw new ErrorException("Session is not currently active");
         }
@@ -56,25 +60,20 @@ public class ChargingSessionTxHandler {
         Booking booking = cs.getBooking();
         User user = booking.getVehicle().getDriver().getUser();
 
-        // 3) SOC ban đầu là bắt buộc để tính delta SOC
         Integer initialSoc = Optional.ofNullable(cs.getInitialSoc())
                 .orElseThrow(() -> new ErrorException("Initial SoC not recorded"));
 
-        // 4) Xác định SOC cuối:
-        //    - Nếu finalSocIfAny != null -> dùng (được clamp 0..100)
-        //    - Ngược lại -> ước lượng theo thời gian sạc & công suất (estimateFinalSoc)
         int finalSoc = (finalSocIfAny != null) ? clampSoc(finalSocIfAny) : estimateFinalSoc(cs, endTime);
-        if (finalSoc < initialSoc) finalSoc = initialSoc; // Không cho giảm so với initial
+        if (finalSoc < initialSoc) finalSoc = initialSoc;
 
-        // 5) Tính năng lượng tiêu thụ (kWh) từ phần trăm pin thay đổi
-        double batteryCapacityKWh = booking.getVehicle().getModel().getBatteryCapacityKWh();
-        double deltaSoc = finalSoc - initialSoc;
-        double energyKWh = round2((deltaSoc / 100.0) * batteryCapacityKWh);
+        // ---- Lấy thông tin slot/window để áp dụng quy tắc tính phí ----
+        LocalDateTime windowStart = resolveWindowStartForTx(booking); // 🆕 helper
+        LocalDateTime windowEnd   = resolveWindowEndForTx(booking);   // 🆕 helper
 
-        // 6) Tính thời lượng phiên (phút)
-        long minutes = Math.max(0, ChronoUnit.MINUTES.between(cs.getStartTime(), endTime));
+        long sessionMinutes = Math.max(0, ChronoUnit.MINUTES.between(cs.getStartTime(), endTime));
+        long totalWindowMinutes = Math.max(0, ChronoUnit.MINUTES.between(windowStart, windowEnd));
 
-        // 7) Lấy thông tin điểm sạc & connector (phục vụ thông báo & lấy biểu giá)
+        // Lấy connector & tariff như cũ
         var firstSlot = booking.getBookingSlots().stream()
                 .findFirst()
                 .orElseThrow(() -> new ErrorException("No slot found for booking"));
@@ -84,45 +83,107 @@ public class ChargingSessionTxHandler {
                 ? point.getConnectorType()
                 : booking.getVehicle().getModel().getConnectorType();
 
-        // 8) Lấy tariff có hiệu lực tại endTime (pricingTime). Nếu không có -> fallback method khác
         LocalDateTime pricingTime = endTime;
         Tariff tariff = tariffRepository
                 .findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(
                         connectorType.getConnectorTypeId(), pricingTime, pricingTime)
-                .orElseGet(() -> {
-                    // fallback: method tuỳ biến để tìm tariff “active” tại thời điểm pricingTime
-                    return tariffRepository.findActiveByConnectorType(connectorType.getConnectorTypeId(), pricingTime)
-                            .stream().findFirst().orElse(null);
-                });
+                .orElseGet(() -> tariffRepository.findActiveByConnectorType(connectorType.getConnectorTypeId(), pricingTime)
+                        .stream().findFirst().orElse(null));
 
-        // 9) Nếu không có tariff phù hợp → force complete (cost=0) và cảnh báo để admin xử lý sau
         if (tariff == null) {
             log.warn("[STOP] No active tariff for connectorTypeId={} at {}. Force complete with cost=0.",
                     connectorType.getConnectorTypeId(), pricingTime);
-            return forceCompleteWithoutBilling(cs, booking, user, pointNumber, initialSoc, finalSoc, energyKWh, minutes);
+            return forceCompleteWithoutBilling(cs, booking, user, pointNumber, initialSoc, finalSoc,
+                    round2(((finalSoc - initialSoc) / 100.0) * booking.getVehicle().getModel().getBatteryCapacityKWh()),
+                    sessionMinutes);
         }
 
-        // 10) Tính chi phí = đơn giá * điện năng
-        double pricePerKWh = tariff.getPricePerKWh();
-        double cost = round2(pricePerKWh * energyKWh);
+        // ---- TÍNH NĂNG LƯỢNG (kWh) cho phần thật sự sạc ----
+        double batteryCapacityKWh = booking.getVehicle().getModel().getBatteryCapacityKWh();
+        double deltaSoc = finalSoc - initialSoc;
+        double energyKWh = round2((deltaSoc / 100.0) * batteryCapacityKWh);
 
-        // 11) Ghi nhận kết quả vào session
+        // ---- CẤU HÌNH SLOT & SỐ LIỆU THỜI GIAN ----
+        long slotMinutes = getSlotMinutes(booking);               // ví dụ = 5
+        int bookedSlots = booking.getBookingSlots() != null ? booking.getBookingSlots().size() : 0;
+        long elapsedFromWindowStart = Math.max(0, ChronoUnit.MINUTES.between(windowStart, endTime));
+
+        // ---- SUY RA "PHÚT SẠC THỰC" TỪ NĂNG LƯỢNG (để không tính trùng phút sạc)
+        //     phútSạc ≈ energyKWh / (ratedKW * efficiency) * 60
+        double ratedKW = 11.0; // fallback
+        if (booking.getBookingSlots() != null && !booking.getBookingSlots().isEmpty()) {
+            var bs0 = booking.getBookingSlots().get(0);
+            if (bs0.getSlot() != null && bs0.getSlot().getChargingPoint() != null) {
+                Double p = bs0.getSlot().getChargingPoint().getMaxPowerKW();
+                if (p != null && p > 0) ratedKW = p;
+            }
+        }
+        double efficiency = 0.90;
+        long chargingMinutesFromEnergy = (long) Math.ceil((energyKWh / (ratedKW * efficiency)) * 60.0);
+        // không vượt quá thời gian thực sạc
+        long activeChargingMinutes = Math.min(sessionMinutes, chargingMinutesFromEnergy);
+
+        // ---- TÍNH CHI PHÍ ----
+        double timeCost = 0.0;
+        double energyCost = 0.0;
+
+        if (initiator == StopInitiator.STAFF) {
+            // STAFF: tính đúng phút thực
+            timeCost = round2(sessionMinutes * tariff.getPricePerMin());
+            energyCost = 0.0;
+
+        } else if (initiator == StopInitiator.DRIVER) {
+            // DRIVER: làm tròn theo slot, nhưng CHỈ tính phút không-sạc theo pricePerMin,
+            // còn phút sạc tính theo kWh (energyKWh)
+            if (slotMinutes <= 0 || bookedSlots <= 0) {
+                // fallback nếu không có slot -> vẫn hybrid: phút còn lại = session - active
+                long timeMinutes = Math.max(0, sessionMinutes - activeChargingMinutes);
+                timeCost = round2(timeMinutes * tariff.getPricePerMin());
+                energyCost = round2(energyKWh * tariff.getPricePerKWh());
+            } else {
+                // làm tròn lên theo slot, nhưng không vượt số slot đã book
+                long roundedSlots = Math.min(
+                        bookedSlots,
+                        (long) Math.ceil((double) elapsedFromWindowStart / (double) slotMinutes)
+                );
+                long roundedMinutes = roundedSlots * slotMinutes;
+
+                // phút tính theo time = phút làm tròn - phút sạc thực (không âm)
+                long timeMinutes = Math.max(0, roundedMinutes - activeChargingMinutes);
+
+                timeCost = round2(timeMinutes * tariff.getPricePerMin());
+                energyCost = round2(energyKWh * tariff.getPricePerKWh());
+            }
+
+        } else { // SYSTEM_AUTO (giữ như cũ)
+            timeCost = 0.0;
+            energyCost = round2(tariff.getPricePerKWh() * energyKWh);
+        }
+
+        // --- “ĐẾN MUỘN”: tự nhiên đã cover vì roundedMinutes tính từ windowStart
+        //     -> các slot lỡ (missed) nằm trong phần timeMinutes và được tính theo pricePerMin
+
+        double totalCost = round2(timeCost + energyCost);
+
+        // 🆕 Giải phóng các slot chưa bắt đầu NẾU driver dừng sớm
+        if (initiator == StopInitiator.DRIVER || initiator == StopInitiator.STAFF) {
+            releaseUnusedFutureSlots(booking, endTime);
+        }
+
+        // ---- Ghi nhận xuống session như cũ ----
         cs.setEndTime(endTime);
-        cs.setDurationMinutes((int) minutes);
+        cs.setDurationMinutes((int) sessionMinutes);
         cs.setFinalSoc(finalSoc);
         cs.setEnergyKWh(energyKWh);
-        cs.setCost(cost);
+        cs.setCost(totalCost);
         cs.setStatus(ChargingSessionStatus.COMPLETED);
         sessionRepository.save(cs);
-
-        // Xoá SOC cache vì phiên đã hoàn tất
         sessionSocCache.remove(cs.getSessionId());
 
-        // 12) Cập nhật trạng thái booking -> COMPLETED
         booking.setStatus(BookingStatus.COMPLETED);
         bookingsRepository.save(booking);
 
-        // 13) Tạo Notification cho user về kết quả sạc
+        // Notification
         Notification done = new Notification();
         done.setUser(user);
         done.setBooking(booking);
@@ -130,10 +191,12 @@ public class ChargingSessionTxHandler {
         done.setTitle("Kết thúc sạc #" + booking.getBookingId());
         done.setContentNoti(
                 "Điểm sạc: " + pointNumber +
-                        " | Thời lượng: " + minutes + " phút" +
+                        " | Thời lượng: " + sessionMinutes + " phút" +
                         " | Tăng SOC: " + initialSoc + "% → " + finalSoc + "%" +
                         " | Năng lượng: " + energyKWh + " kWh" +
-                        " | Chi phí: " + cost + " " + tariff.getCurrency()
+                        " | Phí thời gian: " + timeCost + " " + tariff.getCurrency() +
+                        " | Phí điện năng: " + energyCost + " " + tariff.getCurrency() +
+                        " | Tổng: " + totalCost + " " + tariff.getCurrency()
         );
         done.setType(NotificationTypes.CHARGING_COMPLETED);
         done.setStatus(Notification.STATUS_UNREAD);
@@ -141,20 +204,19 @@ public class ChargingSessionTxHandler {
         notificationsRepository.save(done);
         eventPublisher.publishEvent(new NotificationCreatedEvent(done.getNotiId()));
 
-        // 14) Tạo hoá đơn (Invoice): chặn nếu đã tồn tại trước đó
+        // Invoice
         invoiceRepository.findBySession_SessionId(cs.getSessionId())
                 .ifPresent(i -> { throw new ErrorException("Invoice already exists for this session"); });
 
         Invoice invoice = new Invoice();
         invoice.setSession(cs);
-        invoice.setAmount(cost);
+        invoice.setAmount(totalCost);
         invoice.setCurrency(tariff.getCurrency());
         invoice.setStatus(InvoiceStatus.UNPAID);
         invoice.setIssuedAt(LocalDateTime.now());
         invoice.setDriver(booking.getVehicle().getDriver());
         invoiceRepository.save(invoice);
 
-        // 15) Trả về DTO đã map (có kèm thông tin tariff)
         return stopResponseMapper.mapWithTariff(cs, booking, pointNumber, tariff);
     }
 
@@ -183,7 +245,7 @@ public class ChargingSessionTxHandler {
             // 4) Dừng session bằng flow chuẩn (tính phí theo tariff)
             log.info("[AUTO-STOP] sessionId={} windowEnd={} startTime={} initialSoc={} cachedSoc={}",
                     sessionId, windowEnd, session.getStartTime(), session.getInitialSoc(), cachedSoc);
-            stopSessionInternalTx(sessionId, finalSocIfAny, windowEnd);
+            stopSessionInternalTx(sessionId, finalSocIfAny, windowEnd, StopInitiator.SYSTEM_AUTO);
         } catch (Exception ex) {
             // 5) Nếu dừng chuẩn thất bại -> fallback: kết thúc không tính phí
             log.error("[AUTO-STOP] Failed for sessionId={} at {}: {}", sessionId, windowEnd, ex.getMessage(), ex);
@@ -325,5 +387,48 @@ public class ChargingSessionTxHandler {
 
         // 4) Không tạo invoice khi cost=0 (tuỳ chính sách hệ thống). Trả về DTO tương ứng
         return stopResponseMapper.mapNoBilling(cs, booking, pointNumber);
+    }
+
+    private LocalDateTime resolveWindowStartForTx(Booking booking) {
+        if (booking.getScheduledStartTime() != null) return booking.getScheduledStartTime();
+        return booking.getBookingSlots().stream()
+                .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getStartTime()))
+                .min(LocalDateTime::compareTo)
+                .orElseThrow(() -> new ErrorException("Booking has no slot start time"));
+    }
+
+    private LocalDateTime resolveWindowEndForTx(Booking booking) {
+        if (booking.getScheduledEndTime() != null) return booking.getScheduledEndTime();
+        return booking.getBookingSlots().stream()
+                .map(bs -> bs.getSlot().getDate().with(bs.getSlot().getTemplate().getEndTime()))
+                .max(LocalDateTime::compareTo)
+                .orElseThrow(() -> new ErrorException("Booking has no slot end time"));
+    }
+
+    /** Lấy số phút mỗi slot (giả định đồng nhất theo template) */
+    private long getSlotMinutes(Booking booking) {
+        var any = booking.getBookingSlots().stream()
+                .findFirst()
+                .orElseThrow(() -> new ErrorException("No slot found for booking"));
+        var tpl = any.getSlot().getTemplate();
+        var start = tpl.getStartTime();
+        var end   = tpl.getEndTime();
+        return ChronoUnit.MINUTES.between(start, end);
+    }
+
+    private void releaseUnusedFutureSlots(Booking booking, LocalDateTime endTime) {
+        if (booking.getBookingSlots() == null) return;
+
+        booking.getBookingSlots().forEach(bs -> {
+            SlotAvailability slot = bs.getSlot();
+            LocalDateTime slotStart = slot.getDate().with(slot.getTemplate().getStartTime());
+            // Nếu kết thúc <= thời điểm bắt đầu slot -> slot này chưa bị sử dụng, giải phóng
+            if (!endTime.isAfter(slotStart)) { // endTime <= slotStart
+                slot.setStatus(SlotStatus.AVAILABLE);
+                slotAvailabilityRepository.save(slot);
+                log.info("[RELEASE SLOT] bookingId={} slotId={} released (endTime={} <= slotStart={})",
+                        booking.getBookingId(), slot.getSlotId(), endTime, slotStart);
+            }
+        });
     }
 }

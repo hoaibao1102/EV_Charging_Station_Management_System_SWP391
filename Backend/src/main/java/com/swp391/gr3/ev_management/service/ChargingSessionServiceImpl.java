@@ -2,21 +2,21 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
 import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.dto.response.StartCharSessionResponse;
-import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
-import com.swp391.gr3.ev_management.dto.response.ViewCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import com.swp391.gr3.ev_management.entity.Notification;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
+import com.swp391.gr3.ev_management.enums.StopInitiator;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingSessionMapper;
 import com.swp391.gr3.ev_management.repository.BookingsRepository;
 import com.swp391.gr3.ev_management.repository.ChargingSessionRepository;
 import com.swp391.gr3.ev_management.repository.NotificationsRepository;
+import com.swp391.gr3.ev_management.repository.StaffsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,6 +44,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     private final NotificationsRepository notificationsRepository; // Lưu Notification
     private final SessionSocCache sessionSocCache;                 // Cache tạm SOC theo session
     private final TaskScheduler taskScheduler;                     // Schedule auto-stop khi hết khung giờ
+    private final StaffsRepository staffsRepository;               // Lấy staffId từ userId
 
     // Handler giao dịch riêng (TX độc lập) cho stop/auto-stop để cô lập rollback
     private final ChargingSessionTxHandler txHandler;
@@ -158,7 +159,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 : null;
 
         // 4) Ủy quyền xử lý dừng session cho TX handler (để gom các cập nhật vào 1 TX riêng)
-        return txHandler.stopSessionInternalTx(session.getSessionId(), finalSocIfAny, endTime);
+        return txHandler.stopSessionInternalTx(session.getSessionId(), finalSocIfAny, endTime, StopInitiator.SYSTEM_AUTO);
     }
 
     @Override
@@ -187,7 +188,36 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 : null;
 
         // 5) Dừng session thông qua TX handler với endTime là "bây giờ" (VN)
-        return txHandler.stopSessionInternalTx(sessionId, finalSocIfAny, LocalDateTime.now(TENANT_ZONE));
+        return txHandler.stopSessionInternalTx(sessionId, finalSocIfAny, LocalDateTime.now(TENANT_ZONE), StopInitiator.DRIVER);
+    }
+
+    @Override
+    @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình
+    public StopCharSessionResponse staffStopSession(Long sessionId, Long requesterUserId) {
+        // 1) Tìm session và join fetch owner để kiểm tra quyền sở hữu
+        ChargingSession session = sessionRepository.findWithOwnerById(sessionId)
+                .orElseThrow(() -> new ErrorException("Session not found"));
+
+        // 2) Lấy userId chủ sở hữu xe của phiên sạc này
+        Long ownerUserId = session.getBooking()
+                .getVehicle()
+                .getDriver()
+                .getUser()
+                .getUserId();
+
+        // 3) Nếu requester không phải chủ sở hữu -> chặn
+        if (!ownerUserId.equals(requesterUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not the owner of this session");
+        }
+
+        // 4) Lấy SOC cuối cùng từ cache nếu có
+        Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
+        Integer finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
+                ? cachedSoc
+                : null;
+
+        // 5) Dừng session thông qua TX handler với endTime là "bây giờ" (VN)
+        return txHandler.stopSessionInternalTx(sessionId, finalSocIfAny, LocalDateTime.now(TENANT_ZONE), StopInitiator.STAFF);
     }
 
     @Transactional(readOnly = true) // Chỉ đọc -> tối ưu hiệu năng
@@ -267,5 +297,26 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     public List<ViewCharSessionResponse> getSessionsByPoint(Long pointId) {
         List<ChargingSession> sessions = sessionRepository.findAllByChargingPointIdDeep(pointId);
         return sessions.stream().map(mapper::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ActiveSessionView> getActiveSessionsCompact(Long userId) {
+        // 🔎 Từ userId -> staffId (tuỳ thực thể Staffs của bạn, giả sử có staff.user mapping)
+        Long staffId = staffsRepository.findIdByUserId(userId)
+                .orElseThrow(() -> new ErrorException("Staff not found for current user"));
+
+        // 👉 Query chỉ trả về session của các trạm mà staff này đang active
+        return sessionRepository.findActiveSessionCompactByStaff(staffId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<CompletedSessionView> getCompletedSessionsCompactByStaff(Long userId) {
+
+        Long staffId = staffsRepository.findIdByUserId(userId)
+                .orElseThrow(() -> new ErrorException("Staff not found for current user"));
+
+        return sessionRepository.findCompletedSessionCompactByStaff(staffId);
     }
 }
