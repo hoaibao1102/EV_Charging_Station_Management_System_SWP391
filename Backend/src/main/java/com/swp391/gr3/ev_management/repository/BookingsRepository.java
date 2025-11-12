@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.repository;
 
+import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -83,4 +84,48 @@ public interface BookingsRepository extends JpaRepository<Booking,Long> {
     /** Lấy status hiện tại để log/debug khi rows=0 */
     @Query("select b.status from Booking b where b.bookingId = :id")
     Optional<BookingStatus> findStatusOnly(@Param("id") Long id);
+
+    /**
+     * ✅ Lấy danh sách Booking có trạng thái CONFIRMED,
+     *    nhưng CHỈ ở các trạm mà staff (staffId) hiện đang được assign.
+     *
+     * - DISTINCT: tránh trùng do booking có nhiều bookingSlot.
+     * - EXISTS: kiểm tra staff có assignment active ở trạm đó:
+     *      + ss.station = st
+     *      + ss.staff.staffId = :staffId
+     *      + ss.assignedAt <= CURRENT_TIMESTAMP
+     *      + (ss.unassignedAt IS NULL OR ss.unassignedAt > CURRENT_TIMESTAMP)
+     */
+    @Query("""
+    select distinct new com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView(
+        ct.displayName,
+        cp.pointNumber,
+        st.stationName,
+        u.name,
+        v.vehiclePlate,
+        b.scheduledStartTime,
+        b.scheduledEndTime
+    )
+    from Booking b
+        join b.vehicle v
+        join v.model vm
+        join vm.connectorType ct
+        join b.bookingSlots bs
+        join bs.slot sl
+        join sl.chargingPoint cp
+        join cp.station st
+        join v.driver d
+        join d.user u
+    where b.status = com.swp391.gr3.ev_management.enums.BookingStatus.CONFIRMED
+      and exists (
+            select 1
+            from StationStaff ss
+            where ss.station = st
+              and ss.staff.staffId = :staffId
+              and ss.assignedAt <= CURRENT_TIMESTAMP
+              and (ss.unassignedAt is null or ss.unassignedAt > CURRENT_TIMESTAMP)
+      )
+    order by b.scheduledStartTime asc
+""")
+    List<ConfirmedBookingView> findConfirmedBookingsByStaff(@Param("staffId") Long staffId);
 }
