@@ -10,31 +10,35 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.util.concurrent.Executor;
 
-@Configuration
-@EnableAsync
-@EnableRetry
+@Configuration                     // 🔧 Đánh dấu đây là class cấu hình Spring
+@EnableAsync                       // 🚀 Bật hỗ trợ chạy bất đồng bộ (@Async)
+@EnableRetry                       // 🔁 Bật Spring Retry cho phép retry tự động khi lỗi
 public class AsyncConfig implements AsyncConfigurer {
 
-    // ✅ Executor mặc định cho @Async (tên taskExecutor). Đánh dấu @Primary để hết cảnh báo.
-    @Bean(name = "taskExecutor")
-    @Primary
+    // ======================================================================
+    // ✅ Bean Executor mặc định dùng cho tất cả @Async không chỉ định tên
+    // ======================================================================
+    @Bean(name = "taskExecutor")   // 🏷️ Đặt tên bean là "taskExecutor"
+    @Primary                       // ⭐ Đánh dấu đây là Executor mặc định -> không còn cảnh báo MissingTaskExecutor
     public Executor taskExecutor() {
         return new ThreadPoolTaskExecutorBuilder()
-                .threadNamePrefix("async-")
-                .corePoolSize(8)
-                .maxPoolSize(16)
-                .queueCapacity(200)
-                .build();
+                .threadNamePrefix("async-") // 🧵 Tất cả thread tạo ra sẽ có prefix "async-"
+                .corePoolSize(8)            // 🔹 Số lượng thread chạy thường trực
+                .maxPoolSize(16)            // 🔹 Tối đa thread có thể mở rộng khi tải cao
+                .queueCapacity(200)         // 📌 Sẵn sàng chứa tối đa 200 task chờ xử lý
+                .build();                   // 🏗️ Tạo ra ThreadPoolTaskExecutor
     }
 
-    // ✅ Executor riêng cho mail (nếu bạn dùng @Async("mailExecutor"))
-    @Bean(name = "mailExecutor")
+    // ======================================================================
+    // ✅ Executor riêng cho tác vụ gửi email (nếu dùng @Async("mailExecutor"))
+    // ======================================================================
+    @Bean(name = "mailExecutor")   // 🏷️ Tạo một executor riêng cho email service
     public Executor mailExecutor() {
         return new ThreadPoolTaskExecutorBuilder()
-                .threadNamePrefix("mail-")
-                .corePoolSize(2)
-                .maxPoolSize(8)
-                .queueCapacity(100)
+                .threadNamePrefix("mail-")  // 🧵 Prefix để dễ debug log
+                .corePoolSize(2)            // ✉️ mail nhẹ nên chỉ cần ít thread
+                .maxPoolSize(8)             // 🔼 Có thể mở rộng khi gửi mail hàng loạt
+                .queueCapacity(100)         // 📌 Hàng đợi chứa 100 mail pending
                 .build();
     }
 }

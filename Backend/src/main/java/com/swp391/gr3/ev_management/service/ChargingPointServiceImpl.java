@@ -8,8 +8,6 @@ import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingPointMapper;
 import com.swp391.gr3.ev_management.repository.ChargingPointRepository;
-import com.swp391.gr3.ev_management.repository.ChargingStationRepository;
-import com.swp391.gr3.ev_management.repository.ConnectorTypeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,91 +22,146 @@ import java.util.List;
 public class ChargingPointServiceImpl implements ChargingPointService {
 
     // ====== Dependencies (được Spring inject qua constructor) ======
-    private final ChargingPointRepository pointRepository;           // CRUD cho ChargingPoint
-    private final ChargingPointMapper chargingPointMapper;           // Map Entity <-> DTO
-    private final ChargingStationRepository chargingStationRepository; // Kiểm tra & lấy Station
-    private final ConnectorTypeRepository connectorTypeRepository;   // Kiểm tra & lấy ConnectorType
+    private final ChargingPointRepository chargingPointRepository;          // Repository thao tác DB cho bảng ChargingPoint (CRUD, query)
+    private final ChargingPointMapper chargingPointMapper;                  // Mapper chuyển đổi giữa Entity <-> DTO (request/response)
+    private final ChargingStationService chargingStationService;            // Service xử lý nghiệp vụ liên quan tới ChargingStation (trạm sạc)
+    private final ConnectorTypeService connectorTypeService;                // Service xử lý nghiệp vụ liên quan tới ConnectorType (loại đầu cắm)
 
     @Override
-    @Transactional // Thao tác dừng điểm sạc cần transaction để đảm bảo tính nhất quán
+    @Transactional // Thao tác dừng điểm sạc cần transaction để đảm bảo tính nhất quán dữ liệu
     public ChargingPointResponse stopChargingPoint(StopChargingPointRequest request) {
 
-        // 1) Tìm ChargingPoint theo pointId; nếu không tồn tại -> ném lỗi
-        ChargingPoint point = pointRepository.findById(request.getPointId())
+        // 1) Tìm ChargingPoint theo pointId gửi từ client trong request
+        //    - request.getPointId(): ID của điểm sạc cần dừng
+        //    - findById(...) trả về Optional<ChargingPoint>
+        //    - orElseThrow(...) nếu không có -> ném ErrorException với message "Charging point not found"
+        ChargingPoint point = chargingPointRepository.findById(request.getPointId())
                 .orElseThrow(() -> new ErrorException("Charging point not found"));
 
-        // 2) Không cho dừng nếu điểm sạc đang bận (OCCUPIED) để tránh cắt ngang phiên sạc
+        // 2) Không cho dừng nếu điểm sạc đang bận (OCCUPIED)
+        //    - Trạng thái OCCUPIED biểu thị đang có xe sử dụng, dừng lúc này có thể gây mất điện đột ngột
+        //    - Ném RuntimeException để chặn thao tác, client sẽ nhận được lỗi
         if (point.getStatus() == ChargingPointStatus.OCCUPIED) {
             throw new RuntimeException("Cannot stop point while in use");
         }
 
-        // 3) Cập nhật trạng thái theo yêu cầu (ví dụ: MAINTENANCE/INACTIVE/AVAILABLE ...)
+        // 3) Cập nhật trạng thái ChargingPoint theo newStatus trong request
+        //    - newStatus có thể là: MAINTENANCE, INACTIVE, AVAILABLE, ...
+        //    - Quy tắc nghiệp vụ: front-end/back-end phải đảm bảo truyền vào trạng thái hợp lệ
         point.setStatus(request.getNewStatus());
-        point.setUpdatedAt(LocalDateTime.now());
-        pointRepository.save(point); // 4) Lưu lại thay đổi vào DB
 
-        // 5) Trả về DTO phản hồi cho client
+        // 4) Cập nhật thời gian updatedAt để log lại lúc thay đổi trạng thái
+        point.setUpdatedAt(LocalDateTime.now());
+
+        // 5) Lưu entity đã cập nhật trở lại DB
+        //    - Vì có @Transactional nên nếu ở giữa có lỗi, toàn bộ transaction sẽ rollback
+        chargingPointRepository.save(point); // 4) Lưu lại thay đổi vào DB
+
+        // 6) Map từ Entity ChargingPoint -> ChargingPointResponse DTO
+        //    - DTO dùng để trả dữ liệu về cho client (ẩn bớt field nhạy cảm, format đẹp hơn, ...)
         return chargingPointMapper.toResponse(point);
     }
 
     @Override
     public List<ChargingPointResponse> getAllPoints() {
-        // Lấy tất cả ChargingPoint từ DB, map sang DTO và trả về danh sách
-        return pointRepository.findAll()
-                .stream()
-                .map(chargingPointMapper::toResponse)
-                .toList();
+        // 1) Lấy toàn bộ bản ghi ChargingPoint từ DB bằng findAll()
+        //    - Trả về List<ChargingPoint>
+        // 2) Chuyển từng ChargingPoint -> ChargingPointResponse bằng mapper
+        // 3) Thu kết quả về List<ChargingPointResponse> bằng stream().toList()
+        return chargingPointRepository.findAll()
+                .stream()                            // chuyển sang stream để dùng map
+                .map(chargingPointMapper::toResponse) // map từng entity -> response DTO
+                .toList();                           // thu về danh sách
     }
 
     @Override
     public List<ChargingPointResponse> getPointsByStationId(Long stationId) {
-        log.info("Fetching charging points for stationId={}", stationId);
+        log.info("Fetching charging points for stationId={}", stationId); // Log để debug/monitor API
 
-        // 1) Truy vấn tất cả điểm sạc thuộc một trạm theo stationId
-        List<ChargingPoint> points = pointRepository.findByStation_StationId(stationId);
+        // 1) Truy vấn tất cả ChargingPoint thuộc về một station cụ thể
+        //    - finder method: findByStation_StationId(...) do Spring Data JPA generate theo tên
+        //    - stationId: ID của trạm sạc mà ta muốn lấy danh sách điểm sạc
+        List<ChargingPoint> points = chargingPointRepository.findByStation_StationId(stationId);
 
-        // 2) Nếu không có dữ liệu -> log cảnh báo và trả danh sách rỗng
+        // 2) Nếu không tìm thấy điểm sạc nào cho stationId này
+        //    - Ghi log cảnh báo (level WARN) để dễ tracking vấn đề cấu hình dữ liệu/trạm
+        //    - Trả về List rỗng (List.of()) thay vì null để tránh NullPointerException ở client
         if (points.isEmpty()) {
             log.warn("No charging points found for stationId={}", stationId);
             return List.of();
         }
 
-        // 3) Map danh sách Entity sang DTO và trả về
+        // 3) Nếu có dữ liệu:
+        //    - Dùng mapper để chuyển List<ChargingPoint> -> List<ChargingPointResponse>
+        //    - chargingPointMapper.toResponses(points): method mapper hỗ trợ convert danh sách
         return chargingPointMapper.toResponses(points);
     }
 
     @Override
-    @Transactional // Tạo mới điểm sạc gồm nhiều bước kiểm tra + lưu -> cần transaction
+    @Transactional // Tạo mới điểm sạc gồm nhiều bước kiểm tra + lưu -> cần transaction để rollback nếu lỗi
     public ChargingPointResponse createChargingPoint(CreateChargingPointRequest request) {
-        // 1) Kiểm tra trạm tồn tại
-        var station = chargingStationRepository.findById(request.getStationId())
+        // 1) Kiểm tra trạm sạc (ChargingStation) có tồn tại không
+        //    - request.getStationId(): ID trạm mà điểm sạc này thuộc về
+        //    - Nếu không tồn tại -> ném ErrorException("Station not found")
+        var station = chargingStationService.findById(request.getStationId())
                 .orElseThrow(() -> new ErrorException("Station not found"));
 
-        // 2) Kiểm tra loại đầu nối (connector type) tồn tại
-        var connectorType = connectorTypeRepository.findById(request.getConnectorTypeId())
+        // 2) Kiểm tra loại đầu nối (ConnectorType) có tồn tại không
+        //    - request.getConnectorTypeId(): ID của loại đầu cắm (AC, DC, CCS, CHAdeMO, ...)
+        //    - Nếu không tồn tại -> ném ErrorException("Connector type not found")
+        var connectorType = connectorTypeService.findById(request.getConnectorTypeId())
                 .orElseThrow(() -> new ErrorException("Connector type not found"));
 
-        // 3) Ràng buộc nghiệp vụ: không cho tạo điểm sạc với connector type đã bị deprecate
+        // 3) Ràng buộc nghiệp vụ:
+        //    - Không cho phép tạo điểm sạc mới nếu connector type đã bị đánh dấu deprecated
+        //    - getIsDeprecated(): field Boolean xác định loại đầu nối có còn được dùng hay không
+        //    - Boolean.TRUE.equals(...) để tránh NullPointerException khi isDeprecated có thể null
         if (Boolean.TRUE.equals(connectorType.getIsDeprecated())) {
             throw new ErrorException("Cannot create charging point: connector type is deprecated");
         }
 
-        // 4) Chống trùng dữ liệu:
-        //    - Trong cùng một trạm, pointNumber phải là duy nhất
-        if (pointRepository.findByStation_StationIdAndPointNumber(
+        // 4) Chống trùng dữ liệu: kiểm tra các ràng buộc unique trước khi insert
+        // 4.1) Trong cùng một trạm (station), pointNumber phải là duy nhất
+        //      - Ví dụ: Station A, pointNumber = 1 chỉ được tồn tại đúng 1 điểm sạc
+        //      - findByStation_StationIdAndPointNumber(...) trả về Optional
+        //      - Nếu isPresent() -> đã tồn tại -> ném ErrorException
+        if (chargingPointRepository.findByStation_StationIdAndPointNumber(
                 request.getStationId(), request.getPointNumber()).isPresent()) {
             throw new ErrorException("Point number already exists in this station");
         }
-        //    - SerialNumber toàn hệ thống phải là duy nhất
-        if (pointRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
+
+        // 4.2) SerialNumber là duy nhất trên toàn hệ thống
+        //      - SerialNumber là mã định danh phần cứng của bộ sạc (thường in trên thiết bị)
+        //      - Không được trùng nhau để tránh nhầm lẫn thiết bị khi tích hợp OCPP/điều khiển từ xa
+        if (chargingPointRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
             throw new ErrorException("Serial number already exists");
         }
 
-        // 5) Map từ request sang Entity (gắn station & connectorType), sau đó lưu vào DB
+        // 5) Khi đã pass tất cả validation:
+        //    - Dùng mapper để map CreateChargingPointRequest + station + connectorType -> Entity ChargingPoint
+        //    - toEntity(...) sẽ set đầy đủ các field: station, connectorType, status default, createdAt, ...
         ChargingPoint point = chargingPointMapper.toEntity(request, station, connectorType);
-        pointRepository.save(point);
 
-        // 6) Map lại sang DTO và trả về cho client
+        // 6) Lưu entity mới vào DB
+        //    - Sau lệnh save, entity có thể được fill thêm ID (tự tăng) và các field managed khác
+        chargingPointRepository.save(point);
+
+        // 7) Map entity đã lưu -> DTO để trả lại cho client
+        //    - toResponse(...) sẽ build ChargingPointResponse phù hợp (ẩn bớt thông tin không cần thiết)
         return chargingPointMapper.toResponse(point);
+    }
+
+    @Override
+    public List<ChargingPoint> findByStation_StationId(Long stationId) {
+        // Hàm tiện ích: trả về trực tiếp Entity ChargingPoint theo stationId
+        // Được các service khác dùng để xử lý logic nâng cao hơn (không cần DTO)
+        return chargingPointRepository.findByStation_StationId(stationId);
+    }
+
+    @Override
+    public List<ChargingPoint> findByStation_StationIdAndConnectorType_ConnectorTypeId(Long stationId, Long connectorTypeId) {
+        // Hàm tiện ích: lấy danh sách ChargingPoint theo cả stationId và connectorTypeId
+        // Ví dụ: cần tìm tất cả điểm sạc DC tại một trạm cụ thể để hiển thị / tính năng đặt chỗ
+        return chargingPointRepository.findByStation_StationIdAndConnectorType_ConnectorTypeId(stationId, connectorTypeId);
     }
 }

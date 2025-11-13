@@ -8,12 +8,14 @@ import com.swp391.gr3.ev_management.dto.response.ChargingSessionBriefResponse;
 import com.swp391.gr3.ev_management.dto.response.DriverResponse;
 import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
 import com.swp391.gr3.ev_management.dto.response.VehicleResponse;
+import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public interface DriverService {
@@ -35,5 +37,15 @@ public interface DriverService {
 
     List<TransactionBriefResponse> getMyTransactions(Long userId);
     List<ChargingSessionBriefResponse> getMyChargingSessions(Long userId);
+
+    Optional<Driver> findByUser_UserId(Long userId);
+
+    long count();
+
+    long countByStatus(DriverStatus driverStatus);
+
+    Optional<Driver> findByUserIdWithUser(Long userId);
+
+    void save(Driver driver);
 }
 
