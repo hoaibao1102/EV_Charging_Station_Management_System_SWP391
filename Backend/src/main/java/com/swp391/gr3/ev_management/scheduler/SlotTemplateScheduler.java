@@ -11,27 +11,35 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Component
-@RequiredArgsConstructor
-@Slf4j
+@Component                               // 🧩 Đánh dấu class là một Spring Bean để Scheduler có thể chạy
+@RequiredArgsConstructor                 // 🛠️ Lombok tự tạo constructor cho các final field
+@Slf4j                                   // 📝 Tự tạo logger phục vụ log debug / info
 public class SlotTemplateScheduler {
 
-    private final SlotTemplateService slotTemplateService;
-    private final SlotConfigRepository slotConfigRepository;
+    private final SlotTemplateService slotTemplateService;     // Service để tạo SlotTemplate hằng ngày
+    private final SlotConfigRepository slotConfigRepository;   // Repo để lấy danh sách Config đang ACTIVE
 
-    // 🕛 Chạy tự động mỗi ngày lúc 00:00:00 theo giờ VN
+    // 🕛 Scheduler chạy mỗi ngày lúc 00:00:00 theo giờ Việt Nam
     @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Ho_Chi_Minh")
     public void autoGenerateTodayTemplates() {
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay(); // 00:00 hôm nay
+        // Lấy mốc thời gian đầu ngày hôm nay (00:00)
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         log.info("🕛 Auto-generating slot templates for date {}", todayStart.toLocalDate());
 
-        // 🔥 Chỉ lấy những config đang active
+        // 🔥 Lấy tất cả các SlotConfig có trạng thái ACTIVE
         slotConfigRepository.findByIsActive(SlotConfigStatus.ACTIVE).forEach(config -> {
             try {
-                // generateDailyTemplates hiện yêu cầu 3 tham số: truyền cùng một ngày cho forDate & endDate
+                /**
+                 * Gọi service generateDailyTemplates():
+                 *  - configId: ID của SlotConfig cần tạo slot template
+                 *  - forDate: ngày cần tạo (truyền todayStart)
+                 *  - endDate: tham số thứ 3 nhưng logic hiện tại không sử dụng → truyền cùng giá trị
+                 */
                 slotTemplateService.generateDailyTemplates(config.getConfigId(), todayStart, todayStart);
+
                 log.info("✅ Generated slots for config {}", config.getConfigId());
             } catch (Exception e) {
+                // Nếu có lỗi, log lỗi chi tiết để tiện debug
                 log.error("❌ Failed to generate slots for config {}: {}", config.getConfigId(), e.getMessage(), e);
             }
         });

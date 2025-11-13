@@ -26,4 +26,10 @@ public interface UserService {
     Map<String, Object> registerStaffAndAssignStation(RegisterRequest user, Long stationId);
 
     List<GetUsersResponse> getAllUsersWithSessions();
+
+    User findByEmail(String email);
+
+    User findUserByUserId(Long userId);
+
+    long count();
 }

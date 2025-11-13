@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.swp391.gr3.ev_management.mapper.DriverMapper;
@@ -37,11 +38,11 @@ public class DriverServiceImpl implements DriverService {
     private final DriverRepository driverRepository;                 // Truy vấn/lưu Driver
     private final UserRepository userRepository;                     // Truy vấn/lưu User
     private final UserVehicleRepository userVehicleRepository;       // Truy vấn/lưu UserVehicle
-    private final VehicleModelRepository vehicleModelRepository;     // Truy vấn VehicleModel
+    private final VehicleModelService vehicleModelService;           // Truy vấn VehicleModel
     private final DriverMapper driverMapper;                         // Map Entity <-> DTO cho Driver/Vehicle
     private final PasswordEncoder passwordEncoder;                   // Mã hoá/so khớp mật khẩu
-    private final ChargingSessionRepository chargingSessionRepository; // Truy vấn ChargingSession của driver
-    private final TransactionRepository transactionRepository;       // Truy vấn Transaction của driver
+    private final ChargingSessionService chargingSessionService;     // Truy vấn ChargingSession của driver
+    private final TransactionService transactionService;             // Truy vấn Transaction của driver
 
     /**
      * Tạo driver profile cho 1 user (nâng cấp user thành tài xế).
@@ -55,32 +56,37 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponse createDriverProfile(Long userId, DriverRequest request) {
         log.info("Creating driver for user {}", userId);
 
-        // Tìm user theo userId; nếu không có -> lỗi
+        // 1️⃣ Tìm user theo userId; nếu không có -> ném ErrorException
         User user = userRepository.findUserByUserId(userId);
         if (user == null) {
             throw new ErrorException("User not found with ID: " + userId);
         }
 
-        // Kiểm tra trùng driver theo userId (1 user chỉ có 1 driver)
+        // 2️⃣ Kiểm tra xem user này đã có Driver chưa
+        //    - 1 user chỉ được phép có 1 driver profile
         if (driverRepository.existsByUser_UserId(userId)) {
             throw new ConflictException("Driver already exists for userId " + userId);
         }
 
-        // Khởi tạo driver với status lấy từ request hoặc mặc định ACTIVE
+        // 3️⃣ Khởi tạo mới đối tượng Driver
         Driver driver = new Driver();
-        driver.setUser(user);
+        driver.setUser(user); // gắn user với driver
+
+        // 4️⃣ Xác định trạng thái driver:
+        //    - Nếu request có truyền driverStatus -> dùng giá trị đó
+        //    - Nếu không -> mặc định ACTIVE
         DriverStatus status = (request != null && request.getDriverStatus() != null)
                 ? request.getDriverStatus()
                 : DriverStatus.ACTIVE;
         driver.setStatus(status);
 
         try {
-            // Lưu driver
+            // 5️⃣ Lưu driver xuống DB
             Driver saved = driverRepository.save(driver);
-            // Trả về DTO
+            // 6️⃣ Map sang DTO DriverResponse trả về cho client
             return driverMapper.toDriverResponse(saved);
         } catch (DataIntegrityViolationException e) {
-            // Trường hợp race-condition: unique constraint cho UserID vi phạm
+            // 7️⃣ Nếu gặp lỗi vi phạm ràng buộc (unique key userId...) do race-condition -> ném ConflictException
             throw new ConflictException("Driver already exists for userId " + userId);
         }
     }
@@ -93,8 +99,11 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public DriverResponse getByUserId(Long userId) {
+        // 1️⃣ Tìm driver theo userId, join fetch kèm User
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+
+        // 2️⃣ Map entity Driver -> DTO DriverResponse
         return driverMapper.toDriverResponse(driver);
     }
 
@@ -104,8 +113,10 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public List<DriverResponse> getAllDrivers() {
+        // 1️⃣ Lấy tất cả Driver từ DB
         return driverRepository.findAll()
                 .stream()
+                // 2️⃣ Map từng driver sang DTO DriverResponse
                 .map(driverMapper::toDriverResponse)
                 .toList();
     }
@@ -120,20 +131,28 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional
     public DriverResponse updateDriverProfile(Long userId, DriverUpdateRequest req) {
+        // 1️⃣ Lấy Driver kèm User từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
+        // 2️⃣ Lấy User để update các thông tin cá nhân
         User user = driver.getUser();
-        // Cập nhật các trường nếu request cung cấp
+
+        // 3️⃣ Cập nhật từng trường nếu request có truyền (không override khi null)
         if (req.getName() != null)        user.setName(req.getName());
         if (req.getEmail() != null)       user.setEmail(req.getEmail());
         if (req.getAddress() != null)     user.setAddress(req.getAddress());
         if (req.getPhoneNumber() != null) user.setPhoneNumber(req.getPhoneNumber());
         if (req.getDateOfBirth() != null) user.setDateOfBirth(req.getDateOfBirth());
         if (req.getGender() != null)      user.setGender(req.getGender());
-        driver.setStatus(DriverStatus.ACTIVE); // Có thể cố định ACTIVE khi update profile
 
+        // 4️⃣ Theo business: khi driver update profile -> đảm bảo status ở ACTIVE
+        driver.setStatus(DriverStatus.ACTIVE);
+
+        // 5️⃣ Lưu driver (cascade có thể update luôn user nếu cấu hình)
         Driver updated = driverRepository.save(driver);
+
+        // 6️⃣ Map sang DTO trả về
         return driverMapper.toDriverResponse(updated);
     }
 
@@ -146,31 +165,39 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional
     public DriverResponse updateDriverPassword(Long userId, String oldPassword, String newPassword, String confirmNewPassword) {
+        // 1️⃣ Lấy driver kèm user từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
         User user = driver.getUser();
 
-        // So khớp mật khẩu cũ
+        // 2️⃣ Lấy hash password hiện tại từ User
         String currentHash = user.getPasswordHash();
+
+        // 3️⃣ So khớp mật khẩu cũ (plain) với hash trong DB
         if (!passwordEncoder.matches(oldPassword, currentHash)) {
             throw new ConflictException("Old password is incorrect");
         }
-        // new == confirm
+
+        // 4️⃣ Kiểm tra newPassword & confirmNewPassword giống nhau
         if (!newPassword.equals(confirmNewPassword)) {
             throw new ConflictException("New password and confirm password do not match");
         }
-        // Độ dài tối thiểu
+
+        // 5️⃣ Đảm bảo mật khẩu mới không null và có độ dài tối thiểu 6 ký tự
         if (newPassword == null || newPassword.length() < 6) {
             throw new ConflictException("New password must be at least 6 characters");
         }
-        // Không cho trùng mật khẩu cũ
+
+        // 6️⃣ Không cho phép dùng lại mật khẩu cũ (so khớp newPassword với currentHash)
         if (passwordEncoder.matches(newPassword, currentHash)) {
             throw new ConflictException("New password must be different from old password");
         }
 
-        // Mã hoá và lưu
+        // 7️⃣ Encode mật khẩu mới và lưu vào user
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+
+        // 8️⃣ Trả về DriverResponse (thông tin driver vẫn như cũ, chỉ thay đổi password)
         return driverMapper.toDriverResponse(driver);
     }
 
@@ -183,10 +210,17 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional
     public DriverResponse updateStatus(Long userId, DriverStatus status) {
+        // 1️⃣ Lấy driver theo userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+
+        // 2️⃣ Cập nhật trạng thái (ACTIVE, INACTIVE, SUSPENDED, ...)
         driver.setStatus(status);
+
+        // 3️⃣ Lưu driver
         driverRepository.save(driver);
+
+        // 4️⃣ Map sang DTO trả về
         return driverMapper.toDriverResponse(driver);
     }
 
@@ -204,23 +238,23 @@ public class DriverServiceImpl implements DriverService {
     public VehicleResponse addVehicle(Long userId, AddVehicleRequest request) {
         log.info("Adding vehicle for userId: {}, licensePlate: {}", userId, request.getLicensePlate());
 
-        // Tìm driver
+        // 1️⃣ Tìm driver theo userId (kèm user) để xác định chủ xe
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
-        // Kiểm tra model tồn tại
-        VehicleModel vehicleModel = vehicleModelRepository.findById(request.getModelId())
+        // 2️⃣ Kiểm tra model xe có tồn tại không
+        VehicleModel vehicleModel = vehicleModelService.findById(request.getModelId())
                 .orElseThrow(() -> new ErrorException("Vehicle model not found with ID: " + request.getModelId()));
 
-        // Chỉ cho phép model ACTIVE
+        // 3️⃣ Chỉ cho phép sử dụng VehicleModel ở trạng thái ACTIVE
         if (vehicleModel.getStatus() != VehicleModelStatus.ACTIVE) {
             throw new ConflictException("Cannot add vehicle: vehicle model is not ACTIVE");
         }
 
-        // Chuẩn hoá biển số để so uniqueness (loại bỏ khoảng trắng, dấu gạch, chấm; upper-case)
+        // 4️⃣ Chuẩn hoá biển số (normalize) để phục vụ check uniqueness
         String normalizedPlate = normalizePlate(request.getLicensePlate());
 
-        // Kiểm tra trùng biển số: normalize tất cả rồi so sánh
+        // 5️⃣ Với mọi xe đã tồn tại, normalize biển số rồi so sánh -> nếu trùng thì không cho thêm
         List<UserVehicle> existingVehicles = userVehicleRepository.findAll();
         for (UserVehicle v : existingVehicles) {
             if (normalizePlate(v.getVehiclePlate()).equals(normalizedPlate)) {
@@ -228,21 +262,22 @@ public class DriverServiceImpl implements DriverService {
             }
         }
 
-        // Format biển số theo chuẩn VN trước khi lưu (ví dụ: 86B381052 -> 86B-381.05)
+        // 6️⃣ Format biển số theo chuẩn Việt Nam trước khi lưu (để hiển thị đẹp, nhất quán)
         String formattedPlate = formatVietnamPlate(request.getLicensePlate());
 
-        // Tạo entity UserVehicle
+        // 7️⃣ Tạo entity UserVehicle mới và gán driver, model, plate
         UserVehicle vehicle = UserVehicle.builder()
-                .driver(driver)
-                .vehiclePlate(formattedPlate) // Lưu dạng đã format
-                .model(vehicleModel)
-                .status(UserVehicleStatus.ACTIVE)
+                .driver(driver)                   // gán driver sở hữu xe
+                .vehiclePlate(formattedPlate)     // lưu biển số đã format
+                .model(vehicleModel)              // gán VehicleModel
+                .status(UserVehicleStatus.ACTIVE) // default trạng thái xe là ACTIVE
                 .build();
 
-        // Lưu & map response
+        // 8️⃣ Lưu userVehicle xuống DB
         UserVehicle saved = userVehicleRepository.save(vehicle);
         log.info("Vehicle added successfully: {}", saved.getVehicleId());
 
+        // 9️⃣ Map sang VehicleResponse để trả về cho client
         return driverMapper.toVehicleResponse(saved);
     }
 
@@ -251,7 +286,7 @@ public class DriverServiceImpl implements DriverService {
     private String normalizePlate(String plate) {
         if (plate == null) return null;
         String trimmed = plate.trim().toUpperCase();
-        // Giữ lại chữ & số, bỏ ký tự phân cách
+        // Giữ lại chữ & số, bỏ các ký tự phân cách (space, chấm, gạch)
         return trimmed.replaceAll("[ .-]", "");
     }
 
@@ -264,16 +299,17 @@ public class DriverServiceImpl implements DriverService {
     private String formatVietnamPlate(String plate) {
         if (plate == null || plate.isEmpty()) return plate;
 
+        // 1️⃣ Normalize trước (bỏ dấu, khoảng trắng, upper-case)
         String normalized = normalizePlate(plate);
 
-        // Heuristic: 2 số + 1-2 chữ + 4-5 số
+        // 2️⃣ Áp dụng heuristic: độ dài từ 8 tới 10, dạng 2 số + 1-2 chữ + 4-5 số
         if (normalized.length() >= 8 && normalized.length() <= 10) {
-            String prefix = normalized.substring(0, 2); // 2 số đầu
-            String letters = ""; // 1-2 chữ
-            String numbers;      // phần số phía sau
+            String prefix = normalized.substring(0, 2); // 2 số đầu (mã tỉnh)
+            String letters = "";                        // 1-2 chữ tiếp theo (series)
+            String numbers;                             // phần chữ số còn lại
 
             int i = 2;
-            // Lấy 1-2 ký tự chữ
+            // Lấy 1-2 ký tự chữ cái sau prefix
             while (i < normalized.length() && Character.isLetter(normalized.charAt(i))) {
                 letters += normalized.charAt(i);
                 i++;
@@ -281,18 +317,21 @@ public class DriverServiceImpl implements DriverService {
             // Phần còn lại là số
             numbers = normalized.substring(i);
 
-            // Tạo định dạng A-BBB.CC nếu đủ 5 số; nếu >2 số ở phần cuối thì cắt 2
+            // 3️⃣ Nếu còn đủ số phía sau (>=4), tiến hành tách thành BBB.CC
             if (numbers.length() >= 4) {
-                String part1 = numbers.substring(0, 3);
-                String part2 = numbers.substring(3);
+                String part1 = numbers.substring(0, 3); // 3 số đầu
+                String part2 = numbers.substring(3);    // phần còn lại
+
+                // Nếu part2 > 2 số -> cắt lấy 2 số đầu
                 if (part2.length() > 2) {
                     part2 = part2.substring(0, 2);
                 }
+                // Tạo chuỗi dạng 86B-381.05
                 return prefix + letters + "-" + part1 + "." + part2;
             }
         }
 
-        // Không match -> trả về normalized (đã upper-case, bỏ phân cách)
+        // 4️⃣ Nếu không match được format -> trả về normalized (dù không có dấu gạch, chấm nhưng thống nhất)
         return normalized;
     }
 
@@ -307,11 +346,14 @@ public class DriverServiceImpl implements DriverService {
     public List<VehicleResponse> getMyVehicles(Long userId) {
         log.info("Getting vehicles for userId: {}", userId);
 
+        // 1️⃣ Tìm driver từ userId (xác thực driver tồn tại)
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
+        // 2️⃣ Truy vấn danh sách UserVehicle gắn với driverId (kèm chi tiết model, v.v.)
         List<UserVehicle> vehicles = userVehicleRepository.findByDriverIdWithDetails(driver.getDriverId());
 
+        // 3️⃣ Map danh sách entity -> DTO VehicleResponse
         return vehicles.stream()
                 .map(driverMapper::toVehicleResponse)
                 .collect(Collectors.toList());
@@ -328,37 +370,42 @@ public class DriverServiceImpl implements DriverService {
     public VehicleResponse updateVehicle(Long userId, Long vehicleId, UpdateVehicleRequest request) {
         log.info("Updating vehicle {} for userId: {}", vehicleId, userId);
 
-        // 1) Xác thực driver
+        // 1️⃣ Xác thực driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
-        // 2) Lấy vehicle
+        // 2️⃣ Lấy vehicle theo vehicleId
         UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ErrorException("Vehicle not found with ID: " + vehicleId));
 
-        // 3) Kiểm tra quyền sở hữu
+        // 3️⃣ Kiểm tra quyền sở hữu xe: driver trong vehicle phải trùng với driver hiện tại
         if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {
             throw new ConflictException("Vehicle does not belong to this driver");
         }
 
-        // 4) Cập nhật model nếu có đổi và model tồn tại/ACTIVE
+        // 4️⃣ Cập nhật model nếu request có modelId khác với model hiện tại
         if (request.getModelId() != null && !request.getModelId().equals(
                 vehicle.getModel() != null ? vehicle.getModel().getModelId() : null)) {
-            VehicleModel newModel = vehicleModelRepository.findById(request.getModelId())
+
+            // 4.1) Tìm model mới
+            VehicleModel newModel = vehicleModelService.findById(request.getModelId())
                     .orElseThrow(() -> new ErrorException("Vehicle model not found with ID: " + request.getModelId()));
 
+            // 4.2) Chỉ cho phép chuyển sang model ở trạng thái ACTIVE
             if (newModel.getStatus() != VehicleModelStatus.ACTIVE) {
                 throw new ConflictException("Cannot update vehicle: target vehicle model is not ACTIVE");
             }
 
+            // 4.3) Set model mới
             vehicle.setModel(newModel);
         }
 
-        // 5) Cập nhật biển số nếu có thay đổi
+        // 5️⃣ Cập nhật biển số nếu request có truyền và không rỗng
         if (request.getLicensePlate() != null && !request.getLicensePlate().isBlank()) {
+            // 5.1) Normalize biển số mới
             String normalizedNew = normalizePlate(request.getLicensePlate());
 
-            // Kiểm tra trùng (loại trừ chính vehicle hiện tại)
+            // 5.2) Kiểm tra trùng với các vehicle khác (loại trừ chính vehicle hiện tại)
             List<UserVehicle> existingVehicles = userVehicleRepository.findAll();
             for (UserVehicle v : existingVehicles) {
                 if (!v.getVehicleId().equals(vehicleId)) {
@@ -368,14 +415,16 @@ public class DriverServiceImpl implements DriverService {
                 }
             }
 
-            // Format và set
+            // 5.3) Nếu hợp lệ -> format theo chuẩn VN và set lại cho vehicle
             String formatted = formatVietnamPlate(request.getLicensePlate());
             vehicle.setVehiclePlate(formatted);
         }
 
-        // Lưu & trả response
+        // 6️⃣ Lưu lại vehicle đã cập nhật
         UserVehicle saved = userVehicleRepository.save(vehicle);
         log.info("Vehicle updated successfully: {}", saved.getVehicleId());
+
+        // 7️⃣ Map sang DTO trả kết quả
         return driverMapper.toVehicleResponse(saved);
     }
 
@@ -390,36 +439,39 @@ public class DriverServiceImpl implements DriverService {
     public VehicleResponse updateVehicleStatus(Long userId, Long vehicleId, UserVehicleStatus status) {
         log.info("Updating vehicle {} status for userId: {} -> {}", vehicleId, userId, status);
 
+        // 1️⃣ Validate tham số status
         if (status == null) {
             throw new ErrorException("Status must not be null");
         }
 
-        // 1) Xác thực driver
+        // 2️⃣ Xác thực driver từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
-        // 2) Lấy vehicle
+        // 3️⃣ Tìm vehicle theo vehicleId
         UserVehicle vehicle = userVehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ErrorException("Vehicle not found with ID: " + vehicleId));
 
-        // 3) Kiểm tra quyền sở hữu
+        // 4️⃣ Kiểm tra quyền sở hữu xe
         if (!vehicle.getDriver().getDriverId().equals(driver.getDriverId())) {
             throw new ConflictException("Vehicle does not belong to this driver");
         }
 
-        // (Optional) Rule thêm: nếu đang có phiên sạc thì không cho INACTIVE (tuỳ nghiệp vụ)
+        // (Optional) Có thể kiểm tra nếu xe đang trong phiên sạc thì không cho INACTIVE...
 
-        // 4) Không thay đổi gì -> trả về ngay
+        // 5️⃣ Nếu trạng thái mới giống trạng thái cũ -> không cần update, trả về luôn
         if (vehicle.getStatus() == status) {
             return driverMapper.toVehicleResponse(vehicle);
         }
 
-        // 5) Cập nhật & lưu
+        // 6️⃣ Cập nhật trạng thái và lưu
         UserVehicleStatus old = vehicle.getStatus();
         vehicle.setStatus(status);
         UserVehicle saved = userVehicleRepository.save(vehicle);
 
         log.info("Vehicle status updated: {} -> {}", old, status);
+
+        // 7️⃣ Trả về DTO VehicleResponse
         return driverMapper.toVehicleResponse(saved);
     }
 
@@ -432,10 +484,14 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public List<TransactionBriefResponse> getMyTransactions(Long userId) {
+        // 1️⃣ Đảm bảo driver tồn tại (xác thực user là driver)
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
-        List<Transaction> txs = transactionRepository.findAllDeepGraphByDriverUserId(userId);
+        // 2️⃣ Truy vấn tất cả Transaction liên quan đến driver (deep graph để tránh N+1)
+        List<Transaction> txs = transactionService.findAllDeepGraphByDriverUserId(userId);
+
+        // 3️⃣ Map list Transaction -> list TransactionBriefResponse (DTO tóm tắt)
         return DriverDataMapper.toTransactionBriefResponseList(txs);
     }
 
@@ -448,11 +504,45 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public List<ChargingSessionBriefResponse> getMyChargingSessions(Long userId) {
+        // 1️⃣ Đảm bảo driver tồn tại
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
-        List<ChargingSession> sessions = chargingSessionRepository.findAllByDriverUserIdDeep(userId);
+        // 2️⃣ Truy vấn tất cả các ChargingSession của driver (deep graph)
+        List<ChargingSession> sessions = chargingSessionService.findAllByDriverUserIdDeep(userId);
+
+        // 3️⃣ Map sang DTO tóm tắt để trả về cho client
         return DriverDataMapper.toChargingSessionBriefResponseList(sessions);
+    }
+
+    @Override
+    public Optional<Driver> findByUser_UserId(Long userId) {
+        // Tìm driver theo userId, trả về Optional để caller tự xử lý
+        return driverRepository.findByUser_UserId(userId);
+    }
+
+    @Override
+    public long count() {
+        // Đếm tổng số driver trong hệ thống
+        return driverRepository.count();
+    }
+
+    @Override
+    public long countByStatus(DriverStatus driverStatus) {
+        // Đếm số driver theo trạng thái (ACTIVE/INACTIVE/...)
+        return driverRepository.countByStatus(driverStatus);
+    }
+
+    @Override
+    public Optional<Driver> findByUserIdWithUser(Long userId) {
+        // Tìm driver kèm User theo userId, trả về Optional
+        return driverRepository.findByUserIdWithUser(userId);
+    }
+
+    @Override
+    public void save(Driver driver) {
+        // Hàm tiện ích: lưu driver (create/update)
+        driverRepository.save(driver);
     }
 
 }

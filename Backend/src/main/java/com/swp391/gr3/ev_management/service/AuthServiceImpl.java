@@ -3,8 +3,6 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.entity.OtpVerification;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.exception.ErrorException;
-import com.swp391.gr3.ev_management.repository.OtpRepository;
-import com.swp391.gr3.ev_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,9 +17,7 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
     // Repository để thao tác với bảng User
-    private final UserRepository userRepository;
-    // Repository để thao tác với bảng OtpVerification
-    private final OtpRepository otpRepository;
+    private final UserService userService;
     // Service chuyên xử lý logic về OTP (gửi, sinh, xác minh, ...)
     private final OtpService otpService;
     // Dùng để mã hóa mật khẩu (BCrypt hoặc tương tự)
@@ -31,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional // Đảm bảo toàn bộ logic trong hàm nằm trong một transaction
     public void sendResetOtp(String email) {
         // 1) Kiểm tra xem email có tồn tại trong hệ thống hay không
-        User user = userRepository.findByEmail(email);
+        User user = userService.findByEmail(email);
         if (user == null) {
             // Nếu không tồn tại, ném lỗi (hoặc tùy chính sách, có thể trả về giả là "đã gửi")
             throw new ErrorException("Email không tồn tại trong hệ thống");
@@ -49,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional // Bọc trong transaction để đảm bảo tính toàn vẹn dữ liệu
     public void resetPassword(String email, String otp, String newPassword) {
         // 1) Lấy OTP mới nhất của người dùng dựa vào email, sắp xếp theo thời gian tạo giảm dần
-        OtpVerification latest = otpRepository.findTopByEmailOrderByCreatedAtDesc(email)
+        OtpVerification latest = otpService.findTopByEmailOrderByCreatedAtDesc(email)
                 .orElseThrow(() -> new ErrorException("OTP không tồn tại."));
 
         // 2) Kiểm tra xem OTP có còn hạn không (so sánh thời gian hết hạn với hiện tại)
@@ -69,18 +65,18 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 5) Đổi mật khẩu cho user có email tương ứng
-        User user = userRepository.findByEmail(email);
+        User user = userService.findByEmail(email);
         if (user == null) throw new ErrorException("Email không tồn tại.");
 
         // Mã hóa mật khẩu mới bằng PasswordEncoder trước khi lưu
         user.setPasswordHash(passwordEncoder.encode(newPassword));
 
         // Lưu thay đổi mật khẩu vào DB
-        userRepository.save(user);
+        userService.addUser(user);
 
         // 6) (Tuỳ chọn) Cập nhật lại trạng thái OTP — ví dụ đánh dấu đã dùng
         latest.setVerified(true);
-        otpRepository.save(latest);
+        otpService.save(latest);
 
         // 7) Ghi log thông báo reset thành công
         log.info("Password reset successfully for {}", email);

@@ -4,7 +4,6 @@ import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
-import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.service.BookingService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
