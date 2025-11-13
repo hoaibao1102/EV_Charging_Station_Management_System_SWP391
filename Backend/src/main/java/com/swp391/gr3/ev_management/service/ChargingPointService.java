@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.service;
 import com.swp391.gr3.ev_management.dto.request.CreateChargingPointRequest;
 import com.swp391.gr3.ev_management.dto.request.StopChargingPointRequest;
 import com.swp391.gr3.ev_management.dto.response.ChargingPointResponse;
+import com.swp391.gr3.ev_management.entity.ChargingPoint;
 
 import java.util.List;
 
@@ -12,4 +13,8 @@ public interface ChargingPointService {
     List<ChargingPointResponse> getPointsByStationId(Long stationId);
 
     ChargingPointResponse createChargingPoint(CreateChargingPointRequest request);
+
+    List<ChargingPoint> findByStation_StationId(Long stationId);
+
+    List<ChargingPoint> findByStation_StationIdAndConnectorType_ConnectorTypeId(Long stationId, Long connectorTypeId);
 }

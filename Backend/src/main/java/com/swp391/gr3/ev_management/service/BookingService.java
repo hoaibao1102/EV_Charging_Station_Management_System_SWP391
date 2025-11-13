@@ -4,9 +4,12 @@ import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
+import com.swp391.gr3.ev_management.entity.Booking;
+import com.swp391.gr3.ev_management.enums.BookingStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public interface BookingService {
@@ -25,4 +28,10 @@ public interface BookingService {
     BookingResponse cancelBooking(Long bookingId);
 
     List<ConfirmedBookingView> getConfirmedBookingsForStaff(Long userId);
+
+    Optional<Booking> findByBookingIdAndStatus(Long bookingId, BookingStatus bookingStatus);
+
+    void save(Booking booking);
+
+    Optional<Booking> findByIdWithConnectorType(Long bookingId);
 }

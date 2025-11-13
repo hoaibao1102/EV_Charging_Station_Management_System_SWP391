@@ -2,9 +2,13 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.request.SlotAvailabilityCreateRequest;
 import com.swp391.gr3.ev_management.dto.response.SlotAvailabilityResponse;
+import com.swp391.gr3.ev_management.entity.SlotAvailability;
 import com.swp391.gr3.ev_management.enums.SlotStatus;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public interface SlotAvailabilityService {
@@ -21,4 +25,12 @@ public interface SlotAvailabilityService {
     List<SlotAvailabilityResponse>  findByPointId(Long pointId);
 
     List<SlotAvailabilityResponse> findAll();
+
+    List<SlotAvailability> findAllById(List<Long> slotIds);
+
+    void save(SlotAvailability slot);
+
+    void deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
+
+    Collection<SlotAvailability> saveAll(ArrayList<SlotAvailability> toSave);
 }

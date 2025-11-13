@@ -25,6 +25,12 @@ public class NotificationsServiceImpl implements NotificationsService {
     private final NotificationMapper notificationMapper;
     private final NotificationMapper mapper; // (dường như trùng với notificationMapper — nhưng vẫn được inject)
 
+    @Override
+    public void save(Notification noti) {
+        // Lưu thông báo vào DB qua repository
+        notificationsRepository.save(noti);
+    }
+
     /**
      * Lấy danh sách tất cả thông báo của 1 user theo userId.
      * - Truy vấn DB theo userId
