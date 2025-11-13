@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j // Tích hợp logger (log.info, log.error, ...)
 public class AdminServiceImpl implements AdminService {
 
-    private final AdminRepository adminRepository; // Repository để truy xuất bảng Admin
-    private final UserRepository userRepository;   // Repository để truy xuất bảng User
-    private final PasswordEncoder passwordEncoder; // Dùng để mã hóa & kiểm tra mật khẩu
+    private final AdminRepository adminRepository;       // Repository để truy xuất bảng Admin
+    private final UserRepository userRepository;         // Service để truy xuất bảng User
+    private final PasswordEncoder passwordEncoder;       // Dùng để mã hóa & kiểm tra mật khẩu
 
     @Override
     @Transactional // Đảm bảo toàn bộ thao tác được thực hiện trong 1 transaction

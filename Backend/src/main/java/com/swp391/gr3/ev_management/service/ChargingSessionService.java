@@ -5,6 +5,7 @@ import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
 import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +27,16 @@ public interface ChargingSessionService {
     List<ViewCharSessionResponse> getSessionsByPoint(Long pointId);
     List<ActiveSessionView> getActiveSessionsCompact(Long userId);
     List<CompletedSessionView> getCompletedSessionsCompactByStaff(Long userId);
+
+    List<ChargingSession> findAllByDriverUserIdDeep(Long userId);
+
+    double sumEnergyAll();
+
+    long countAll();
+
+    long countByStationBetween(Long stationId, LocalDateTime yearFrom, LocalDateTime yearTo);
+
+    long countSessionsByUserId(Long userId);
+
+    Optional<ChargingSession> findByBooking_BookingId(Long bookingId);
 }

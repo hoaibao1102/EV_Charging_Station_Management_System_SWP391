@@ -9,4 +9,7 @@ import java.util.List;
 public interface RoleService {
     List<Role> findAll();
 
+    Role findByRoleId(long l);
+
+    Role findByRoleName(String staffName);
 }

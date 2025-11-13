@@ -8,7 +8,6 @@ import com.swp391.gr3.ev_management.enums.NotificationTypes;
 import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.BookingsRepository;
-import com.swp391.gr3.ev_management.repository.NotificationsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,7 +27,7 @@ public class BookingOverdueHandler {
     private static final ZoneId TENANT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final BookingsRepository bookingsRepository;           // Repository để thao tác bảng Booking
-    private final NotificationsRepository notificationsRepository; // Repository để lưu Notification
+    private final NotificationsService notificationsService;       // Service để lưu Notification
     private final ApplicationEventPublisher eventPublisher;        // Dùng để bắn Event trong Spring (publish event)
     private final ViolationService violationService;               // Service xử lý vi phạm (tạo Violation)
 
@@ -112,7 +111,7 @@ public class BookingOverdueHandler {
             noti.setBooking(booking);                                 // Gắn booking liên quan
 
             // Lưu notification vào DB
-            notificationsRepository.save(noti);
+            notificationsService.save(noti);
 
             // Sau khi lưu, bắn sự kiện để các listener khác (ví dụ gửi email) xử lý
             try {
