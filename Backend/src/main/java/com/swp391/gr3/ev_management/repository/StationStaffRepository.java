@@ -44,8 +44,8 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     @Query("""
         select new com.swp391.gr3.ev_management.dto.response.StationStaffResponse(
             ss.stationStaffId,
-            stf.staffId,    
             s.stationId,
+            stf.staffId,
             u.name,
             u.email,
             u.phoneNumber,
@@ -57,6 +57,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
         join stf.user u
         join ss.station s
         where u.userId = :userId
+                    and ss.unassignedAt is null
     """)
     Optional<StationStaffResponse> findByUserId(@Param("userId") Long userId);
 
@@ -92,8 +93,8 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     @Query("""
     select new com.swp391.gr3.ev_management.dto.response.StationStaffResponse(
         ss.stationStaffId,
-        stf.staffId,
         s.stationId,
+        stf.staffId,
         u.name,
         u.email,
         u.phoneNumber,
@@ -105,6 +106,7 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     join stf.user u
     join ss.station s
     where stf.staffId = :staffId
+            and ss.unassignedAt is null
     """)
     Optional<StationStaffResponse> findByStaffId(@Param("staffId") Long staffId);
 

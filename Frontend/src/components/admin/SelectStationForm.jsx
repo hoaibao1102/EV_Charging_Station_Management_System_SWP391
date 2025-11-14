@@ -5,9 +5,8 @@ import Button from 'react-bootstrap/Button';
 
 export default function SelectStationForm({onClose, onAddSuccess, staff, staffsStationData, stations}) {
 
-
-
   if (!staff) return null;
+
   const currentStationEntry = staffsStationData.find(
     s => (staff.staffId && s.staffId === staff.staffId) || (staff.userId && s.userId === staff.userId)
   );
@@ -18,19 +17,15 @@ export default function SelectStationForm({onClose, onAddSuccess, staff, staffsS
     station => station.stationId === currentStationId
   )?.stationName;
 
-  
-
-
   const handleTransferStaff = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-  const selectedStation = formData.get('station');
+    const selectedStation = formData.get('station');
 
     if (!selectedStation) {
       alert('Vui lòng chọn một trạm sạc.');
       return;
     }
-
 
     const staffIdToSend = staff.staffId ?? staffsStationData.find(s => s.userId === staff.userId)?.staffId;
 
@@ -38,8 +33,10 @@ export default function SelectStationForm({onClose, onAddSuccess, staff, staffsS
       alert('Không xác định được ID nhân viên để chuyển công tác.');
       return;
     }
+
     console.log("Staff ID to send:", staffIdToSend);
     console.log("Selected Station ID:", selectedStation);
+
     const response = await transferStaffApi(staffIdToSend, selectedStation);
     if (response.success) {
       alert('Chuyển công tác thành công');
@@ -66,7 +63,7 @@ export default function SelectStationForm({onClose, onAddSuccess, staff, staffsS
           <Form.Select aria-label="select station" name="station" required>
             <option value="">Chọn trạm sạc mới</option>
             {stations
-                .filter(station => station.stationId != currentStationId) 
+                .filter(station => station.stationId != currentStationId && station.status !== 'INACTIVE') 
                 .map(station => (
                   <option key={station.stationId} value={station.stationId}>
                     {station.stationName}

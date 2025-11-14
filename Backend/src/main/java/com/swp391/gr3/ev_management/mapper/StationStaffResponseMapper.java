@@ -14,8 +14,8 @@ public class StationStaffResponseMapper {
         if (s == null) return null;
         return new StationStaffResponse(
                 s.getStationStaffId(),
-                s.getStaff().getStaffId(),
-                s.getStation() != null ? s.getStation().getStationId() : null,
+        s.getStation() != null ? s.getStation().getStationId() : null,
+        s.getStaff().getStaffId(),
                 s.getStaff().getUser().getName(),
                 s.getStaff().getUser().getEmail(),
                 s.getStaff().getUser().getPhoneNumber(),

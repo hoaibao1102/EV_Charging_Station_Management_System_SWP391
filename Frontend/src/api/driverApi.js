@@ -71,3 +71,11 @@ export const markNotificationAsReadApi = (notificationId) => {
         'Đánh dấu thông báo đã đọc thất bại'
     );
 }
+
+// thay doi mat khau
+export const changePasswordDriverApi = (passwordData) => {
+    return handleApiCall(
+        () => apiClient.put('/api/driver/password', passwordData),
+        'Thay đổi mật khẩu thất bại'
+    );
+}
