@@ -5,9 +5,9 @@ import {
   statusStaffApi, 
   unbanDriverApi, 
   getStaffs_UserApi, 
-  getStaffs_StationApi // <-- 1. IMPORT THÊM API
+  getStaffs_StationApi
 } from '../../api/admin.js';
-import { getAllStations } from '../../api/stationApi.js'; // <-- 2. IMPORT THÊM API
+import { getAllStations } from '../../api/stationApi.js';
 import Table from 'react-bootstrap/Table';
 import AddStaffForm from '../../components/admin/AddStaffForm.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -32,17 +32,15 @@ export default function ManagementUser() {
   const [loading, setLoading] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [staffsUserData, setStaffsUserData] = useState([]);
-
-  // --- 3. THÊM STATE CHO DỮ LIỆU MỚI ---
   const [staffsStationData, setStaffsStationData] = useState([]);
   const [stations, setStations] = useState([]);
-  // ----------------------------------------
+  const [isLoadingTransfer, setIsLoadingTransfer] = useState(false);
 
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         console.log('Starting to fetch all data...');
-        // 1. Chạy tất cả các promise song song
+        
         const [
           usersResponse,
           staffsUserResponse,
@@ -55,7 +53,6 @@ export default function ManagementUser() {
           getAllStations()
         ]);
 
-        // 2. Cập nhật TẤT CẢ state cùng một lúc (hoặc gần như cùng lúc)
         if (usersResponse.success) {
           setUsersList(usersResponse.data);
         } else {
@@ -64,7 +61,6 @@ export default function ManagementUser() {
 
         if (staffsUserResponse.success) {
           setStaffsUserData(staffsUserResponse.data);
-          // Thêm log để kiểm tra
           console.log('Fetched staffs-user data:', staffsUserResponse.data);
         } else {
           console.error('Failed to fetch staffs-user data');
@@ -72,7 +68,6 @@ export default function ManagementUser() {
 
         if (staffsStationResponse.success) {
           setStaffsStationData(staffsStationResponse.data);
-          // Thêm log để kiểm tra
           console.log('Fetched staffs-station data:', staffsStationResponse.data);
         } else {
           console.error('Failed to fetch staffs-station data');
@@ -80,7 +75,6 @@ export default function ManagementUser() {
 
         if (stationsResponse.success) {
           setStations(stationsResponse.data);
-          // Thêm log để kiểm tra
           console.log('Fetched stations data:', stationsResponse.data);
         } else {
           console.error('Failed to fetch stations');
@@ -113,34 +107,28 @@ export default function ManagementUser() {
     setSelectedStaff(null);
   };
 
-  // Hàm này ĐÓNG form VÀ TẢI LẠI DỮ LIỆU (dùng khi submit THÀNH CÔNG)
   const handleActionSuccess = () => {
     setShowAddStaffForm(false);
     setShowSelectStationForm(false);
     setSelectedStaff(null);
     
-    // 2. THÊM MỘT ĐỘ TRỄ NHỎ để đảm bảo database đã cập nhật
     setTimeout(() => {
-      setLoading(pre => !pre); // Trigger useEffect refetch
+      setLoading(pre => !pre);
       console.log('Refetching data after success...');
     }, 1000); 
   };
 
-  // Tính toán thống kê 
   const totalUsers = usersList.length;
   const totalStaff = usersList.filter(u => u.roleName === 'STAFF').length;
   const totalDrivers = usersList.filter(u => u.roleName === 'DRIVER').length;
 
-  // Tính toán danh sách hiển thị
   const displayedUsers = useMemo(() => {
     let filtered = usersList;
 
-    // Lọc theo Tab
     if (activeTab !== 'allUsers') {
       filtered = filtered.filter(user => user.roleName === activeTab.toUpperCase());
     }
 
-    // Lọc theo Search
     if (searchTerm) {
       filtered = filtered.filter(user => 
         user.name?.toLowerCase().includes(searchTerm) ||
@@ -152,18 +140,14 @@ export default function ManagementUser() {
     return filtered;
   }, [usersList, activeTab, searchTerm]);
   
-  // --- 6. HÀM LOGIC ĐỂ LẤY TÊN TRẠM TỪ USERID ---
   const getStationNameByUserId = (userId) => {
     try {
-      // 1. Từ userId -> staffId (qua bảng staffsUserData)
       const staffUser = staffsUserData.find(su => su.userId === userId);
       if (!staffUser || !staffUser.staffId) return null;
   
-      // 2. Từ staffId -> stationId (qua bảng staffsStationData)
       const staffStation = staffsStationData.find(ss => ss.staffId === staffUser.staffId);
       if (!staffStation || !staffStation.stationId) return null;
   
-      // 3. Từ stationId -> stationName (qua bảng stations)
       const station = stations.find(s => s.stationId === staffStation.stationId);
       return station ? station.stationName : null;
     } catch (e) {
@@ -171,7 +155,6 @@ export default function ManagementUser() {
       return null;
     }
   };
-  // -----------------------------------------------
 
   const handleStatusStaff = async (staffId, status) => {
     const confirmed = window.confirm(`Bạn có chắc chắn muốn ${status === 'BANNED' ? 'xóa' : 'kích hoạt lại'} nhân viên này?`);
@@ -186,11 +169,36 @@ export default function ManagementUser() {
     }
   };
 
-  const handleTransferStaff = (staff) => {
-    toast.info('Bạn có thể chuyển công tác nhân viên này');
-    setSelectedStaff(staff);
-    setShowSelectStationForm(true);
-  }; 
+  const handleTransferStaff = async (staff) => {
+    try {
+      setIsLoadingTransfer(true);
+      toast.info('Đang tải thông tin trạm...');
+      
+      const [staffsStationResponse, stationsResponse] = await Promise.all([
+        getStaffs_StationApi(),
+        getAllStations()
+      ]);
+
+      if (staffsStationResponse.success && stationsResponse.success) {
+        setStaffsStationData(staffsStationResponse.data);
+        setStations(stationsResponse.data);
+        
+        console.log('Refreshed staffs-station data:', staffsStationResponse.data);
+        console.log('Refreshed stations data:', stationsResponse.data);
+        
+        setSelectedStaff(staff);
+        setShowSelectStationForm(true);
+        toast.success('Sẵn sàng chuyển công tác');
+      } else {
+        toast.error('Không thể tải thông tin trạm');
+      }
+    } catch (error) {
+      console.error('Error loading station data:', error);
+      toast.error('Lỗi khi tải dữ liệu, vui lòng thử lại');
+    } finally {
+      setIsLoadingTransfer(false);
+    }
+  };
 
   const handleDriverUnblock = async (driverId) => {
     const confirmed = window.confirm('Bạn có chắc chắn muốn gỡ lệnh khóa tài khoản tài xế này?');
@@ -211,10 +219,8 @@ export default function ManagementUser() {
       {showAddStaffForm && <AddStaffForm onClose={handleCloseForm} onAddSuccess={handleActionSuccess} />}
       {!showAddStaffForm && !showSelectStationForm && (
         <div className="management-user-container">
-          {/* Header Section */}
           <Header />
 
-          {/* Action Section */}
           <div className="action-section">
             <h2>Quản lý người dùng</h2>
             <button className="btn-add-staff" onClick={handleAddStaff}>
@@ -222,7 +228,6 @@ export default function ManagementUser() {
             </button>
           </div>
 
-          {/* Statistics Section */}
           <ul className="statistics-section">
             <li className="stat-card">
               Tổng người dùng
@@ -238,7 +243,6 @@ export default function ManagementUser() {
             </li>
           </ul>
 
-          {/* Table Section */}
           <div className="table-section">
             <div className="table-scroll-container"> 
               <div className="filter-section">
@@ -285,24 +289,23 @@ export default function ManagementUser() {
                   {displayedUsers.length > 0 ? (
                     displayedUsers.map((user, index) => {
                       
-                      // --- 7. GỌI HÀM HELPER TRƯỚC KHI RENDER ---
-                      const stationName = user.roleName === 'STAFF' 
-                                          ? getStationNameByUserId(user.userId) 
-                                          : null;
+                      const staffRecord = user.roleName === 'STAFF' 
+                        ? staffsUserData.find(s => s.userId === user.userId) 
+                        : null;
+                      
+                      const stationName = staffRecord 
+                        ? getStationNameByUserId(user.userId) 
+                        : null;
 
                       return (
                         <tr key={user.phoneNumber || index}>
                           <td>{user.name}</td>
-                          
-                          {/* --- 8. CẬP NHẬT HIỂN THỊ --- */}
                           <td>
                             {user.roleName === 'STAFF' 
-                              ? `NHÂN VIÊN ${stationName ? `(${stationName})` : ''}` 
+                              ? `NHÂN VIÊN ${stationName ? `(${stationName})` : '(Chưa gán trạm)'}` 
                               : user.roleName === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI XẾ'
                             }
                           </td>
-                          {/* --------------------------- */}
-
                           <td>{user.phoneNumber}</td>
                           <td>{user.email}</td>
                           <td>{user.address}</td>
@@ -314,8 +317,14 @@ export default function ManagementUser() {
                                 <button className="btn-delete" onClick={() => handleStatusStaff(user.userId, 'BANNED')}>
                                   Xóa
                                 </button> 
-                                <button className="btn-transfer" onClick={() => handleTransferStaff(staffsUserData.find(s => s.userId === user.userId))}>
-                                  Công tác
+                                
+                                <button 
+                                  className="btn-transfer" 
+                                  onClick={() => handleTransferStaff(staffRecord)} 
+                                  disabled={isLoadingTransfer || !staffRecord} 
+                                  title={!staffRecord ? "Không tìm thấy dữ liệu staff, không thể chuyển công tác" : "Chuyển công tác"}
+                                >
+                                  {isLoadingTransfer ? 'Đang tải...' : 'Công tác'}
                                 </button> 
                               </div>
                             )}
@@ -347,9 +356,7 @@ export default function ManagementUser() {
                 </tbody>
               </Table>
             </div>
-            {/* (Hết table-scroll-container) */}
           </div>
-          {/* (Hết table-section) */}
         </div>
       )}
     </>

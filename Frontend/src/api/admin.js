@@ -83,3 +83,10 @@ export const getAdminStatisticsApi = () => {
     );
 }
 
+// cập nhật mật khẩu admin
+export const updateAdminPasswordApi = (passwordData) => {
+    return handleApiCall(
+        () => apiClient.put(`/api/admin/password`, passwordData),
+        'Cập nhật mật khẩu admin thất bại'
+    );
+}

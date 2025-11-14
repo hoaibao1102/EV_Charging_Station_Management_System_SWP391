@@ -40,33 +40,35 @@ public class StaffStationServiceImpl implements StaffStationService {
     @Transactional
     @Override
     public StationStaffResponse updateStation(Long staffId, Long stationId) {
-        // 1) Kiểm tra staff theo staffId, nếu không có -> ném lỗi
-        StationStaff ss = stationStaffRepository.findEntityByStaffId(staffId)
-                .orElseThrow(() -> new ErrorException("Staff not found with staffId " + staffId));
+    // 1) Lấy assignment đang ACTIVE (unassignedAt IS NULL). Nếu không có -> lỗi.
+    StationStaff active = stationStaffRepository.findActiveByStaffId(staffId)
+        .orElseThrow(() -> new ErrorException("Active assignment not found for staffId " + staffId));
 
-        // 2) Tìm trạm theo stationId, nếu không có -> lỗi
-        var newStation = chargingStationService.findById(stationId)
-                .orElseThrow(() -> new ErrorException("Station not found with id " + stationId));
+    // 2) Tìm trạm theo stationId, nếu không có -> lỗi
+    var newStation = chargingStationService.findById(stationId)
+        .orElseThrow(() -> new ErrorException("Station not found with id " + stationId));
 
-        // 3) Nếu staff đã thuộc đúng trạm cần update → không làm gì thêm, trả dữ liệu đang có
-        if (ss.getStation() != null && ss.getStation().getStationId().equals(stationId)) {
-            return stationStaffRepository.findByStaffId(staffId)
-                    .orElseThrow(() -> new ErrorException("Failed to load staff after update"));
-        }
+    // 3) Nếu đã cùng trạm thì trả về luôn dữ liệu hiện tại
+    if (active.getStation() != null && active.getStation().getStationId().equals(stationId)) {
+        return stationStaffResponseMapper.mapToResponse(active);
+    }
 
-        // 4) Cập nhật station mới cho staff
-        ss.setStation(newStation);
+    // 4) Đánh dấu bản ghi active hiện tại là unassigned (kết thúc assignment cũ)
+    active.setUnassignedAt(LocalDateTime.now());
+    stationStaffRepository.save(active);
 
-        // Ghi nhận mốc thời gian thay đổi (tùy mục đích bạn sử dụng)
-        ss.setAssignedAt(LocalDateTime.now());   // thời điểm được gán vào station mới
-        ss.setUnassignedAt(LocalDateTime.now()); // thời điểm rời trạm cũ (nếu dùng để lưu lịch sử)
+    // 5) Tạo bản ghi mới cho assignment (preserve history)
+    StationStaff fresh = StationStaff.builder()
+        .assignedAt(LocalDateTime.now())
+        .unassignedAt(null)
+        .staff(active.getStaff())
+        .station(newStation)
+        .build();
 
-        // 5) Lưu lại thay đổi
-        stationStaffRepository.save(ss);
+    StationStaff saved = stationStaffRepository.save(fresh);
 
-        // 6) Trả lại dữ liệu projection cho client
-        return stationStaffRepository.findByStaffId(staffId)
-                .orElseThrow(() -> new ErrorException("Failed to load staff after update"));
+    // 6) Trả về DTO của bản ghi mới
+    return stationStaffResponseMapper.mapToResponse(saved);
     }
 
     /**
@@ -74,10 +76,13 @@ public class StaffStationServiceImpl implements StaffStationService {
      */
     @Override
     public List<StationStaffResponse> getAll() {
-        return stationStaffRepository.findAll()              // lấy toàn bộ entity
-                .stream()
-                .map(stationStaffResponseMapper::mapToResponse) // map sang response DTO
-                .toList();
+    // Only return active assignments (unassignedAt == null) so frontend shows the
+    // currently assigned station per staff instead of historical records.
+    return stationStaffRepository.findAll()
+        .stream()
+        .filter(s -> s.getUnassignedAt() == null)
+        .map(stationStaffResponseMapper::mapToResponse)
+        .toList();
     }
 
     /**
