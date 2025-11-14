@@ -166,8 +166,11 @@
 /* ==== LIST ==== */
 .station-list {
   padding: 0 20px;
-  display: flex;
-  flex-direction: column;
+  
+  /* === THAY ĐỔI: Chuyển sang Grid === */
+  display: grid;
+  /* Mặc định 1 cột trên mobile */
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -178,6 +181,9 @@
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
+  
+  /* === THAY ĐỔI: Đảm bảo text căn trái trong grid item === */
+  text-align: left;
 }
 
 .station-card:hover {
@@ -455,6 +461,13 @@
     font-size: 18px;
   }
 
+  /* === THAY ĐỔI: Grid 2 cột cho Tablet === */
+  .station-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px; /* Tăng khoảng cách */
+    padding: 0 30px; /* Tăng padding */
+  }
+
   .pagination-container {
     margin: 30px 0 100px;
     gap: 20px;
@@ -501,6 +514,13 @@
     width: 44px;
     height: 44px;
     font-size: 20px;
+  }
+
+  /* === THAY ĐỔI: Grid 3 cột cho Desktop === */
+  .station-list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px; /* Tăng khoảng cách */
+    padding: 0 40px; /* Tăng padding */
   }
 
   .pagination-container {

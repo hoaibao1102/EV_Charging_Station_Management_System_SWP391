@@ -3,24 +3,21 @@
 .information-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
-  padding: 20px;
+  padding: 16px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .information-container {
-  height: auto;
-  max-height: 95vh;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   background: white;
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(32, 178, 170, 0.15);
-  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(32, 178, 170, 0.12);
+  padding: 24px 20px 20px;
   margin: auto;
   position: relative;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -28,27 +25,27 @@
 /* ===== BACK BUTTON ===== */
 .info-back-btn {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 36px;
-  height: 36px;
-  background: #20b2aa;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #20b2aa 0%, #1a8f89 100%);
   border: none;
-  border-radius: 50%;
+  border-radius: 12px;
   color: white;
   font-size: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(32, 178, 170, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
 }
 
 .info-back-btn:hover {
-  background: #1a8f89;
-  transform: scale(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(32, 178, 170, 0.35);
 }
 
 /* ===== AVATAR SECTION ===== */
@@ -57,7 +54,10 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
-  padding-top: 10px;
+  padding: 24px 16px 16px;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+  border-radius: 16px;
+  margin-top: 24px;
 }
 
 .info-avatar-wrapper {
@@ -66,102 +66,119 @@
 }
 
 .info-avatar {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #20b2aa;
-  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.2);
+  border: 4px solid white;
+  box-shadow: 0 4px 20px rgba(32, 178, 170, 0.25);
 }
 
 .info-avatar-placeholder {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background: linear-gradient(135deg, #20b2aa 0%, #1a8f89 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 38px;
   color: white;
   font-weight: 700;
-  border: 3px solid #20b2aa;
-  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.2);
+  border: 4px solid white;
+  box-shadow: 0 4px 20px rgba(32, 178, 170, 0.25);
 }
 
 .info-name {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 6px 0;
+  margin: 0 0 14px 0;
   text-align: center;
+}
+
+/* ===== BUTTON GROUP ===== */
+.info-button-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
 /* ===== EDIT BUTTON ===== */
 .info-edit-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  background: transparent;
+  gap: 5px;
+  padding: 10px 12px;
+  background: white;
   border: 2px solid #20b2aa;
-  border-radius: 20px;
+  border-radius: 12px;
   color: #20b2aa;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(32, 178, 170, 0.1);
+  white-space: nowrap;
 }
 
 .info-edit-btn:hover {
-  background: #20b2aa;
+  background: linear-gradient(135deg, #20b2aa 0%, #1a8f89 100%);
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.3);
+  box-shadow: 0 6px 16px rgba(32, 178, 170, 0.3);
+  border-color: transparent;
 }
 
 .info-edit-icon {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 /* ===== INFORMATION FIELDS ===== */
 .info-fields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  flex: 1;
-  overflow-y: auto;
+  gap: 10px;
 }
 
 .info-field {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
-  justify-content: space-between;
+  gap: 10px;
 }
 
 .info-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #20b2aa;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  min-width: 80px;
+  letter-spacing: 0.5px;
+  margin: 0px !important;
+  min-width: 95px;
   flex-shrink: 0;
 }
 
 .info-value {
   font-size: 13px;
-  color: #334155;
+  color: #1e293b;
   font-weight: 500;
   padding: 8px 12px;
   background: #f8fafc;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
   flex: 1;
-  text-align: left;
+}
+
+.info-value:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
 }
 
 /* ===== GENDER RADIO ===== */
@@ -170,9 +187,15 @@
   gap: 16px;
   padding: 8px 12px;
   background: #f8fafc;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
   flex: 1;
+}
+
+.info-gender-group:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
 }
 
 .info-gender-option {
@@ -190,7 +213,7 @@
 
 .info-gender-label {
   font-size: 13px;
-  color: #334155;
+  color: #1e293b;
   font-weight: 500;
   cursor: pointer;
 }
@@ -200,11 +223,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border-radius: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  width: fit-content;
 }
 
 .info-status-badge.active {
@@ -303,7 +327,7 @@
   }
 
   .info-fields {
-    gap: 14px;
+    gap: 2px;
   }
 
   .info-label {

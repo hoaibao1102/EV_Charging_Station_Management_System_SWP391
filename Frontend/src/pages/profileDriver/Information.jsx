@@ -4,12 +4,18 @@ import { getProfileApi } from '../../api/driverApi.js';
 import './Information.css';
 import man from '../../assets/icon/man.png';
 import girl from '../../assets/icon/girl.png';
+import FormProfile from '../../components/admin/FormChangePassword.jsx';
 
 export default function Information() {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [formProfile, setFormProfile] = useState(false);
+
+    const closeProfile = () => {
+        setFormProfile(false);
+    }
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -44,6 +50,9 @@ export default function Information() {
 
     return (
         <div className="information-page">
+            {formProfile && <FormProfile onClose={closeProfile} />}
+            {!formProfile && (
+            <>
             {loading ? (
                 <div className="information-container">
                     <div className="info-loading">
@@ -85,14 +94,24 @@ export default function Information() {
                         </div>
                         <h1 className="info-name">{profile.name}</h1>
                         
-                        {/* Edit Button */}
-                        <button 
-                            className="info-edit-btn"
-                            onClick={() => navigate('/profile/edit', { state: { profile } })}
-                        >
-                            <span className="info-edit-icon">✏️</span>
-                            Chỉnh sửa
-                        </button>
+                        {/* Button Group */}
+                        <div className="info-button-group">
+                            <button 
+                                className="info-edit-btn"
+                                onClick={() => navigate('/profile/edit', { state: { profile } })}
+                            >
+                                <span className="info-edit-icon">✏️</span>
+                                Chỉnh sửa
+                            </button>
+
+                            <button 
+                                className="info-edit-btn"
+                                onClick={() => setFormProfile(true)}
+                            >
+                                <span className="info-edit-icon">🔒</span>
+                                Đổi mật khẩu
+                            </button>
+                        </div>
                     </div>
 
                     {/* Information Fields */}
@@ -115,13 +134,6 @@ export default function Information() {
                         <div className="info-field">
                             <label className="info-label">Ngày sinh:</label>
                             <div className="info-value">{formatDate(profile.dateOfBirth)}</div>
-                        </div>
-
-                        <div className="info-field">
-                            <label className="info-label">Giới tính:</label>
-                            <div className="info-gender-group">
-                              {profile.gender === 'M' ? 'Nam' : 'Nữ'}
-                            </div>
                         </div>
 
                         <div className="info-field">
@@ -149,6 +161,8 @@ export default function Information() {
                         <p>Không có thông tin</p>
                     </div>
                 </div>
+            )}
+            </>
             )}
         </div>
     );
