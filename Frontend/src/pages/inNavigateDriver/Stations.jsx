@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Stations.css";
 import { stationAPI } from "../../api/stationApi.js";
-import stationsHeroMobile from "../../assets/img/home/home.jpg"; // Dùng tạm ảnh home
+import stationsHeroMobile from "../../assets/img/home/home.jpg"; 
 import stationsHeroDesktop from "../../assets/img/home/home_lab.jpg";
 
 export default function Stations() {
@@ -138,9 +138,9 @@ export default function Stations() {
 
   // ===== Màu trạng thái =====
   const getStatusColor = (status) => {
-    if (status === "available" || status === "active") return "#4CAF50";
-    if (status === "charging" || status === "busy") return "#00BCD4";
-    if (status === "offline" || status === "maintenance") return "#F44336";
+    if (status === "ACTIVE" || status === "active") return "#4CAF50";
+    if (status === "MAINTENANCE" || status === "busy") return "#00BCD4";
+    if (status === "INACTIVE" || status === "maintenance") return "#F44336";
     return "#9E9E9E";
   };
 
@@ -183,7 +183,7 @@ export default function Stations() {
           </div>
         </div>
         {/* Tiêu đề */}
-        <h2 className="stations-header">Trạm sạc gần đây</h2>
+        <h2 className="stations-header" style={{paddingTop:'10px'}}>Trạm sạc gần đây</h2>
 
         {/* Danh sách trạm */}
         <div className="station-list">

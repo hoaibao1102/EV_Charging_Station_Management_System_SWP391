@@ -10,7 +10,7 @@ import AccidentDetail from '../../components/admin/AccidentDetail.jsx';
 
 export default function ManagementAccident() {
 
-  const [activeTab, setActiveTab] = useState('allStations');
+  const [activeTab, setActiveTab] = useState('allAccidents');
   const [accidents, setAccidents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAccidentDetail, setShowAccidentDetail] = useState(false);
