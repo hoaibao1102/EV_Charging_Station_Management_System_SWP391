@@ -66,14 +66,15 @@ export default function FormProfile({ onClose }) {
 
         // Bước 2: Chọn API và tạo payload
         // Sửa lỗi: Gán trực tiếp hàm thay vì tên chuỗi
-        const apiToCall = role === 'ADMIN' ? updateAdminPasswordApi : role === 'STAFF' ? updateStaffPasswordApi : changePasswordDriverApi;
+        const apiToCall = role === 'ADMIN' ? updateAdminPasswordApi : role === 'STAFF' ? updateStaffPasswordApi : role === 'DRIVER' ? changePasswordDriverApi : changePasswordDriverApi;
         
         // API chỉ cần 2 trường này
         const payload = data;
-
+        console.log("data", payload)
         // Bước 3: Gọi API
         try {
             await apiToCall(payload); // Gửi payload
+
             toast.success('Cập nhật mật khẩu thành công!');
             onClose(); // Đóng modal khi thành công
         } catch (error) {
