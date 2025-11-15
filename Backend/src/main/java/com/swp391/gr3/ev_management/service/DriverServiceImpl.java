@@ -1,9 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.dto.request.AddVehicleRequest;
-import com.swp391.gr3.ev_management.dto.request.DriverRequest;
-import com.swp391.gr3.ev_management.dto.request.DriverUpdateRequest;
-import com.swp391.gr3.ev_management.dto.request.UpdateVehicleRequest;
+import com.swp391.gr3.ev_management.dto.request.*;
 import com.swp391.gr3.ev_management.dto.response.ChargingSessionBriefResponse;
 import com.swp391.gr3.ev_management.dto.response.DriverResponse;
 import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
@@ -164,7 +161,7 @@ public class DriverServiceImpl implements DriverService {
      */
     @Override
     @Transactional
-    public DriverResponse updateDriverPassword(Long userId, String oldPassword, String newPassword, String confirmNewPassword) {
+    public DriverResponse updateDriverPassword(Long userId, UpdatePasswordRequest request) {
         // 1️⃣ Lấy driver kèm user từ userId
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
@@ -174,27 +171,27 @@ public class DriverServiceImpl implements DriverService {
         String currentHash = user.getPasswordHash();
 
         // 3️⃣ So khớp mật khẩu cũ (plain) với hash trong DB
-        if (!passwordEncoder.matches(oldPassword, currentHash)) {
+        if (!passwordEncoder.matches(request.getOldPassword(), currentHash)) {
             throw new ConflictException("Old password is incorrect");
         }
 
         // 4️⃣ Kiểm tra newPassword & confirmNewPassword giống nhau
-        if (!newPassword.equals(confirmNewPassword)) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new ConflictException("New password and confirm password do not match");
         }
 
         // 5️⃣ Đảm bảo mật khẩu mới không null và có độ dài tối thiểu 6 ký tự
-        if (newPassword == null || newPassword.length() < 6) {
+        if (request.getNewPassword().length() < 6) {
             throw new ConflictException("New password must be at least 6 characters");
         }
 
         // 6️⃣ Không cho phép dùng lại mật khẩu cũ (so khớp newPassword với currentHash)
-        if (passwordEncoder.matches(newPassword, currentHash)) {
+        if (passwordEncoder.matches(request.getNewPassword(), currentHash)) {
             throw new ConflictException("New password must be different from old password");
         }
 
         // 7️⃣ Encode mật khẩu mới và lưu vào user
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
         // 8️⃣ Trả về DriverResponse (thông tin driver vẫn như cũ, chỉ thay đổi password)

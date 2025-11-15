@@ -49,15 +49,13 @@ public class DriverController {
     @Operation(summary = "Update own driver Password", description = "Driver updates their own Password")
     public ResponseEntity<DriverResponse> updateOwnPassword(
             HttpServletRequest request, // ✅ Dùng để xác định tài xế từ token
-            @Valid @RequestBody DriverChangePasswordRequest req // ✅ Gồm mật khẩu cũ và mới
+            @Valid @RequestBody UpdatePasswordRequest updateRequest // ✅ Gồm mật khẩu cũ và mới
     ) {
         Long userId = tokenService.extractUserIdFromRequest(request); // 🟢 Lấy userId của driver từ token
         // 🟢 Gọi service để đổi mật khẩu (có kiểm tra mật khẩu cũ và xác nhận mật khẩu mới)
         DriverResponse updated = driverService.updateDriverPassword(
                 userId,
-                req.getOldPassword(),
-                req.getNewPassword(),
-                req.getConfirmNewPassword()
+                updateRequest
         );
         return ResponseEntity.ok(updated); // 🟢 Trả về phản hồi thành công
     }
