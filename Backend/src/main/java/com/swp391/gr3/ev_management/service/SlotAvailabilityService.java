@@ -30,7 +30,9 @@ public interface SlotAvailabilityService {
 
     void save(SlotAvailability slot);
 
-    void deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
+    int deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
 
     Collection<SlotAvailability> saveAll(ArrayList<SlotAvailability> toSave);
+
+    List<SlotAvailability> findByConfigAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
 }
