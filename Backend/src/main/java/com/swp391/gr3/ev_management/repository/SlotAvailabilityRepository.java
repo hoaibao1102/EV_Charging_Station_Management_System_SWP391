@@ -56,7 +56,7 @@ public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailabili
      * @param start thời gian bắt đầu khoảng cần xóa
      * @param end thời gian kết thúc khoảng cần xóa
      */
-    void deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
+    int deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
 
 
     /**
@@ -76,4 +76,29 @@ public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailabili
      * @return danh sách các slot availability thuộc điểm sạc đó
      */
     List<SlotAvailability> findAllByChargingPoint_PointId(Long pointId);
+
+    /**
+     * ✅ Lấy tất cả các slot availability theo cấu hình (configId) trong khoảng thời gian chỉ định.
+     *
+     * 👉 Ý nghĩa:
+     * - Dùng để lấy danh sách các slot availability thuộc một cấu hình slot cụ thể
+     *   trong một khoảng ngày (ví dụ: để hiển thị lịch sạc theo cấu hình).
+     *
+     * ⚙️ Query tự động sinh ra:
+     * SELECT * FROM slot_availability
+     * WHERE config_id = :configId
+     *   AND date BETWEEN :start AND :end
+     *
+     * 💡 Hữu ích khi cần lọc slot availability theo cấu hình và ngày tháng.
+     *
+     * @param configId ID của slot config
+     * @param start thời gian bắt đầu khoảng cần lấy
+     * @param end thời gian kết thúc khoảng cần lấy
+     * @return danh sách các slot availability thỏa mãn điều kiện
+     */
+    List<SlotAvailability> findByTemplate_Config_ConfigIdAndDateBetween(
+            Long configId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }

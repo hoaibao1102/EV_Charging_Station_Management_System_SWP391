@@ -2,7 +2,6 @@ package com.swp391.gr3.ev_management.scheduler;
 
 import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
-import com.swp391.gr3.ev_management.service.SlotConfigService;
 import com.swp391.gr3.ev_management.service.SlotTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,16 +19,16 @@ import java.time.LocalDateTime;
 public class SlotTemplateScheduler {
 
     private final SlotConfigRepository slotConfigRepository;
-    private final SlotConfigService slotConfigService;     // 👉 Dùng service này để generate cả template + slot
-    private final SlotTemplateService slotTemplateService; // 👉 Dùng để kiểm tra hôm nay đã có template chưa
+    private final SlotTemplateService slotTemplateService; // 👉 CHỈ làm việc với Template
 
     /**
      * 1) Chạy MỖI GIỜ (00 phút mỗi giờ)
+     *    → Đảm bảo hôm nay có SlotTemplate cho tất cả SlotConfig ACTIVE
      */
     @Scheduled(cron = "0 0 * * * *", zone = "Asia/Ho_Chi_Minh")
     public void autoEnsureTodayTemplatesBySchedule() {
-        log.info("⏰ Scheduled check: ensure today templates & slots exist");
-        ensureTodayTemplatesAndSlots();
+        log.info("⏰ Scheduled check: ensure today slot templates exist");
+        ensureTodayTemplates();
     }
 
     /**
@@ -37,43 +36,41 @@ public class SlotTemplateScheduler {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void autoEnsureTodayTemplatesOnStartup() {
-        log.info("🚀 App started: ensure today templates & slots exist");
-        ensureTodayTemplatesAndSlots();
+        log.info("🚀 App started: ensure today slot templates exist");
+        ensureTodayTemplates();
     }
 
     /**
      * Hàm dùng chung:
-     * - Nếu hôm nay CHƯA có SlotTemplate cho config → gọi SlotConfigService.generateDailyTemplates
-     *   => tạo cả Template + SlotAvailability (nếu bạn đã code như vậy trong service)
+     * - Nếu hôm nay CHƯA có SlotTemplate cho config → gọi SlotTemplateService.generateDailyTemplates
+     * - KHÔNG tạo SlotAvailability ở đây.
      */
-    private void ensureTodayTemplatesAndSlots() {
+    private void ensureTodayTemplates() {
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LocalDateTime todayEnd   = todayStart.plusDays(1).minusNanos(1);
 
-        log.info("🕛 Ensuring templates & slots for date {}", todayStart.toLocalDate());
+        log.info("🕛 Ensuring slot templates for date {}", todayStart.toLocalDate());
 
         slotConfigRepository.findByIsActive(SlotConfigStatus.ACTIVE).forEach(config -> {
             Long configId = config.getConfigId();
             try {
-                // Kiểm tra hôm nay đã có SlotTemplate chưa
                 boolean hasTodayTemplate =
                         !slotTemplateService
                                 .findByConfig_ConfigIdAndStartTimeBetween(configId, todayStart, todayEnd)
                                 .isEmpty();
 
                 if (!hasTodayTemplate) {
-                    // ❗Chưa có template hôm nay → gọi generateDailyTemplates() của SlotConfigService
-                    // 👉 Hàm này bên bạn đang generate cả Template + SlotAvailability
-                    slotConfigService.generateDailyTemplates(configId, todayStart);
+                    // 👉 Chỉ generate TEMPLATE, không động đến SlotAvailability
+                    slotTemplateService.generateDailyTemplates(configId, todayStart, todayEnd);
 
-                    log.info("✅ Generated templates & slots for config {} on {}",
+                    log.info("✅ Generated slot templates for config {} on {}",
                             configId, todayStart.toLocalDate());
                 } else {
-                    log.info("ℹ️ Templates already exist for config {} on {}. Skip.",
+                    log.info("ℹ️ Slot templates already exist for config {} on {}. Skip.",
                             configId, todayStart.toLocalDate());
                 }
             } catch (Exception e) {
-                log.error("❌ Failed to ensure templates & slots for config {}: {}",
+                log.error("❌ Failed to ensure slot templates for config {}: {}",
                         configId, e.getMessage(), e);
             }
         });
