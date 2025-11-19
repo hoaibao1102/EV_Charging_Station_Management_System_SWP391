@@ -224,8 +224,9 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
      * Dùng cho job reset daily.
      */
     @Override
-    public void deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end) {
-        slotAvailabilityRepository.deleteByTemplate_Config_ConfigIdAndDateBetween(configId, start, end);
+    @Transactional
+    public int deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end) {
+        return slotAvailabilityRepository.deleteByTemplate_Config_ConfigIdAndDateBetween(configId, start, end);
     }
 
     /**
@@ -234,5 +235,14 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     @Override
     public Collection<SlotAvailability> saveAll(ArrayList<SlotAvailability> toSave) {
         return slotAvailabilityRepository.saveAll(toSave);
+    }
+
+    /**
+     * Tìm SlotAvailability theo configId trong khoảng ngày [start, end).
+     * Dùng cho các logic lọc slot theo config và ngày.
+     */
+    @Override
+    public List<SlotAvailability> findByConfigAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end) {
+        return slotAvailabilityRepository.findByTemplate_Config_ConfigIdAndDateBetween(configId, start, end);
     }
 }
