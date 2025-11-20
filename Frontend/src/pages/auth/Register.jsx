@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { registerApi } from "../../api/authApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import "./Login.css"; // Reuse Login.css for shared styles
+import "./login.css"; // Reuse Login.css for shared styles
 import "./Register-mobile.css"; // Additional styles for Register page
 
 const Register = () => {
