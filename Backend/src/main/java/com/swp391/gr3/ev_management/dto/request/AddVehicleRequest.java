@@ -27,6 +27,5 @@ public class AddVehicleRequest {
     )
     private String licensePlate;
 
-    @NotBlank
     private UserVehicleStatus vehicleStatus;
 }
