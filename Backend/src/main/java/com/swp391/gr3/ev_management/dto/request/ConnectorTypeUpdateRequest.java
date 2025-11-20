@@ -13,20 +13,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ConnectorTypeUpdateRequest {
-    @NotNull(message = "Code không được để trống")
-    @Size(max = 20, message = "Code không được quá 20 ký tự")
+
+    @NotNull(message = "Code is required")
+    @Size(max = 20, message = "Code must not exceed 20 characters")
     private String code;
 
-    @NotNull(message = "Mode không được để trống")
-    @Size(max = 10, message = "Mode không được quá 10 ký tự")
+    @NotNull(message = "Mode is required")
+    @Size(max = 10, message = "Mode must not exceed 10 characters")
     private String mode;
 
-    @NotNull(message = "Display name không được để trống")
-    @Size(max = 100, message = "Display name không được quá 100 ký tự")
+    @NotNull(message = "Display name is required")
+    @Size(max = 100, message = "Display name must not exceed 100 characters")
     private String displayName;
 
-    @NotNull(message = "Default max power không được để trống")
-    @Positive(message = "Default max power phải lớn hơn 0")
+    @NotNull(message = "Default max power is required")
+    @Positive(message = "Default max power must be greater than 0")
     private double defaultMaxPowerKW;
 
     private Boolean isDeprecated;

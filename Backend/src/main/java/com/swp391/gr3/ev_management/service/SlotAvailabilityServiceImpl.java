@@ -226,7 +226,7 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     @Override
     @Transactional
     public int deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end) {
-        return slotAvailabilityRepository.deleteByTemplate_Config_ConfigIdAndDateBetween(configId, start, end);
+        return slotAvailabilityRepository.deleteByConfigIdAndDateRange(configId, start, end);
     }
 
     /**
