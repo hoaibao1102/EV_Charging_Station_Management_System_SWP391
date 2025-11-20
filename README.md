@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ EV Charging Station Management System (SWP391)
+# ⚡ EV Charging Station Management System
 
 Quản lý toàn diện hệ thống trạm sạc xe điện: người dùng (tài xế, nhân viên, quản trị), trạm sạc, bộ sạc, điểm sạc (charging point), phiên sạc, đặt lịch, định giá, thống kê và xử lý sự cố.
 
@@ -31,21 +31,21 @@ Hệ thống hỗ trợ doanh nghiệp/đơn vị vận hành mạng lưới tr�
 ```
 EV_Charging_Station_Management_System_SWP391/
 ├── Backend/
-│   ├── pom.xml                  # Cấu hình Maven, dependencies Spring Boot
-│   ├── src/main/java/com/...    # Mã nguồn ứng dụng (entities, services, controllers, security)
-│   ├── src/main/resources/      # application.properties, scripts
-│   └── report/                  # SpotBugs HTML & JSON báo cáo
+│   ├── pom.xml                      # Cấu hình Maven, dependencies Spring Boot
+│   ├── src/main/java/com/...        # Mã nguồn ứng dụng (entities, services, controllers, security)
+│   ├── src/main/resources/          # application.properties, scripts
+│   └── report/                      # SpotBugs HTML & JSON báo cáo
 ├── Frontend/
-│   ├── package.json             # Scripts Vite (dev/build/preview)
+│   ├── package.json                 # Scripts Vite (dev/build/preview)
 │   ├── src/
-│   │   ├── api/                 # axios wrappers, auth, station, driver
-│   │   ├── pages/admin/         # ManagementStation / Charger / ChargingPoint / User / Price...
+│   │   ├── api/                     # axios wrappers, auth, station, driver
+│   │   ├── pages/admin/             # ManagementStation / Charger / ChargingPoint / User / Price...
 │   │   ├── pages/inNavigateDriver/  # Booking, Stations, StationDetail, Profile...
 │   │   ├── pages/profileDriver/     # Vehicles, Notification, AddVehicle...
-│   │   ├── pages/staff/         # SessionCharging, ManagementTransaction, ReportAccident
-│   │   ├── layouts/             # AdminLayout, DriverLayout
-│   │   ├── redux/               # store, authSlice
-│   │   └── components/          # Shared & domain components
+│   │   ├── pages/staff/             # SessionCharging, ManagementTransaction, ReportAccident
+│   │   ├── layouts/                 # AdminLayout, DriverLayout
+│   │   ├── redux/                   # store, authSlice
+│   │   └── components/              # Shared & domain components
 │   └── vite.config.js
 └── README.md
 ```
