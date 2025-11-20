@@ -229,7 +229,7 @@ public class DataInitializer implements CommandLineRunner {
             // Bọc transaction RIÊNG cho reset + seed
             transactionTemplate.executeWithoutResult(status -> {
                 // 1) XÓA AVAILABILITY TRONG NGÀY (con trước)
-                slotAvailabilityRepository.deleteByTemplate_Config_ConfigIdAndDateBetween(
+                slotAvailabilityRepository.deleteByConfigIdAndDateRange(
                         config.getConfigId(), baseStart, baseEnd);
                 slotAvailabilityRepository.flush(); // ép DB thực thi
 
