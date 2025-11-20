@@ -1,165 +1,115 @@
-# 🏫 EduHealth - Hệ thống y tế học đường thông minh
+<div align="center">
+
+# ⚡ EV Charging Station Management System (SWP391)
+
+Quản lý toàn diện hệ thống trạm sạc xe điện: người dùng (tài xế, nhân viên, quản trị), trạm sạc, bộ sạc, điểm sạc (charging point), phiên sạc, đặt lịch, định giá, thống kê và xử lý sự cố.
+
+</div>
 
 ## 📌 Giới thiệu
-EduHealth là hệ thống phần mềm hỗ trợ quản lý toàn diện các hoạt động y tế trong trường học. Hệ thống giúp phụ huynh, nhân viên y tế và nhà trường phối hợp hiệu quả trong việc chăm sóc sức khỏe học sinh – từ khai báo thông tin y tế, xử lý các tình huống khẩn cấp, đến quản lý tiêm chủng và kiểm tra sức khỏe định kỳ.
+Hệ thống hỗ trợ doanh nghiệp/đơn vị vận hành mạng lưới trạm sạc EV theo mô hình nhiều vai trò. Người quản trị cấu hình trạm & giá; tài xế đặt lịch / sạc / quản lý phương tiện; nhân viên theo dõi phiên sạc, giao dịch và báo cáo sự cố. Cung cấp dashboard thống kê kinh doanh, an toàn và hiệu suất.
 
-## 👤 Các vai trò người dùng
+## 👤 Vai trò người dùng
+- **Admin**: Quản lý người dùng, trạm, bộ sạc, model xe, cấu hình giá, thống kê, xử lý sự cố.
+- **Driver (Tài xế)**: Quản lý hồ sơ, phương tiện, đặt lịch sạc, xem trạm & chi tiết, nhận thông báo.
+- **Staff (Nhân viên)**: Theo dõi phiên sạc, giao dịch, báo cáo & xác nhận tai nạn/sự cố.
 
-1. **Parent** - Phụ huynh, có thể khai báo sức khỏe và theo dõi tình trạng của con
-2. **School Nurse** - Nhân viên y tế, xử lý sự kiện y tế và theo dõi hồ sơ sức khỏe
-3. **Admin** -  Quản lý nhà trường, giám sát hoạt động y tế học đường
-
-## Chức năng chính
-
-1. **Trang chủ & thông tin y tế học đường**
-- Giới thiệu trường học, phòng y tế, dịch vụ hỗ trợ
-- Chia sẻ tài liệu & blog về chăm sóc sức khỏe học đường
-
-2. **Khai báo hồ sơ sức khỏe học sinh (dành cho phụ huynh)**
-- Dị ứng, bệnh nền, thị lực, thính lực, tiền sử tiêm chủng
-- Gửi thuốc cho y tế trường kèm hướng dẫn sử dụng
-
-3. **Ghi nhận & xử lý sự kiện y tế tại trường**
-- Ghi nhận các sự kiện: sốt, té ngã, tai nạn, dịch bệnh,...
-- Quản lý sơ cứu, điều trị và theo dõi sau can thiệp
-
-4. **Quản lý thuốc & vật tư y tế**
-- Kiểm kê thuốc men, thiết bị và vật tư y tế
-- Xuất - nhập kho theo tình huống hoặc định kỳ
-
-5. **Quản lý tiêm chủng học đường**
-- Gửi phiếu xin ý kiến phụ huynh
-- Tạo danh sách học sinh tham gia
-- Ghi nhận kết quả tiêm và theo dõi sau tiêm
-
-6. **Quản lý kiểm tra sức khỏe định kỳ**
-- Thông báo nội dung & thời gian kiểm tra cho phụ huynh
-- Lập danh sách kiểm tra, ghi nhận kết quả
-- Gửi kết quả về phụ huynh, đặt lịch tư vấn nếu cần
-
-7. **Hồ sơ y tế học sinh & lịch sử chăm sóc**
-- Tổng hợp hồ sơ sức khỏe, quá trình khám chữa bệnh
-- Quản lý theo năm học hoặc cấp học
-
-8. **Báo cáo & Dashboard**
-- Thống kê sự kiện y tế, tiêm chủng, kiểm tra định kỳ
-- Xuất báo cáo phục vụ công tác tổng hợp & đánh giá
+## 🔑 Chức năng chính
+1. **Quản lý tài khoản & phân quyền** – tạo / cập nhật người dùng, xác thực bảo mật (JWT + Security), OAuth2 login Google.
+2. **Quản lý trạm sạc** – thêm, cập nhật thông tin trạm, chi tiết điểm sạc (charging point) & bộ sạc (charger) khả dụng.
+3. **Cấu hình giá (Pricing)** – thiết lập khung giá / chính sách theo thời gian hoặc loại bộ sạc.
+4. **Đặt lịch & Phiên sạc** – tài xế đặt chỗ, hệ thống theo dõi trạng thái phiên (bắt đầu / kết thúc / báo cáo).
+5. **Quản lý phương tiện & model** – CRUD model xe điện, phương tiện của tài xế.
+6. **Xử lý tai nạn / sự cố** – ghi nhận, báo cáo, xác thực và thống kê.
+7. **Thông báo & Email** – gửi email (SMTP), thông báo hệ thống (caffeine cache hỗ trợ hiệu năng).
+8. **QR / Mã hoá** – ZXing hỗ trợ tạo/đọc mã (ví dụ QR cho phiên sạc / xác thực).
+9. **Thanh toán / VNPAY (sandbox)** – thông số VNPAY tích hợp cổng thanh toán (trả về URL callback).
+10. **Quản lý media** – Cloudinary lưu trữ ảnh (xe, trạm, avatar...).
+11. **Thống kê & Dashboard** – biểu đồ doanh thu, tần suất phiên sạc, hiệu suất trạm (Recharts ở frontend + endpoints tổng hợp backend).
 
 ## 🗂️ Cấu trúc thư mục
-
 ```
-SWP-School-Medical-Management/
-│
+EV_Charging_Station_Management_System_SWP391/
 ├── Backend/
-│   └── SchoolMedicalManagement/
-│       ├── School-Medical-Management.API/        # Lớp API: Controllers, cấu hình, entrypoint backend
-│       ├── SchoolMedicalManagement.Models/        # Lớp Models: Entity, DTO, request/response, utils
-│       ├── SchoolMedicalManagement.Repository/    # Lớp Repository: Truy cập dữ liệu, repository pattern
-│       └── SchoolMedicalManagement.Service/       # Lớp Service: Logic nghiệp vụ, interface & implement
-│
+│   ├── pom.xml                  # Cấu hình Maven, dependencies Spring Boot
+│   ├── src/main/java/com/...    # Mã nguồn ứng dụng (entities, services, controllers, security)
+│   ├── src/main/resources/      # application.properties, scripts
+│   └── report/                  # SpotBugs HTML & JSON báo cáo
 ├── Frontend/
-│   ├── public/                                   # Tài nguyên tĩnh (ảnh, favicon, ...)
+│   ├── package.json             # Scripts Vite (dev/build/preview)
 │   ├── src/
-│   │   ├── assets/                               # Ảnh, icon, css
-│   │   ├── components/                           # Các component React tái sử dụng
-│   │   ├── layouts/                              # Layout tổng thể
-│   │   ├── pages/                                # Các trang chức năng (dashboard, login, ...)
-│   │   └── routes/                               # Định tuyến ứng dụng
-│   ├── package.json                              # Thông tin, dependencies frontend
-│   └── vite.config.js                            # Cấu hình Vite
-│
-├── Docs/                                         # Tài liệu dự án, hướng dẫn, đặc tả
-│
+│   │   ├── api/                 # axios wrappers, auth, station, driver
+│   │   ├── pages/admin/         # ManagementStation / Charger / ChargingPoint / User / Price...
+│   │   ├── pages/inNavigateDriver/  # Booking, Stations, StationDetail, Profile...
+│   │   ├── pages/profileDriver/     # Vehicles, Notification, AddVehicle...
+│   │   ├── pages/staff/         # SessionCharging, ManagementTransaction, ReportAccident
+│   │   ├── layouts/             # AdminLayout, DriverLayout
+│   │   ├── redux/               # store, authSlice
+│   │   └── components/          # Shared & domain components
+│   └── vite.config.js
 └── README.md
 ```
+
+## 🧱 Kiến trúc tổng quan 
+- **Frontend**: React SPA + Vite, phân vai trò qua Router, Redux Toolkit quản lý auth/notify.
+- **Backend**: Spring Boot phân tầng rõ ràng (Controller → Service → Repository → Entity) + bảo mật Security/JWT/OAuth2.
+- **Tích hợp**: Cloudinary (ảnh), VNPAY (sandbox), SMTP Gmail (mail), ZXing (QR), Caffeine (cache), Springdoc (OpenAPI).
+- **Chất lượng**: SpotBugs/FindSecBugs trong pha `verify` để rà soát lỗi & bảo mật.
 
 ## 💻 Công nghệ sử dụng
 
 ### Frontend
-- **React**: Thư viện JavaScript để xây dựng giao diện người dùng hiện đại
-- **Vite**: Công cụ build và phát triển frontend nhanh, tối ưu
-- **CSS Modules**: Quản lý style theo từng component, tránh xung đột
-- **React Router**: Định tuyến các trang trong ứng dụng
-- **Axios**: Giao tiếp API với backend
+- **React 19 + Vite**: SPA hiệu năng cao, HMR nhanh.
+- **React Router v7**: Điều hướng nhiều vai trò (admin/driver/staff).
+- **Redux Toolkit**: Quản lý state phiên đăng nhập & thông báo.
+- **Axios**: Gọi API chuẩn hóa header/token.
+- **Styled Components / Bootstrap / Recharts / ZXing**: UI linh hoạt, biểu đồ thống kê, quét mã QR.
 
 ### Backend
-- **.NET 8.0 (ASP.NET Core)**: Nền tảng phát triển Web API mạnh mẽ, hiện đại
-- **Entity Framework Core**: ORM thao tác với cơ sở dữ liệu SQL Server
-- **JWT Bearer Authentication**: Xác thực người dùng bảo mật
-- **Redis**: Lưu trữ cache, OTP, dữ liệu tạm thời
-- **Swagger / OpenAPI**: Sinh tài liệu API tự động, hỗ trợ test API
-- **Docker**: Đóng gói và triển khai backend
+- **Spring Boot 3.5.x (Java 17)**: REST API, cấu hình đơn giản.
+- **Spring Security + JWT + OAuth2 (Google)**: Xác thực & phân quyền theo vai trò (ADMIN / DRIVER / STAFF).
+- **Spring Data JPA (Hibernate)**: Tầng truy cập dữ liệu SQL Server.
+- **Spring Validation / Mail / Retry**: Kiểm tra dữ liệu, gửi email, retry ổn định.
+- **Springdoc OpenAPI**: Tài liệu & thử nghiệm endpoint.
+- **Cloudinary / ZXing / Caffeine**: Media, mã QR, cache nhẹ.
+- **jjwt**: Tạo & xác thực token JWT.
 
 ### Database
-- **SQL Server on Linux (Docker)**: Chạy trên máy ảo Azure (Linux VM), sử dụng image `mcr.microsoft.com/azure-sql-edge`.
+- **SQL Server**: Lưu trữ giao dịch sạc, phiên đặt lịch, cấu hình giá.
 
 ### DevOps & Testing
-- **Git**: Quản lý phiên bản mã nguồn
-- **Docker**: Đóng gói ứng dụng cho việc triển khai.
-- **Render**: Nền tảng CI/CD, tự động triển khai backend (Dockerized).
+- **Git**: Quản lý phiên bản mã nguồn.
+- **Maven Wrapper**: Build nhất quán.
 - **Vercel**: Nền tảng triển khai và hosting cho frontend.
+- **SpotBugs + FindSecBugs**: Phân tích chất lượng & bảo mật.
 - **Swagger UI**: Test và kiểm thử API trực tiếp trên trình duyệt
 
-## 🔐 Bảo mật & Quyền riêng tư
-
-- **Xác thực & Phân quyền**: Hệ thống sử dụng JWT Bearer Authentication để xác thực người dùng và phân quyền dựa trên vai trò (Admin, School Nurse, Parent).
-- **Mã hóa mật khẩu**: Mật khẩu người dùng được mã hóa bằng thuật toán mạnh (BCrypt) trước khi lưu trữ.
-- **Bảo vệ dữ liệu cá nhân**: Thông tin sức khỏe, hồ sơ học sinh và dữ liệu cá nhân được bảo vệ nghiêm ngặt, chỉ những người có quyền mới được truy cập.
-- **Kiểm soát truy cập API**: Các endpoint API được bảo vệ, chỉ cho phép truy cập với token hợp lệ và đúng vai trò.
-- **Kiểm tra đầu vào**: Tất cả dữ liệu đầu vào đều được kiểm tra, xác thực để phòng tránh tấn công injection, XSS, CSRF.
+### 🔐 Bảo mật & Quyền riêng tư
+- **JWT / OAuth2**: Bảo vệ API, hạn chế truy cập trái phép.
+- **Phân quyền vai trò**: Chỉ ADMIN quản lý giá & trạm; STAFF xử lý phiên; DRIVER thao tác đặt lịch.
+- **Validation**: Ngăn dữ liệu xấu (injection, format sai).
+- **Báo cáo phân tích**: SpotBugs hỗ trợ phát hiện lỗi tiềm ẩn.
 - **Chính sách bảo mật**: Cam kết tuân thủ các quy định về bảo mật và quyền riêng tư dữ liệu theo pháp luật hiện hành.
+- **⚠️ Cảnh báo bảo mật**: Các secrets (mail password, Cloudinary API key/secret, VNPAY secretKey, JWT secret) hiện đang xuất hiện trong `application.properties`. Khuyến nghị thay thế bằng biến môi trường / vault trước khi triển khai production hoặc public.
 
-## 🛡️ Yêu cầu phi chức năng
+### 🛡️ Yêu cầu phi chức năng
+- **Hiệu năng**: Cache nhẹ (Caffeine) giảm truy vấn lặp.
+- **Mở rộng**: Kiến trúc phân lớp rõ ràng dễ tách service sau này.
+- **Bảo trì**: Tên package & phân tầng chuẩn (controller/service/repository).
+- **Kiểm thử**: Có dependencies test (`spring-boot-starter-test`, `spring-security-test`).
+- **Di động**: Chạy được trên Windows / Linux / Docker.
+- **Trải nghiệm người dùng**: Giao diện phân vai trò rõ ràng.
 
-- **Hiệu năng**: Hệ thống đáp ứng nhanh, có khả năng mở rộng để phục vụ nhiều người dùng đồng thời.
-- **Khả năng mở rộng**: Thiết kế kiến trúc nhiều lớp, dễ dàng mở rộng thêm tính năng hoặc tích hợp hệ thống khác.
-- **Khả năng bảo trì**: Codebase rõ ràng, tuân thủ SOLID, Clean Code, dễ bảo trì và nâng cấp.
-- **Khả năng kiểm thử**: Hỗ trợ kiểm thử tự động (unit test, integration test), dễ dàng kiểm thử các thành phần riêng biệt.
-- **Tính di động**: Ứng dụng có thể triển khai trên nhiều môi trường (Windows, Linux, Docker...).
-- **Bảo mật**: Đảm bảo an toàn dữ liệu, bảo vệ thông tin cá nhân, tuân thủ các tiêu chuẩn bảo mật.
-- **Khả năng sử dụng**: Giao diện thân thiện, dễ sử dụng cho cả phụ huynh, nhân viên y tế và quản trị viên.
+---
 
 ## 👥 Author & Contributors
+| Vai trò | Mô tả ngắn |
+|---------|-----------|
+| Team Lead | Điều phối phát triển, kiến trúc, review mã |
+| Backend Dev | Xây dựng API, bảo mật, tích hợp thanh toán & Cloudinary |
+| Frontend Dev | UI/UX, Redux, tối ưu hiệu năng & biểu đồ |
 
 ---
-
-### 🧑‍💼 Mai Văn Thành  
-**Team Leader** | Full-Stack Developer | DevOps | SQL Server DB Designer  
-
-- Led the development of the SchoolMedicalManager project  
-- Built both frontend (ReactJS) and backend (.NET 8 Web API)  
-- Designed and optimized SQL Server database (schema, procedures, seed data)  
-- Deployed backend & DB using Docker; frontend to Vercel, backend to Render  
-- Registered custom domain and configured DNS for production  
-- Managed team progress, code quality, and final delivery
-
----
-
-### 👨‍💻 Nguyễn Ngọc Viên  
-**Full-Stack Developer** | DevOps | SQL Server DB Designer  
-
-- Contributed to frontend and backend development  
-- Co-designed and optimized SQL Server database  
-- Wrote stored procedures, seed/migration scripts  
-- Deployed SQL Server on Linux via Docker  
-- Handled backup, remote access, and DB performance tuning
-
----
-
-### 🎨 Lạc Đông  
-**Frontend Developer** | SQL Server DB Designer  
-
-- Developed UI components with ReactJS  
-- Participated in UI/UX design and user flow  
-- Assisted in SQL Server schema design and seed data
-
----
-
-### 💻 Anh Quốc  
-**Frontend Developer**  
-
-- Developed and styled frontend components (ReactJS)  
-- Participated in UI/UX design
 
 
 
