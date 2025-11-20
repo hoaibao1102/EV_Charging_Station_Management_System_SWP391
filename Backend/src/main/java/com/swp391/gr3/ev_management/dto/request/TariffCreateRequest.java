@@ -16,24 +16,26 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class TariffCreateRequest {
-    @NotNull(message = "ConnectorTypeId không được để trống")
+
+    @NotNull(message = "ConnectorTypeId is required")
+    @Positive(message = "ConnectorTypeId must be greater than 0")
     private Long connectorTypeId;
 
-    @NotNull(message = "Giá tiền không được để trống")
-    @Positive(message = "Giá tiền phải lớn hơn 0")
+    @NotNull(message = "Price per kWh is required")
+    @Positive(message = "Price per kWh must be greater than 0")
     private double pricePerKWh;
 
-    @NotNull(message = "Giá tiền không được để trống")
-    @Positive(message = "Giá tiền phải lớn hơn 0")
+    @NotNull(message = "Price per minute is required")
+    @Positive(message = "Price per minute must be greater than 0")
     private double pricePerMin;
 
-    @NotBlank(message = "Currency không được để trống")
-    @Size(max = 10, message = "Currency không được quá 10 ký tự")
+    @NotBlank(message = "Currency cannot be blank")
+    @Size(max = 10, message = "Currency must not exceed 10 characters")
     private String currency;
 
-    @NotNull(message = "Effective from không được để trống")
+    @NotNull(message = "Effective from date is required")
     private LocalDateTime effectiveFrom;
 
-    @NotNull(message = "Effective to không được để trống")
+    @NotNull(message = "Effective to date is required")
     private LocalDateTime effectiveTo;
 }

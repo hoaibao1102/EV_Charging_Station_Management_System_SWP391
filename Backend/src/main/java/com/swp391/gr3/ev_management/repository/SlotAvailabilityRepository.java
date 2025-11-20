@@ -2,7 +2,10 @@ package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.entity.SlotAvailability;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -56,7 +59,18 @@ public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailabili
      * @param start thời gian bắt đầu khoảng cần xóa
      * @param end thời gian kết thúc khoảng cần xóa
      */
-    int deleteByTemplate_Config_ConfigIdAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
+    @Modifying
+    @Transactional
+    @Query("""
+        delete from SlotAvailability sa
+        where sa.template.config.configId = :configId
+          and sa.date between :start and :end
+    """)
+    int deleteByConfigIdAndDateRange(
+            Long configId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 
 
     /**
