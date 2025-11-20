@@ -130,6 +130,8 @@ public class SecurityConfig {
                 "http://127.0.0.1:5173",
                 "http://localhost:5174",    // 👈 thêm dòng này
                 "http://127.0.0.1:5174",    // 👈 thêm dòng này
+                "https://evm-8xs7x9ze9-quangvus-projects-4f4e558d.vercel.app",
+                "https://www.bqtstore.online",
                 "http://localhost:3000",
                 "http://127.0.0.1:3000"
         ));
