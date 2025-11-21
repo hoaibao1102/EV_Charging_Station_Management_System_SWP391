@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class UpdateAdminProfileRequest {
 
-    @NotBlank(message = "Name cannot be null")
-    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message="Invalid VN phone")
+    @NotNull(message = "Số điện thoại không được để trống")
+    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message = "Số điện thoại Việt Nam không hợp lệ")
     private String phoneNumber;
 }

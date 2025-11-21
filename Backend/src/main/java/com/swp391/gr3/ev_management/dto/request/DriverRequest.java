@@ -16,13 +16,13 @@ import lombok.NoArgsConstructor;
 public class DriverRequest {
 
     @Enumerated(EnumType.STRING)
-    @NotBlank(message = "Status is required")
-    private DriverStatus driverStatus =  DriverStatus.ACTIVE; // Initial status when creating a driver
+    @NotNull(message = "Trạng thái tài xế không được để trống")
+    private DriverStatus driverStatus = DriverStatus.ACTIVE; // trạng thái mặc định khi tạo tài xế
 
-    @NotNull(message = "Driver ID is required")
-    @Positive(message = "Driver ID must be positive")
-    private long driverId;
+    @NotNull(message = "ID tài xế không được để trống")
+    @Positive(message = "ID tài xế phải là số dương")
+    private Long driverId;
 
-    @NotBlank(message = "Driver name is required")
+    @NotBlank(message = "Tên tài xế không được để trống")
     private String driverName;
 }

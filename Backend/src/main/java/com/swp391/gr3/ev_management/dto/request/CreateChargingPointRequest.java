@@ -17,32 +17,31 @@ import java.time.LocalDateTime;
 @Builder
 public class CreateChargingPointRequest {
 
-    @NotNull(message = "Station ID cannot be null")
-    @Positive(message = "Station ID must be positive")
+    @NotNull(message = "ID trạm sạc không được để trống")
+    @Positive(message = "ID trạm sạc phải là số dương")
     private Long stationId;
 
-    @NotNull(message = "Connector Type ID cannot be null")
-    @Positive(message = "Connector Type ID must be positive")
+    @NotNull(message = "ID loại đầu nối không được để trống")
+    @Positive(message = "ID loại đầu nối phải là số dương")
     private Long connectorTypeId;
 
-    @NotBlank(message = "Point number cannot be null")
+    @NotBlank(message = "Số điểm sạc không được để trống")
     private String pointNumber;
 
-    @NotBlank(message = "Serial number cannot be null")
+    @NotBlank(message = "Số serial không được để trống")
     private String serialNumber;
 
-    @NotNull(message = "Installation date cannot be null")
+    @NotNull(message = "Ngày lắp đặt không được để trống")
     private LocalDateTime installationDate;
 
-    @NotNull(message = "Last maintenance date cannot be null")
+    @NotNull(message = "Ngày bảo trì gần nhất không được để trống")
     private LocalDateTime lastMaintenanceDate;
 
-    @NotNull(message = "Max power (kW) cannot be null")
-    private double maxPowerKW;
+    @NotNull(message = "Công suất tối đa (kW) không được để trống")
+    private Double maxPowerKW;
 
-    @NotBlank(message = "Status cannot be null")
+    @NotNull(message = "Trạng thái không được để trống")
     private ChargingPointStatus status;
 
     private LocalDateTime createdAt;
-
 }

@@ -10,17 +10,17 @@ import java.time.LocalDate;
 @Data
 public class UpdateStaffProfileRequest {
 
-    @NotNull(message = "Full name cannot be null")
+    @NotNull(message = "Họ và tên không được để trống")
     private String fullName;
 
-    @NotNull(message = "Date of birth cannot be null")
-    @Past(message = "Date of birth must be in the past")
+    @NotNull(message = "Ngày sinh không được để trống")
+    @Past(message = "Ngày sinh phải là ngày trong quá khứ")
     private LocalDate dateOfBirth;
 
-    @NotNull(message = "Gender cannot be null")
-    @Pattern(regexp = "^[MFO]$", message = "Gender must be 'M', 'F', or 'O'")
+    @NotNull(message = "Giới tính không được để trống")
+    @Pattern(regexp = "^[MF]$", message = "Giới tính phải là 'M', 'F'")
     private String gender;
 
-    @NotNull(message = "Address cannot be null")
+    @NotNull(message = "Địa chỉ không được để trống")
     private String address;
 }

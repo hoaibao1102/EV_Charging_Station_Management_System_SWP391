@@ -8,15 +8,15 @@ import lombok.Data;
 @Data
 public class UpdatePasswordRequest {
 
-    @NotBlank(message = "Old password cannot be null")
-    @Size(min = 6, message = "oldPassword must be at least 6 characters")
+    @NotNull(message = "Mật khẩu cũ không được để trống")
+    @Size(min = 6, message = "Mật khẩu cũ phải có ít nhất 6 ký tự")
     private String oldPassword;
 
-    @NotBlank(message = "New password cannot be null")
-    @Size(min = 6, message = "newPassword must be at least 6 characters")
+    @NotNull(message = "Mật khẩu mới không được để trống")
+    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
     private String newPassword;
 
-    @Size(min = 6, message = "newPassword must be at least 6 characters")
-    @NotBlank(message = "Confirm password cannot be null")
+    @NotNull(message = "Xác nhận mật khẩu không được để trống")
+    @Size(min = 6, message = "Xác nhận mật khẩu phải có ít nhất 6 ký tự")
     private String confirmPassword;
 }

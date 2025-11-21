@@ -9,13 +9,11 @@ import java.util.Optional;
 @Service
 public interface StationStaffService {
 
-    Optional<StationStaff> findActiveByStationStaffId(@NotNull(message = "Staff ID cannot be null") Long staffId);
-
-    Optional<StationStaff> findActiveByUserId(Long userId);
-
     Optional<StationStaff> findActiveByStaffId(Long staffId);
 
     void save(StationStaff active);
 
     StationStaff saveStationStaff(StationStaff stationStaff);
+
+    Long getStationIdByUserId(Long userId);
 }

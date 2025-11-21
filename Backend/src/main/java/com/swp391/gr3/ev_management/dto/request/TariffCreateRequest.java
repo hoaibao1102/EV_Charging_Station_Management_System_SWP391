@@ -17,25 +17,25 @@ import java.time.LocalDateTime;
 @Builder
 public class TariffCreateRequest {
 
-    @NotNull(message = "ConnectorTypeId is required")
-    @Positive(message = "ConnectorTypeId must be greater than 0")
+    @NotNull(message = "ID loại đầu nối là bắt buộc")
+    @Positive(message = "ID loại đầu nối phải lớn hơn 0")
     private Long connectorTypeId;
 
-    @NotNull(message = "Price per kWh is required")
-    @Positive(message = "Price per kWh must be greater than 0")
+    @NotNull(message = "Giá theo kWh là bắt buộc")
+    @Positive(message = "Giá theo kWh phải lớn hơn 0")
     private double pricePerKWh;
 
-    @NotNull(message = "Price per minute is required")
-    @Positive(message = "Price per minute must be greater than 0")
+    @NotNull(message = "Giá theo phút là bắt buộc")
+    @Positive(message = "Giá theo phút phải lớn hơn 0")
     private double pricePerMin;
 
-    @NotBlank(message = "Currency cannot be blank")
-    @Size(max = 10, message = "Currency must not exceed 10 characters")
+    @NotBlank(message = "Đơn vị tiền tệ không được để trống")
+    @Size(max = 10, message = "Đơn vị tiền tệ không được vượt quá 10 ký tự")
     private String currency;
 
-    @NotNull(message = "Effective from date is required")
+    @NotNull(message = "Ngày bắt đầu hiệu lực là bắt buộc")
     private LocalDateTime effectiveFrom;
 
-    @NotNull(message = "Effective to date is required")
+    @NotNull(message = "Ngày kết thúc hiệu lực là bắt buộc")
     private LocalDateTime effectiveTo;
 }

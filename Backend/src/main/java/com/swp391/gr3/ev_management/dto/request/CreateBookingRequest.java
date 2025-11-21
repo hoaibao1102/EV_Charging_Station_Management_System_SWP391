@@ -1,6 +1,5 @@
 package com.swp391.gr3.ev_management.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -12,11 +11,11 @@ import java.util.List;
 @Data
 public class CreateBookingRequest {
 
-    @NotNull(message = "Vehicle ID must not be null")
-    @Positive(message = "Vehicle ID must be positive")
+    @NotNull(message = "ID xe không được để trống")
+    @Positive(message = "ID xe phải là số dương")
     private Long vehicleId;
 
-    @NotEmpty(message = "Slot IDs must not be empty")
+    @NotEmpty(message = "Danh sách slot không được để trống")
     private List<Long> slotIds;
 
     private LocalDateTime bookingTime;
