@@ -68,6 +68,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication)
             throws IOException, ServletException {
 
+        System.out.println("🔐 [OAuth2] Starting Google OAuth authentication handler");
+        
         // 1️⃣ Lấy đối tượng OidcUser (user Google) từ Authentication principal
         OidcUser oidc = (OidcUser) authentication.getPrincipal();
 
@@ -80,8 +82,29 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 ? ((givenName != null ? givenName : "") + " " + (familyName != null ? familyName : "")).trim()
                 : oidc.getFullName();                              // Ghép họ tên nếu có, fallback fullName
 
+        System.out.println("📧 [OAuth2] Email: " + email + ", Verified: " + emailVerified);
+        System.out.println("👤 [OAuth2] Display Name: " + displayName);
+        
+        // 2.1 Lấy giới tính từ Google (nếu có)
+        String gender = null;
+        try {
+            Object genderClaim = oidc.getClaim("gender");
+            if (genderClaim != null) {
+                String genderStr = genderClaim.toString().toLowerCase();
+                if ("male".equals(genderStr)) {
+                    gender = "M";
+                } else if ("female".equals(genderStr)) {
+                    gender = "F";
+                }
+            }
+            System.out.println("👥 [OAuth2] Gender from Google: " + (gender != null ? gender : "not provided"));
+        } catch (Exception e) {
+            System.out.println("⚠️ [OAuth2] Could not get gender from Google profile");
+        }
+        
         // 3️⃣ Nếu email chưa verify hoặc rỗng -> không cho login, redirect về FE kèm error
         if (!emailVerified || email == null || email.isBlank()) {
+            System.out.println("❌ [OAuth2] Email not verified or empty");
             String errorUrl = UriComponentsBuilder
                     .fromUriString(frontendCallback)
                     .queryParam("error", "EMAIL_NOT_VERIFIED") // FE sẽ đọc param này để hiển thị lỗi
@@ -92,7 +115,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 4️⃣ Tìm user trong DB theo email (đã có role join)
         User user = userRepository.findByEmailWithRole(email);
+        System.out.println("🔍 [OAuth2] User found in DB: " + (user != null));
+        
         if (user == null) {
+            System.out.println("➕ [OAuth2] Creating new user for email: " + email);
             // 4.1 Nếu chưa có user -> tạo mới với ROLE_USER mặc định (id=3L)
             Role role = roleRepository.findByRoleId(3L);
             if (role == null) {
@@ -115,6 +141,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             String randomPwd = "GOOGLE_" + UUID.randomUUID();
             user.setPasswordHash(passwordEncoder.encode(randomPwd));
 
+            // Set giới tính nếu Google cung cấp
+            if (gender != null) {
+                user.setGender(gender);
+                System.out.println("✅ [OAuth2] Set gender: " + gender);
+            }
+
             // 4.4 PhoneNumber có thể để null, sau này FE sẽ yêu cầu bổ sung
             user = userRepository.save(user);
 
@@ -130,9 +162,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 5️⃣ Sinh JWT cho user vừa login xong (cũ hoặc mới)
         String jwt = tokenService.generateToken(user);
+        System.out.println("🔑 [OAuth2] JWT generated: " + jwt.substring(0, Math.min(30, jwt.length())) + "...");
+        System.out.println("👤 [OAuth2] User role: " + (user.getRole() != null ? user.getRole().getRoleName() : "null"));
 
         // 6️⃣ Kiểm tra user đã có phoneNumber chưa, để FE hiển thị form bổ sung nếu cần
         boolean needPhone = (user.getPhoneNumber() == null || user.getPhoneNumber().isBlank());
+        System.out.println("📱 [OAuth2] Need phone: " + needPhone);
 
         // 7️⃣ Build URL redirect về FE, kèm token + needPhone
         String redirect = UriComponentsBuilder
@@ -142,6 +177,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 .build()
                 .toUriString();
 
+        System.out.println("🔗 [OAuth2] Redirecting to: " + redirect);
+        
         // 8️⃣ Đặt HTTP status 302 (FOUND) rồi redirect
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.sendRedirect(redirect);

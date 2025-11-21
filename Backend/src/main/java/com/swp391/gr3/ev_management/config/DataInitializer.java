@@ -78,6 +78,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ================== STATIONS ==================
+    
     private void initChargingStations() {
         createStationIfNotExists(
                 "VinFast SmartCharge - Quận 1",

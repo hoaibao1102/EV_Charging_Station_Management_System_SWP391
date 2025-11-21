@@ -5,6 +5,7 @@ import accident from "../../assets/icon/admin/accident.png";
 import station from "../../assets/icon/admin/ad_charging-station.png";
 import charger from "../../assets/icon/admin/charger_ad.png";
 import price from "../../assets/icon/admin/best-price.png";
+import policy from "../../assets/icon/admin/policy.png";
 import chargingPoint from "../../assets/icon/admin/charging-building.png";
 import { NavLink, useLocation } from "react-router-dom";
 import "./AdminNavigate.css";
@@ -66,6 +67,11 @@ export default function AdminNavigate() {
       path: paths.accidentReports,
       icon: accident,
       label: "Quản lý sự cố",
+    },
+    {
+      path: paths.policyManagement,
+      icon: policy,
+      label: "Quản lý chính sách",
     },
   ];
 

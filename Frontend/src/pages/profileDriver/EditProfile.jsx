@@ -13,6 +13,7 @@ export default function EditProfile() {
         phoneNumber: "",
         name: "",
         address: "",
+        gender: "",
     });
 
     const handleChange = (e) => {
@@ -87,6 +88,19 @@ export default function EditProfile() {
                         value={form.address} 
                         onChange={handleChange} 
                     />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="formBasicGender">
+                    <Form.Label>Giới tính</Form.Label>
+                    <Form.Select 
+                        name="gender" 
+                        value={form.gender} 
+                        onChange={handleChange}
+                    >
+                        <option value="">Chọn giới tính</option>
+                        <option value="M">Nam</option>
+                        <option value="F">Nữ</option>
+                    </Form.Select>
                 </Form.Group>
 
                 <div><strong>Vui lòng nhập đúng mail vì lý do bảo mật và tiện ích!</strong></div>

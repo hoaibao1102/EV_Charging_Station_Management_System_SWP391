@@ -3,7 +3,7 @@ import { Container, Row, Col } from "react-bootstrap";
 import { getMyVehiclesApi } from "../../api/driverApi.js";
 import VehicleCard from "../../components/driver/VehicleCard.jsx";
 import { toast } from "react-toastify";
-import { deleteVehicleApi } from "../../api/driverApi.js";
+import { updateVehicleApi } from "../../api/driverApi.js";
 import "./Vehicles.css";
 import AddVehicle from "./AddVehicle.jsx";
 import classCss from "../../assets/css/Main.module.css";
@@ -14,21 +14,34 @@ export default function Vehicles() {
 
   const [showAddVehicle, setShowAddVehicle] = useState(false);
 
-  const handleDelete = async (vehicle) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa xe khỏi danh sách?")) {
+  const handleUpdate = async (vehicle) => {
+    const newStatus = vehicle.vehicleStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const confirmMessage = newStatus === "INACTIVE" 
+      ? "Bạn có chắc chắn muốn ngưng hoạt động xe này?" 
+      : "Bạn có chắc chắn muốn cho xe này hoạt động trở lại?";
+    
+    if (window.confirm(confirmMessage)) {
       try {
-        const response = await deleteVehicleApi(vehicle.vehicleId);
+        const response = await updateVehicleApi(vehicle.vehicleId, newStatus);
         if (response.success) {
+          // Cập nhật lại trạng thái xe trong danh sách
           setVehicles((prevVehicles) =>
-            prevVehicles.filter((v) => v.vehicleId !== vehicle.vehicleId)
+            prevVehicles.map((v) =>
+              v.vehicleId === vehicle.vehicleId
+                ? { ...v, vehicleStatus: newStatus }
+                : v
+            )
           );
-          toast.success("Xóa xe thành công!");
+          const successMessage = newStatus === "INACTIVE" 
+            ? "Ngưng hoạt động xe thành công!" 
+            : "Xe đã hoạt động trở lại!";
+          toast.success(successMessage);
         } else {
-          toast.error("Xóa xe thất bại!");
+          toast.error("Cập nhật trạng thái xe thất bại!");
         }
       } catch (error) {
-        console.error("Error deleting vehicle:", error);
-        toast.error("Xóa xe thất bại!");
+        console.error("Error updating vehicle status:", error);
+        toast.error("Cập nhật trạng thái xe thất bại!");
       }
     }
   };
@@ -50,7 +63,6 @@ export default function Vehicles() {
   };
 
   const handleAddSuccess = () => {
-    // Refresh danh sách xe sau khi thêm thành công
     fetchVehicles();
   };
 
@@ -81,6 +93,7 @@ export default function Vehicles() {
                 <p>Không có xe nào trong danh sách. Hãy thêm xe mới!</p>
                 <button
                   className="btn btn-primary"
+                  style={{width:'200px' , marginRight:'10px'}}
                   onClick={() => setShowAddVehicle(true)}
                 >
                   Thêm xe mới
@@ -88,22 +101,57 @@ export default function Vehicles() {
               </div>
             ) : (
               <>
-                <button
-                  className={classCss.button}
-                  onClick={() => setShowAddVehicle(true)}
-                >
-                  Thêm xe mới
-                </button>
-                <Row className="g-4">
-                  {vehicles.map((vehicle) => (
-                    <Col xs={12} sm={6} md={4} lg={3} key={vehicle.vehicleId}>
-                      <VehicleCard
-                        vehicle={vehicle}
-                        onDelete={() => handleDelete(vehicle)}
-                      />
-                    </Col>
-                  ))}
-                </Row>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <button
+                    className={classCss.button}
+                    onClick={() => setShowAddVehicle(true)}
+                    style={{ width: 'auto', padding: '0.5rem 1.5rem' }}
+                  >
+                    Thêm xe mới
+                  </button>
+                </div>
+                
+                {/* Xe đang hoạt động */}
+                <div className="vehicle-section">
+                  <h3 className="section-title">Xe đang hoạt động</h3>
+                  <Row className="g-4">
+                    {vehicles.filter(v => v.vehicleStatus === "ACTIVE").length === 0 ? (
+                      <p className="text-muted">Không có xe nào đang hoạt động</p>
+                    ) : (
+                      vehicles
+                        .filter(v => v.vehicleStatus === "ACTIVE")
+                        .map((vehicle) => (
+                          <Col xs={12} sm={6} md={4} lg={3} key={vehicle.vehicleId}>
+                            <VehicleCard
+                              vehicle={vehicle}
+                              onUpdate={() => handleUpdate(vehicle)}
+                            />
+                          </Col>
+                        ))
+                    )}
+                  </Row>
+                </div>
+
+                {/* Xe ngưng hoạt động */}
+                <div className="vehicle-section mt-5">
+                  <h3 className="section-title">Xe ngưng hoạt động</h3>
+                  <Row className="g-4">
+                    {vehicles.filter(v => v.vehicleStatus === "INACTIVE").length === 0 ? (
+                      <p className="text-muted">Không có xe nào ngưng hoạt động</p>
+                    ) : (
+                      vehicles
+                        .filter(v => v.vehicleStatus === "INACTIVE")
+                        .map((vehicle) => (
+                          <Col xs={12} sm={6} md={4} lg={3} key={vehicle.vehicleId}>
+                            <VehicleCard
+                              vehicle={vehicle}
+                              onUpdate={() => handleUpdate(vehicle)}
+                            />
+                          </Col>
+                        ))
+                    )}
+                  </Row>
+                </div>
               </>
             )}
           </div>

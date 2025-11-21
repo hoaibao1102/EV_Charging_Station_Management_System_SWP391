@@ -24,11 +24,11 @@ export const getMyVehiclesApi = () => {
   );
 };
 
-//Xóa phưong tiện của tài xế
-export const deleteVehicleApi = (vehicleId) => {
+//Cập nhật trạng thái phương tiện của tài xế
+export const updateVehicleApi = (vehicleId, status) => {
   return handleApiCall(
-    () => apiClient.delete(`/api/driver/vehicles/${vehicleId}`),
-    "Xóa phương tiện thất bại"
+    () => apiClient.patch(`/api/driver/vehicles/${vehicleId}/status?status=${status}`),
+    "Cập nhật trạng thái phương tiện thất bại"
   );
 };
 
