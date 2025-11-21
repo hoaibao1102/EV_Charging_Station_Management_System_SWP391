@@ -20,6 +20,7 @@ export default function TransactionHistory() {
       });
       navigate(paths.login);
       return;
+      0;
     }
     fetchTransactions();
   }, [navigate]);
