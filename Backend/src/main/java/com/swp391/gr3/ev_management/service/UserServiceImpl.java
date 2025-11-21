@@ -376,14 +376,6 @@ public class UserServiceImpl implements UserService{
     }
 
     /**
-     * Tìm User theo userId.
-     */
-    @Override
-    public User findUserByUserId(Long userId) {
-        return userRepository.findUserByUserId(userId);
-    }
-
-    /**
      * Đếm tổng số user trong hệ thống.
      * - Dùng cho dashboard thống kê.
      */

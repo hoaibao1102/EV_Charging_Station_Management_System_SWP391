@@ -414,4 +414,22 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         // Tìm phiên sạc theo bookingId (1-1): dùng khi cần kiểm tra booking đã có session chưa
         return chargingSessionRepository.findByBooking_BookingId(bookingId);
     }
+
+    @Override
+    public long countByStatus(ChargingSessionStatus active) {
+        // Đếm số phiên sạc theo trạng thái (status)
+        return chargingSessionRepository.countByStatus(active);
+    }
+
+    @Override
+    public List<ChargingSession> findTop5ByOrderByStartTimeDesc() {
+        // Lấy 5 phiên sạc mới nhất (theo startTime giảm dần)
+        return chargingSessionRepository.findTop5ByOrderByStartTimeDesc();
+    }
+
+    @Override
+    public List<ChargingSession> findByStartTimeBetween(LocalDateTime startOfDay, LocalDateTime endOfDay) {
+        // Lấy danh sách phiên sạc bắt đầu trong khoảng [startOfDay, endOfDay]
+        return chargingSessionRepository.findByStartTimeBetween(startOfDay, endOfDay);
+    }
 }

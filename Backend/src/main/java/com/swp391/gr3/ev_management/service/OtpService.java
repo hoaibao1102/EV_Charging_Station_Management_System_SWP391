@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface OtpService {
 
     String generateOtp(String email);
+
     boolean verifyOtp(String email, String otpCode);
 
     Optional<OtpVerification> findTopByEmailOrderByCreatedAtDesc(String email);

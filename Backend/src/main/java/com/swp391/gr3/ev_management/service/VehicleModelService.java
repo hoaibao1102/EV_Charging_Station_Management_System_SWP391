@@ -10,12 +10,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface VehicleModelService {
+
     VehicleModelResponse create(VehicleModelCreateRequest request);
+
     VehicleModelResponse getById(Long id);
+
     List<VehicleModelResponse> getAll();
+
     List<VehicleModelResponse> search(String brand, String model, Integer year, Integer connectorTypeId);
+
     VehicleModelResponse update(Long id, VehicleModelUpdateRequest request);
+
     void delete(Long id); //hard delete
+
     VehicleModelResponse updateStatus(Long id, VehicleModelStatus status);
 
     Optional<VehicleModel> findById(Long modelId);

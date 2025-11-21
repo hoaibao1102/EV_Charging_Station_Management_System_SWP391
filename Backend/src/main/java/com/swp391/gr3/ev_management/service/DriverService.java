@@ -18,21 +18,28 @@ import java.util.Optional;
 public interface DriverService {
     // CRUD
     DriverResponse createDriverProfile(Long idDriver, @Valid DriverRequest request);
+
     DriverResponse getByUserId(Long userId);
+
     List<DriverResponse> getAllDrivers();
+
     DriverResponse updateDriverProfile(Long userId, @Valid DriverUpdateRequest updateRequest);
+
     DriverResponse updateStatus(Long userId, DriverStatus newStatus);
-    
     // UC-04: Vehicle Management
+
     VehicleResponse addVehicle(Long userId, @Valid AddVehicleRequest request);
+
     List<VehicleResponse> getMyVehicles(Long userId);
 
     VehicleResponse updateVehicle(Long userId, Long vehicleId, UpdateVehicleRequest request);
+
     VehicleResponse updateVehicleStatus(Long userId, Long vehicleId, UserVehicleStatus status);
 
     DriverResponse updateDriverPassword(Long userId, UpdatePasswordRequest request);
 
     List<TransactionBriefResponse> getMyTransactions(Long userId);
+
     List<ChargingSessionBriefResponse> getMyChargingSessions(Long userId);
 
     Optional<Driver> findByUser_UserId(Long userId);

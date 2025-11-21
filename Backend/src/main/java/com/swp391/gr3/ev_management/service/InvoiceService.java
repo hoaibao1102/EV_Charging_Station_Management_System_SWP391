@@ -9,6 +9,7 @@ import java.util.Optional;
 
 @Service
 public interface InvoiceService {
+
     void save(Invoice invoice);
 
     Optional<Invoice> findBySession_SessionId(Long sessionId);

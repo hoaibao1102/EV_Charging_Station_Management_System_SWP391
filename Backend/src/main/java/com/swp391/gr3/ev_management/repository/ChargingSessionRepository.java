@@ -3,6 +3,7 @@ package com.swp391.gr3.ev_management.repository;
 import com.swp391.gr3.ev_management.dto.response.ActiveSessionView;
 import com.swp391.gr3.ev_management.dto.response.CompletedSessionView;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -213,4 +214,13 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
         order by s.endTime desc
     """)
     List<CompletedSessionView> findCompletedSessionCompactByStaff(@Param("staffId") Long staffId);
+
+    /** Đếm số phiên sạc theo trạng thái cụ thể */
+    long countByStatus(ChargingSessionStatus status);
+
+    /** Lấy 5 phiên sạc mới nhất theo thời gian bắt đầu (startTime) */
+    List<ChargingSession> findTop5ByOrderByStartTimeDesc();
+
+    /** Tìm danh sách phiên sạc bắt đầu trong khoảng thời gian nhất định */
+    List<ChargingSession> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 }

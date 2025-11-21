@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SlotTemplateService {
+
     List<SlotTemplateResponse> generateDailyTemplates(Long configId, LocalDateTime forDate, LocalDateTime endDate);
+
     SlotTemplateResponse getById(Long templateId);
+
     List<SlotTemplateResponse> getAll();
 
     List<SlotTemplate> findByConfig_ConfigIdAndStartTimeBetween(Long configId, LocalDateTime start, LocalDateTime end);
