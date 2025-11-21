@@ -35,6 +35,7 @@ export const paths = {
   accidentReports: "/admin/accident-reports",
   chargingPriceConfiguration: "/admin/charging-price-configuration",
   chargingPointManagement: "/admin/manage-charging-points",
+  policyManagement: "/admin/manage-policies",
 
   //staff
   staffDashboard: "/staff",

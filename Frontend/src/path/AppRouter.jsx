@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import paths from "./paths.jsx";
+import OAuthHandler from "../components/OAuthHandler.jsx";
 
 // Import Layouts
 import AdminLayout from "../layouts/AdminLayout";
@@ -43,6 +44,7 @@ import ManagementCharger from "../pages/admin/ManagementCharger.jsx";
 import ManagementChargingPoint from "../pages/admin/ManagementChargingPoint.jsx";
 import PriceConfiguration from "../pages/admin/PriceConfiguration.jsx";
 import ManagementModel from "../pages/admin/ManagementModel.jsx";
+import Policy from "../pages/admin/Policy.jsx";
 
 // Staff Pages ====================================
 import ReportAccidents from "../pages/staff/ReportAccident.jsx";
@@ -55,8 +57,9 @@ import Triplet from "../pages/staff/Triplet.jsx";
 const AppRouter = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path={paths.error} element={<Error404 />} />
+      <OAuthHandler>
+        <Routes>
+          <Route path={paths.error} element={<Error404 />} />
 
         {/* ======================= PUBLIC ROUTES (Không cần đăng nhập) ======================= */}
         <Route path="/" element={<DriverLayout />}>
@@ -109,6 +112,7 @@ const AppRouter = () => {
               element={<ManagementStation />}
             />
             <Route path={paths.modelManagement} element={<ManagementModel />} />
+            <Route path={paths.policyManagement} element={<Policy />} />
             <Route
               path={paths.chargerManagement}
               element={<ManagementCharger />}
@@ -156,6 +160,7 @@ const AppRouter = () => {
         {/* ======================= 404 - Route không tồn tại ======================= */}
         <Route path="*" element={<Error404 />} />
       </Routes>
+      </OAuthHandler>
     </BrowserRouter>
   );
 };

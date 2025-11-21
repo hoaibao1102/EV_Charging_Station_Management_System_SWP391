@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogin } from "../../hooks/useAuth";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../redux/slices/authSlice.js";
 
 const Login = () => {
   const [form, setForm] = useState({
@@ -19,6 +21,101 @@ const Login = () => {
 
   const { login, loading } = useLogin();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Xử lý token từ Google OAuth redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const needPhone = urlParams.get('needPhone');
+    
+    if (token) {
+      console.log('🔑 Token received from Google OAuth:', token.substring(0, 20) + '...');
+      console.log('📱 Need phone:', needPhone);
+      
+      try {
+        // Decode JWT để lấy thông tin user
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('📦 Token payload:', payload);
+        
+        // Lấy role từ token (thử nhiều field có thể)
+        // Backend JWT có claim "role" chứ không phải "scope"
+        let role = null;
+        if (payload.role) {
+          // JWT từ backend có claim "role" - check đầu tiên
+          role = payload.role;
+        } else if (payload.scope) {
+          role = payload.scope;
+        } else if (payload.authorities && payload.authorities.length > 0) {
+          role = payload.authorities[0].authority || payload.authorities[0];
+        } else {
+          // Fallback: nếu không có role, mặc định là DRIVER
+          console.warn('⚠️ No role found in token, defaulting to DRIVER');
+          role = 'DRIVER';
+        }
+        
+        // Remove ROLE_ prefix nếu có
+        if (role && typeof role === 'string') {
+          role = role.replace('ROLE_', '');
+        }
+        
+        console.log('👤 User role:', role);
+        
+        // Lưu token và role vào localStorage
+        localStorage.setItem('accessToken', token);
+        if (role) {
+          localStorage.setItem('role', role);
+        }
+        
+        // Lấy thông tin user từ token
+        const userDetails = {
+          name: payload.name || payload.sub || 'User',
+          email: payload.email || payload.sub,
+          phone: null, // Google không trả về phone
+          gender: null
+        };
+        
+        // Lưu user details
+        localStorage.setItem('userDetails', JSON.stringify(userDetails));
+        
+        // 🔥 QUAN TRỌNG: Dispatch Redux action để update store
+        dispatch(loginSuccess({
+          accessToken: token,
+          role: role,
+          userDetails: userDetails
+        }));
+        
+        console.log('✅ Redux state updated');
+        console.log('🔍 Redux state check:', { isLoggedIn: true, role, accessToken: token.substring(0, 20) });
+        
+        // Show success message
+        toast.success('Đăng nhập Google thành công!');
+        
+        // Xóa token khỏi URL SAU KHI đã lưu và dispatch
+        window.history.replaceState({}, document.title, '/');
+        
+        // Redirect dựa vào role sau khi Redux đã update (tăng delay)
+        setTimeout(() => {
+          console.log('🚀 Navigating to role-based page:', role);
+          if (role?.toUpperCase().includes('ADMIN')) {
+            window.location.href = '/admin'; // Force reload để Redux được pick up
+          } else if (role?.toUpperCase().includes('STAFF')) {
+            window.location.href = '/staff';
+          } else if (role?.toUpperCase().includes('DRIVER')) {
+            window.location.href = '/';
+          } else {
+            window.location.href = '/';
+          }
+        }, 1000); // Tăng từ 500ms lên 1000ms
+        
+      } catch (error) {
+        console.error('❌ Error parsing token:', error);
+        toast.error('Lỗi xử lý token đăng nhập');
+        // Xóa token lỗi khỏi URL
+        window.history.replaceState({}, document.title, '/');
+      }
+    }
+  }, [dispatch, navigate]);
 
   // Khôi phục trạng thái khóa và số lần thất bại từ localStorage
   useEffect(() => {
