@@ -4,6 +4,8 @@ import com.swp391.gr3.ev_management.service.PaymentService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +19,12 @@ public class VnPayController {
 
     private final PaymentService paymentService; // ✅ Service xử lý logic thanh toán (VNPAY, EVM, cập nhật hóa đơn...)
     private final TokenService tokenService;     // ✅ Service để trích xuất thông tin người dùng (userId) từ JWT token
+
+    @Value("${app.frontend.vnpay-success-url}")
+    private String vnpaySuccessUrl;              // ✅ URL frontend để redirect khi thanh
+
+    @Value("${app.frontend.vnpay-fail-url}")
+    private String vnpayFailUrl;                 // ✅ URL frontend để redirect khi thanh toán thất bại
 
     /**
      * ✅ API: Tạo thanh toán
@@ -32,7 +40,7 @@ public class VnPayController {
      */
     @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> create(
-            @RequestParam Long sessionId,      // 🟢 ID của phiên sạc cần thanh toán
+            @RequestParam Long sessionId,       // 🟢 ID của phiên sạc cần thanh toán
             @RequestParam Long paymentMethodId, // 🟢 ID của phương thức thanh toán (EVM hoặc VNPAY)
             HttpServletRequest request          // 🟢 Request gốc để lấy token + IP client
     ) throws Exception {
@@ -72,11 +80,21 @@ public class VnPayController {
      * 3️⃣ Trả về phản hồi JSON cho frontend.
      */
     @GetMapping("/return")
-    public ResponseEntity<?> handleReturn(HttpServletRequest req) throws Exception {
-        // 🔹 Gọi service để xác minh chữ ký, xử lý kết quả thanh toán
-        paymentService.handleVnPayReturn(req);
-        // 🟢 Trả về phản hồi báo thành công
-        return ResponseEntity.ok(Map.of("message", "OK"));
+    public ResponseEntity<Void> handleReturn(HttpServletRequest req) {
+        String redirectUrl;
+
+        try {
+            // Nếu xử lý không ném exception ⇒ coi như thành công
+            paymentService.handleVnPayReturn(req);
+            redirectUrl = vnpaySuccessUrl;
+        } catch (Exception e) {
+            // Nếu có lỗi trong quá trình xử lý ⇒ redirect sang trang fail
+            redirectUrl = vnpayFailUrl;
+        }
+
+        return ResponseEntity.status(302) // 302 Found → redirect
+                .header(HttpHeaders.LOCATION, redirectUrl)
+                .build();
     }
 
     /**
