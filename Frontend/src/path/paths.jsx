@@ -3,6 +3,8 @@ export const paths = {
   login: "/login",
   register: "/register",
   verify: "/verify-otp",
+  forgotPassword: "/forgot-password",
+  resetPassword: "/reset-password",
   error: "/error",
   //driver
   home: "/",
