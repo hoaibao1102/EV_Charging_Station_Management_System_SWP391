@@ -1,8 +1,25 @@
 package com.swp391.gr3.ev_management.service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
 import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.dto.response.*;
+import com.swp391.gr3.ev_management.dto.response.ActiveSessionView;
+import com.swp391.gr3.ev_management.dto.response.CompletedSessionView;
+import com.swp391.gr3.ev_management.dto.response.StartCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.ViewCharSessionResponse;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import com.swp391.gr3.ev_management.entity.Notification;
@@ -14,20 +31,9 @@ import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.mapper.ChargingSessionMapper;
 import com.swp391.gr3.ev_management.repository.ChargingSessionRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service // Đánh dấu class là Spring Service (chứa nghiệp vụ phiên sạc)
 @RequiredArgsConstructor // Generate constructor cho các field final (DI)
@@ -170,13 +176,18 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         // 2) Xác định thời điểm kết thúc phiên sạc theo TENANT_ZONE (VN)
         LocalDateTime endTime = LocalDateTime.now(TENANT_ZONE);
 
-        // 3) Lấy SOC cuối cùng từ cache nếu có (do các worker cập nhật trong quá trình sạc)
-        //    - Nếu cachedSoc == null: tức là không có update, có thể dùng initialSoc
-        //    - Nếu cachedSoc == initialSoc: coi như không đổi, không set finalSoc
-        Integer cachedSoc = sessionSocCache.get(session.getSessionId()).orElse(null);
-        Integer finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
-                ? cachedSoc
-                : null; // nếu không thoả điều kiện -> để null, handler sẽ tự xử lý
+        // 3) Xác định final SOC:
+        //    - Ưu tiên: SOC từ request (nếu có)
+        //    - Fallback: Lấy từ cache nếu không có từ request
+        Integer finalSocIfAny;
+        if (request.getFinalSoc() != null && request.getFinalSoc() >= session.getInitialSoc()) {
+            finalSocIfAny = request.getFinalSoc();
+        } else {
+            Integer cachedSoc = sessionSocCache.get(session.getSessionId()).orElse(null);
+            finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
+                    ? cachedSoc
+                    : null; // nếu không thoả điều kiện -> để null, handler sẽ tự xử lý
+        }
 
         // 4) Ủy quyền việc dừng session cho TX handler
         //    - stopSessionInternalTx thực hiện update đầy đủ: endTime, finalSoc, status, totalEnergy,...
@@ -186,7 +197,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
 
     @Override
     @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình
-    public StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId) {
+    public StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId, Integer finalSocFromRequest) {
         // 1) Tìm session kèm thông tin owner (join fetch) để kiểm tra quyền sở hữu
         ChargingSession session = chargingSessionRepository.findWithOwnerById(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
@@ -203,11 +214,20 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
             throw new org.springframework.security.access.AccessDeniedException("You are not the owner of this session");
         }
 
-        // 4) Lấy SOC cuối cùng từ cache (nếu khác initial thì sử dụng làm final SOC)
-        Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
-        Integer finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
-                ? cachedSoc
-                : null;
+        // 4) Xác định final SOC:
+        //    - Ưu tiên: SOC từ frontend request (virtualSoc đã tính realtime)
+        //    - Fallback: Lấy từ cache nếu không có từ request
+        //    - Validate: SOC phải >= initialSoc
+        Integer finalSocIfAny = null;
+        if (finalSocFromRequest != null && finalSocFromRequest >= session.getInitialSoc()) {
+            finalSocIfAny = finalSocFromRequest;
+        } else {
+            // Fallback to cache if request doesn't provide finalSoc
+            Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
+            finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
+                    ? cachedSoc
+                    : null;
+        }
 
         // 5) Gọi TX handler để dừng session
         //    - StopInitiator.DRIVER: đánh dấu là tài xế chủ động dừng

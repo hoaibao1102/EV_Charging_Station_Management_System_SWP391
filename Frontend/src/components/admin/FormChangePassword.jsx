@@ -16,6 +16,9 @@ export default function FormProfile({ onClose }) {
     const role = localStorage.getItem('role') || null;
     const [data, setData] = useState(dataInitial);
     const [errors, setErrors] = useState({});
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Hàm cập nhật state chung
     const handleChange = (e) => {
@@ -65,20 +68,26 @@ export default function FormProfile({ onClose }) {
         }
 
         // Bước 2: Chọn API và tạo payload
-        // Sửa lỗi: Gán trực tiếp hàm thay vì tên chuỗi
         const apiToCall = role === 'ADMIN' ? updateAdminPasswordApi : role === 'STAFF' ? updateStaffPasswordApi : role === 'DRIVER' ? changePasswordDriverApi : changePasswordDriverApi;
         
-        // API chỉ cần 2 trường này
         const payload = data;
         console.log("data", payload)
+        
         // Bước 3: Gọi API
         try {
-            await apiToCall(payload); // Gửi payload
-
-            toast.success('Cập nhật mật khẩu thành công!');
-            onClose(); // Đóng modal khi thành công
+            const result = await apiToCall(payload);
+            
+            // Kiểm tra success từ handleApiCall
+            if (result.success) {
+                toast.success('Cập nhật mật khẩu thành công!');
+                onClose();
+            } else {
+                // Hiển thị lỗi từ server
+                const errorMessage = result.message || 'Cập nhật mật khẩu thất bại!';
+                toast.error(errorMessage);
+            }
         } catch (error) {
-            // Hiển thị lỗi từ server (nếu có)
+            // Fallback error handling
             const errorMessage = error.response?.data?.message || 'Cập nhật mật khẩu thất bại!';
             toast.error(errorMessage);
         }
@@ -136,14 +145,33 @@ export default function FormProfile({ onClose }) {
                     {/* Old Password */}
                     <Form.Group className="mb-3" controlId="formOldPassword">
                         <Form.Label>Mật khẩu cũ</Form.Label>
-                        <Form.Control
-                            type="password"
-                            name="oldPassword"
-                            value={data.oldPassword}
-                            onChange={handleChange}
-                            isInvalid={!!errors.oldPassword}
-                            autoComplete="current-password"
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Form.Control
+                                type={showOldPassword ? "text" : "password"}
+                                name="oldPassword"
+                                value={data.oldPassword}
+                                onChange={handleChange}
+                                isInvalid={!!errors.oldPassword}
+                                autoComplete="current-password"
+                                style={{ paddingRight: '40px' }}
+                            />
+                            <Button
+                                variant="link"
+                                onClick={() => setShowOldPassword(!showOldPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '5px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    padding: '4px 8px',
+                                    fontSize: '18px',
+                                    color: '#6c757d',
+                                    textDecoration: 'none'
+                                }}
+                            >
+                                {showOldPassword ? '👁️' : '👁️‍🗨️'}
+                            </Button>
+                        </div>
                         <Form.Control.Feedback type="invalid">
                             {errors.oldPassword}
                         </Form.Control.Feedback>
@@ -152,15 +180,34 @@ export default function FormProfile({ onClose }) {
                     {/* New Password */}
                     <Form.Group className="mb-3" controlId="formNewPassword">
                         <Form.Label>Mật khẩu mới</Form.Label>
-                        <Form.Control
-                            type="password"
-                            name="newPassword"
-                            value={data.newPassword}
-                            onChange={handleChange}
-                            isInvalid={!!errors.newPassword}
-                            aria-describedby="passwordHelpBlock"
-                            autoComplete="new-password"
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Form.Control
+                                type={showNewPassword ? "text" : "password"}
+                                name="newPassword"
+                                value={data.newPassword}
+                                onChange={handleChange}
+                                isInvalid={!!errors.newPassword}
+                                aria-describedby="passwordHelpBlock"
+                                autoComplete="new-password"
+                                style={{ paddingRight: '40px' }}
+                            />
+                            <Button
+                                variant="link"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '5px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    padding: '4px 8px',
+                                    fontSize: '18px',
+                                    color: '#6c757d',
+                                    textDecoration: 'none'
+                                }}
+                            >
+                                {showNewPassword ? '👁️' : '👁️‍🗨️'}
+                            </Button>
+                        </div>
                         <Form.Text id="passwordHelpBlock" muted>
                             Mật khẩu của bạn phải có ít nhất 6 ký tự.
                         </Form.Text>
@@ -172,14 +219,33 @@ export default function FormProfile({ onClose }) {
                     {/* Confirm New Password */}
                     <Form.Group className="mb-3" controlId="formConfirmPassword">
                         <Form.Label>Xác nhận mật khẩu mới</Form.Label>
-                        <Form.Control
-                            type="password"
-                            name="confirmPassword"
-                            value={data.confirmPassword}
-                            onChange={handleChange}
-                            isInvalid={!!errors.confirmPassword}
-                            autoComplete="new-password"
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Form.Control
+                                type={showConfirmPassword ? "text" : "password"}
+                                name="confirmPassword"
+                                value={data.confirmPassword}
+                                onChange={handleChange}
+                                isInvalid={!!errors.confirmPassword}
+                                autoComplete="new-password"
+                                style={{ paddingRight: '40px' }}
+                            />
+                            <Button
+                                variant="link"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '5px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    padding: '4px 8px',
+                                    fontSize: '18px',
+                                    color: '#6c757d',
+                                    textDecoration: 'none'
+                                }}
+                            >
+                                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                            </Button>
+                        </div>
                         <Form.Control.Feedback type="invalid">
                             {errors.confirmPassword}
                         </Form.Control.Feedback>

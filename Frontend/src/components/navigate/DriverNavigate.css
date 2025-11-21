@@ -2,11 +2,10 @@
 nav.navigationBar {
   background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
   padding: 8px 20px;
-  box-shadow: 
-    0 8px 32px rgba(32, 178, 170, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(32, 178, 170, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   z-index: 1000;
   backdrop-filter: blur(10px);
+  overflow: visible;
 }
 
 /* Mobile: Navigation ở dưới */
@@ -23,10 +22,10 @@ nav.navigationBar {
 /* Desktop: Navigation ở trên */
 @media (min-width: 769px) {
   nav.navigationBar {
-        position: static;
-        margin: 3px auto;
-        max-width: 900px;
-        padding: 0px 9px;
+    position: static;
+    margin: 3px auto;
+    max-width: 900px;
+    padding: 0px 9px;
   }
 }
 
@@ -37,6 +36,8 @@ nav.navigationBar .navContainer {
   align-items: center;
   gap: 12px;
   height: 60px;
+  position: relative;
+  overflow: visible;
 }
 
 /* Nav Item Container - Horizontal */
@@ -73,7 +74,8 @@ nav.navigationBar .navIcon img {
   width: 26px;
   height: 26px;
   object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(148deg) brightness(95%) contrast(86%);
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%)
+    hue-rotate(148deg) brightness(95%) contrast(86%);
   transition: all 0.3s ease;
 }
 
@@ -92,7 +94,11 @@ nav.navigationBar .navLabel {
 
 /* Hover Effect - Expand horizontally */
 nav.navigationBar .navItem:hover {
-  background: linear-gradient(135deg, rgba(32, 178, 170, 0.08) 0%, rgba(32, 178, 170, 0.04) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(32, 178, 170, 0.08) 0%,
+    rgba(32, 178, 170, 0.04) 100%
+  );
   padding: 0 16px;
   min-width: auto;
 }
@@ -117,8 +123,7 @@ nav.navigationBar .navItemActive {
   background: linear-gradient(135deg, #20b2aa 0%, #1a9d96 100%);
   padding: 0 16px;
   min-width: auto;
-  box-shadow: 
-    0 0 0 3px rgba(32, 178, 170, 0.2),
+  box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.2),
     0 4px 12px rgba(32, 178, 170, 0.3);
 }
 
@@ -141,8 +146,7 @@ nav.navigationBar .navItemActive .navLabel {
 /* Active State Hover */
 nav.navigationBar .navItemActive:hover {
   background: linear-gradient(135deg, #1a9d96 0%, #178d82 100%);
-  box-shadow: 
-    0 0 0 3px rgba(32, 178, 170, 0.3),
+  box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.3),
     0 6px 16px rgba(32, 178, 170, 0.4);
   transform: translateY(-2px);
 }
@@ -166,25 +170,25 @@ nav.navigationBar .navItem:active {
     gap: 8px;
     height: 56px;
   }
-  
+
   nav.navigationBar .navItem {
     min-width: 56px;
     height: 56px;
     padding: 0;
     border-radius: 14px;
   }
-  
+
   nav.navigationBar .navIcon {
     width: 40px;
     height: 40px;
     border-radius: 12px;
   }
-  
+
   nav.navigationBar .navIcon img {
     width: 24px;
     height: 24px;
   }
-  
+
   /* Hide label on mobile, show tooltip on hover */
   nav.navigationBar .navLabel {
     display: none;
@@ -218,18 +222,18 @@ nav.navigationBar .navItem:active {
     gap: 6px;
     height: 52px;
   }
-  
+
   nav.navigationBar .navItem {
     min-width: 52px;
     height: 52px;
     border-radius: 12px;
   }
-  
+
   nav.navigationBar .navIcon {
     width: 38px;
     height: 38px;
   }
-  
+
   nav.navigationBar .navIcon img {
     width: 22px;
     height: 22px;
