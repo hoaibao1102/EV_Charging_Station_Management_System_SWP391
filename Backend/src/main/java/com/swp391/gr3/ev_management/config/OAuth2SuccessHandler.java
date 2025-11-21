@@ -4,14 +4,18 @@ import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.events.UserGoogleFirstLoginEvent;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
+import com.swp391.gr3.ev_management.service.EmailService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -24,6 +28,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Component // Đánh dấu class này là một bean Spring, để Spring Security autowire làm success handler
+@RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     // ====== Dependencies chính ======
@@ -32,23 +37,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final PasswordEncoder passwordEncoder;       // Mã hoá password ngẫu nhiên cho user Google
     private final TokenService tokenService;             // Sinh JWT sau khi login thành công
     private final DriverRepository driverRepository;     // Lưu bản ghi Driver nếu user là tài xế
+    private final EmailService emailService;             // Gửi email (nếu cần)
+    private final ApplicationEventPublisher publisher;   // Để publish event trong ứng dụng
 
     // URL callback bên FE để nhận token sau khi đăng nhập Google thành công
     // Có thể cấu hình trong application.properties: app.oauth2.frontend-callback=...
     @Value("${app.oauth2.frontend-callback:http://localhost:5173/}")
     private String frontendCallback;
-
-    // Constructor injection cho các dependency
-    public OAuth2SuccessHandler(UserRepository userRepository,
-                                RoleRepository roleRepository,
-                                PasswordEncoder passwordEncoder,
-                                TokenService tokenService, DriverRepository driverRepository) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
-        this.driverRepository = driverRepository;
-    }
 
     /**
      * Hàm được Spring Security gọi khi quá trình OAuth2 (Google) authentication thành công.
@@ -68,8 +63,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication)
             throws IOException, ServletException {
 
-        System.out.println("🔐 [OAuth2] Starting Google OAuth authentication handler");
-        
         // 1️⃣ Lấy đối tượng OidcUser (user Google) từ Authentication principal
         OidcUser oidc = (OidcUser) authentication.getPrincipal();
 
@@ -82,29 +75,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 ? ((givenName != null ? givenName : "") + " " + (familyName != null ? familyName : "")).trim()
                 : oidc.getFullName();                              // Ghép họ tên nếu có, fallback fullName
 
-        System.out.println("📧 [OAuth2] Email: " + email + ", Verified: " + emailVerified);
-        System.out.println("👤 [OAuth2] Display Name: " + displayName);
-        
-        // 2.1 Lấy giới tính từ Google (nếu có)
-        String gender = null;
-        try {
-            Object genderClaim = oidc.getClaim("gender");
-            if (genderClaim != null) {
-                String genderStr = genderClaim.toString().toLowerCase();
-                if ("male".equals(genderStr)) {
-                    gender = "M";
-                } else if ("female".equals(genderStr)) {
-                    gender = "F";
-                }
-            }
-            System.out.println("👥 [OAuth2] Gender from Google: " + (gender != null ? gender : "not provided"));
-        } catch (Exception e) {
-            System.out.println("⚠️ [OAuth2] Could not get gender from Google profile");
-        }
-        
         // 3️⃣ Nếu email chưa verify hoặc rỗng -> không cho login, redirect về FE kèm error
         if (!emailVerified || email == null || email.isBlank()) {
-            System.out.println("❌ [OAuth2] Email not verified or empty");
             String errorUrl = UriComponentsBuilder
                     .fromUriString(frontendCallback)
                     .queryParam("error", "EMAIL_NOT_VERIFIED") // FE sẽ đọc param này để hiển thị lỗi
@@ -115,10 +87,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 4️⃣ Tìm user trong DB theo email (đã có role join)
         User user = userRepository.findByEmailWithRole(email);
-        System.out.println("🔍 [OAuth2] User found in DB: " + (user != null));
-        
         if (user == null) {
-            System.out.println("➕ [OAuth2] Creating new user for email: " + email);
             // 4.1 Nếu chưa có user -> tạo mới với ROLE_USER mặc định (id=3L)
             Role role = roleRepository.findByRoleId(3L);
             if (role == null) {
@@ -141,14 +110,16 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             String randomPwd = "GOOGLE_" + UUID.randomUUID();
             user.setPasswordHash(passwordEncoder.encode(randomPwd));
 
-            // Set giới tính nếu Google cung cấp
-            if (gender != null) {
-                user.setGender(gender);
-                System.out.println("✅ [OAuth2] Set gender: " + gender);
-            }
-
             // 4.4 PhoneNumber có thể để null, sau này FE sẽ yêu cầu bổ sung
             user = userRepository.save(user);
+
+            // 4.4.1 Gửi email báo password cho user
+            emailService.sendPasswordEmailHtml(user.getEmail(), randomPwd);
+
+            publisher.publishEvent(new UserGoogleFirstLoginEvent(
+                    user.getUserId(),
+                    user.getName()
+            ));
 
             // 4.5 Nếu role tương ứng là Driver thì tạo bản ghi Driver (ACTIVE)
             if ("Driver".equalsIgnoreCase(role.getRoleName())) {
@@ -162,12 +133,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 5️⃣ Sinh JWT cho user vừa login xong (cũ hoặc mới)
         String jwt = tokenService.generateToken(user);
-        System.out.println("🔑 [OAuth2] JWT generated: " + jwt.substring(0, Math.min(30, jwt.length())) + "...");
-        System.out.println("👤 [OAuth2] User role: " + (user.getRole() != null ? user.getRole().getRoleName() : "null"));
 
         // 6️⃣ Kiểm tra user đã có phoneNumber chưa, để FE hiển thị form bổ sung nếu cần
         boolean needPhone = (user.getPhoneNumber() == null || user.getPhoneNumber().isBlank());
-        System.out.println("📱 [OAuth2] Need phone: " + needPhone);
 
         // 7️⃣ Build URL redirect về FE, kèm token + needPhone
         String redirect = UriComponentsBuilder
@@ -177,8 +145,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 .build()
                 .toUriString();
 
-        System.out.println("🔗 [OAuth2] Redirecting to: " + redirect);
-        
         // 8️⃣ Đặt HTTP status 302 (FOUND) rồi redirect
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.sendRedirect(redirect);

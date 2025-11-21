@@ -4,11 +4,13 @@ import com.swp391.gr3.ev_management.entity.SlotAvailability;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailability, Long> {
@@ -115,4 +117,13 @@ public interface SlotAvailabilityRepository extends JpaRepository<SlotAvailabili
             LocalDateTime start,
             LocalDateTime end
     );
+
+    @Query("""
+    select cp.connectorType.connectorTypeId
+    from BookingSlot bs
+    join bs.slot sa
+    join sa.chargingPoint cp
+    where bs.booking.bookingId = :bookingId
+    """)
+    List<Long> findConnectorTypeIdsByBooking(@Param("bookingId") Long bookingId);
 }

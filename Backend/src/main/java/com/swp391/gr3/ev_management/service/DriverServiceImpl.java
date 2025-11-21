@@ -481,15 +481,12 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public List<TransactionBriefResponse> getMyTransactions(Long userId) {
-        // 1️⃣ Đảm bảo driver tồn tại (xác thực user là driver)
+        // 1) Check driver tồn tại (nếu vẫn muốn giữ)
         Driver driver = driverRepository.findByUserIdWithUser(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
 
-        // 2️⃣ Truy vấn tất cả Transaction liên quan đến driver (deep graph để tránh N+1)
-        List<Transaction> txs = transactionService.findAllDeepGraphByDriverUserId(userId);
-
-        // 3️⃣ Map list Transaction -> list TransactionBriefResponse (DTO tóm tắt)
-        return DriverDataMapper.toTransactionBriefResponseList(txs);
+        // 2) Lấy thẳng DTO từ repository
+        return transactionService.findBriefByUserId(userId);
     }
 
     /**
@@ -540,6 +537,11 @@ public class DriverServiceImpl implements DriverService {
     public void save(Driver driver) {
         // Hàm tiện ích: lưu driver (create/update)
         driverRepository.save(driver);
+    }
+
+    @Override
+    public Optional<Driver> findByUserIdLight(Long userId) {
+        return driverRepository.findByUserIdLight(userId);
     }
 
 }

@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Tariffs")
-@Data @NoArgsConstructor
-@AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Tariff {
 
     @Id
@@ -47,5 +49,4 @@ public class Tariff {
     @UpdateTimestamp
     @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
-
 }

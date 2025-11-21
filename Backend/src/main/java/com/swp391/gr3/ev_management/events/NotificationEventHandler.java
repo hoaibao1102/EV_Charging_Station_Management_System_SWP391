@@ -39,4 +39,29 @@ public class NotificationEventHandler {
         // ✅ Bây giờ mới publish event thông báo đã được tạo
         publisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onGoogleFirstLogin(UserGoogleFirstLoginEvent event) {
+
+        User user = userRepository.findById(event.userId())
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        Notification noti = new Notification();
+        noti.setUser(user);
+        noti.setType(NotificationTypes.GOOGLE_FIRST_LOGIN);
+        noti.setTitle("Đăng nhập Google lần đầu");
+
+        noti.setContentNoti(
+                "Chào " + event.fullName() +
+                        ", tài khoản của bạn đã được tạo khi đăng nhập bằng Google. " +
+                        "Vui lòng kiểm tra hộp thư để nhận mật khẩu đăng nhập tạm thời và đổi mật khẩu ngay để đảm bảo an toàn tài khoản."
+        );
+
+        noti.setStatus(Notification.STATUS_UNREAD);
+
+        notificationsRepository.save(noti);
+
+        publisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+    }
 }

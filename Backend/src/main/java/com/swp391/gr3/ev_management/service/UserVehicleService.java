@@ -11,4 +11,6 @@ public interface UserVehicleService {
     long countByModel_ModelId(Long id);
 
     Optional<UserVehicle> findById(Long vehicleId);
+
+    Optional<Long> findConnectorTypeIdByVehicleId(Long vehicleId);
 }

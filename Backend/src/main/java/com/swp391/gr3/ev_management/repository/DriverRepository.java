@@ -89,4 +89,12 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
      * @return Số lượng driver có status tương ứng
      */
     long countByStatus(DriverStatus status);
+
+    @Query("""
+    select d
+    from Driver d
+    join fetch d.user u
+    where u.userId = :userId
+    """)
+    Optional<Driver> findByUserIdLight(Long userId);
 }

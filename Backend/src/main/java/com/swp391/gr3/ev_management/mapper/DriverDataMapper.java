@@ -38,12 +38,6 @@ public class DriverDataMapper {
                 .build();
     }
 
-    public static List<TransactionBriefResponse> toTransactionBriefResponseList(List<Transaction> txs) {
-        return txs.stream()
-                .map(DriverDataMapper::toTransactionBriefResponse)
-                .collect(Collectors.toList());
-    }
-
     // ================== MAPPER: ChargingSession ==================
     public static ChargingSessionBriefResponse toChargingSessionBriefResponse(ChargingSession s) {
         if (s == null) return null;

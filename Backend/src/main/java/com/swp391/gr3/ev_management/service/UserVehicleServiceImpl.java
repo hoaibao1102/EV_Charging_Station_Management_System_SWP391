@@ -40,4 +40,9 @@ public class UserVehicleServiceImpl implements UserVehicleService {
         // Truy vấn theo PK
         return userVehicleRepository.findById(vehicleId);
     }
+
+    @Override
+    public Optional<Long> findConnectorTypeIdByVehicleId(Long vehicleId) {
+        return userVehicleRepository.findConnectorTypeIdByVehicleId(vehicleId);
+    }
 }

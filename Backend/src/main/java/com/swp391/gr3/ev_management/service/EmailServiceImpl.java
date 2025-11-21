@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -161,5 +162,28 @@ public class EmailServiceImpl implements EmailService {
     // Hàm nhỏ để đảm bảo không bị NullPointerException khi hiển thị dữ liệu trong email
     private static String safe(Object o) {
         return o == null ? "" : String.valueOf(o);
+    }
+
+    @Override
+    public void sendPasswordEmailHtml(String to, String password) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+
+            helper.setTo(to);
+            helper.setFrom(from);
+            helper.setSubject("EV Station – Mật khẩu đăng nhập lần đầu");
+
+            Context ctx = new Context();
+            ctx.setVariable("password", password);
+            String html = templateEngine.process("password-first-login", ctx);
+
+            helper.setText(html, true);
+
+            mailSender.send(msg);
+
+        } catch (Exception e) {
+            log.error("Failed to send HTML password email", e);
+        }
     }
 }

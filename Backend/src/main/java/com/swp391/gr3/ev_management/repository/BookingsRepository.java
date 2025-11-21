@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.repository;
 
+import com.swp391.gr3.ev_management.dto.request.LightBookingInfo;
 import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
@@ -21,28 +22,10 @@ public interface BookingsRepository extends JpaRepository<Booking,Long> {
 
     // ✅ Lấy tối đa 50 booking có status cho trước và có scheduledEndTime <= thời điểm truyền vào,
     //    sắp xếp tăng dần theo scheduledEndTime (dùng cho job thu dọn/auto-cancel/auto-complete theo hạn).
-    List<Booking> findTop50ByStatusAndScheduledEndTimeLessThanEqualOrderByScheduledEndTimeAsc(
-            BookingStatus status, LocalDateTime beforeOrEqual
+    List<Booking> findTop50ByStatusInAndScheduledEndTimeLessThanEqualOrderByScheduledEndTimeAsc(
+            List<BookingStatus> statuses,
+            LocalDateTime now
     );
-
-    // ✅ Lấy một booking kèm TẤT CẢ các quan hệ cần thiết để hiển thị/ xử lý:
-    //    - vehicle -> driver -> user
-    //    - bookingSlots -> slot -> chargingPoint -> connectorType
-    //    - station
-    //    join fetch để tránh N+1 và LazyInitializationException.
-    @Query("""
-      SELECT DISTINCT b FROM Booking b
-      JOIN FETCH b.vehicle v
-      JOIN FETCH v.driver d
-      JOIN FETCH d.user u
-      LEFT JOIN FETCH b.bookingSlots bs
-      LEFT JOIN FETCH bs.slot s
-      LEFT JOIN FETCH s.chargingPoint cp
-      LEFT JOIN FETCH cp.connectorType ct
-      LEFT JOIN FETCH b.station st
-      WHERE b.bookingId = :bookingId
-    """)
-    Optional<Booking> findByIdWithAllNeeded(@Param("bookingId") Long bookingId);
 
     // ✅ Lấy một booking chủ yếu để xác định "connector type" đang dùng:
     //    - fetch bookingSlots -> slot -> chargingPoint -> connectorType (của point)
@@ -61,23 +44,21 @@ public interface BookingsRepository extends JpaRepository<Booking,Long> {
 """)
     Optional<Booking> findByIdWithConnectorType(@Param("bookingId") Long bookingId);
 
-    // ✅ Cập nhật trạng thái booking theo điều kiện "so khớp trạng thái hiện tại":
-    //    - Chỉ update khi b.status đang bằng fromStatus (optimistic conditional update để tránh race condition).
-    //    - Đồng thời cập nhật updatedAt.
-    //    - @Modifying + clear/flush auto để đồng bộ persistence context.
-    //    Trả về số dòng cập nhật (0 nếu không khớp fromStatus, 1 nếu thành công).
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    // ✅ Cập nhật trạng thái của một booking nếu trạng thái hiện tại nằm trong danh sách cho phép.
+    //    Trả về số row bị ảnh hưởng (0 hoặc 1).
+    @Modifying
     @Query("""
-        update Booking b
-           set b.status    = :toStatus,
-               b.updatedAt = :updatedAt
-         where b.bookingId = :id
-           and b.status    = :fromStatus
-    """)
-    int updateStatusIfMatches(@Param("id") Long id,
-                              @Param("fromStatus") BookingStatus fromStatus,
-                              @Param("toStatus") BookingStatus toStatus,
-                              @Param("updatedAt") LocalDateTime updatedAt);
+    UPDATE Booking b 
+    SET b.status = :newStatus, b.updatedAt = :now 
+    WHERE b.bookingId = :bookingId 
+      AND b.status IN (:allowedStatuses)
+""")
+    int updateStatusIfIn(
+            @Param("bookingId") Long bookingId,
+            @Param("newStatus") BookingStatus newStatus,
+            @Param("allowedStatuses") List<BookingStatus> allowedStatuses,
+            @Param("now") LocalDateTime now
+    );
 
     // ✅ Tiện debug/log: chỉ lấy status hiện tại của một booking theo id.
     //    Hữu ích khi updateStatusIfMatches trả về 0 rows -> kiểm tra trạng thái thật sự đang là gì.
@@ -141,4 +122,47 @@ public interface BookingsRepository extends JpaRepository<Booking,Long> {
 
     /** Lấy 5 booking mới nhất theo thời gian tạo */
     List<Booking> findTop5ByOrderByCreatedAtDesc();
+
+
+    /** Lấy thông tin booking nhẹ để gửi email */
+    @Query("""
+        select new com.swp391.gr3.ev_management.dto.request.LightBookingInfo(
+            b.bookingId,
+            b.scheduledStartTime,
+            b.scheduledEndTime,
+            v.vehicleId
+        )
+        from Booking b
+        join b.vehicle v
+        where b.bookingId = :bookingId
+    """)
+    Optional<LightBookingInfo> findLightBookingInfo(Long bookingId);
+
+    /** Lấy tối đa 50 ID booking quá hạn theo list trạng thái */
+    @Query("""
+        select b.bookingId
+        from Booking b
+        where b.status in :statuses
+          and b.scheduledEndTime <= :now
+        order by b.scheduledEndTime asc
+    """)
+    List<Long> findOverdueIds(
+            @Param("statuses") List<BookingStatus> statuses,
+            @Param("now") LocalDateTime now
+    );
+
+    /** Lấy thông tin tối thiểu để dùng cho Violation + Notification khi overdue */
+    @Query("""
+        select u.userId as userId,
+               st.stationName as stationName,
+               b.scheduledEndTime as scheduledEndTime
+        from Booking b
+            join b.vehicle v
+            join v.driver d
+            join d.user u
+            join b.station st
+        where b.bookingId = :bookingId
+    """)
+    java.util.Optional<com.swp391.gr3.ev_management.repository.BookingOverdueView>
+    findOverdueView(@Param("bookingId") Long bookingId);
 }

@@ -41,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PaymentMethodRepository paymentMethodRepository;
     private final DriverViolationRepository driverViolationRepository;
     private final DriverViolationTripletRepository driverViolationTripletRepository;
+    private final PolicyRepository policyRepository;
 
 
     @Value("${app.data.init.enabled:true}")
@@ -69,6 +70,7 @@ public class DataInitializer implements CommandLineRunner {
             initBanDrivers();
             initBannedDriverViolations();
             initTwoViolationsFor0987456321();
+            initPolicies();
 
 
             log.info("✅ Data initialization completed.");
@@ -78,7 +80,6 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ================== STATIONS ==================
-    
     private void initChargingStations() {
         createStationIfNotExists(
                 "VinFast SmartCharge - Quận 1",
@@ -892,5 +893,116 @@ public class DataInitializer implements CommandLineRunner {
         v = driverViolationRepository.save(v);
 //        attachViolationToTriplet(driver, v);
         log.info("Created violation {} for driver {}", v.getViolationId(), driver.getDriverId());
+    }
+
+    // ================== POLICIES (BR-01 ... BR-22) ==================
+    private void initPolicies() {
+        createPolicyIfNotExists(
+                "BR-01",
+                "Nếu người dùng nhập sai mật khẩu 3 lần liên tiếp, tài khoản sẽ bị khóa đăng nhập trong 3 phút."
+        );
+        createPolicyIfNotExists(
+                "BR-02",
+                "Khi thực hiện đặt chỗ (booking), tài xế phải chọn đúng một phương tiện từ danh sách xe của họ."
+        );
+        createPolicyIfNotExists(
+                "BR-03",
+                "Khi thêm xe, tài xế chỉ có thể chọn một model xe được hệ thống hỗ trợ."
+        );
+        createPolicyIfNotExists(
+                "BR-04",
+                "Một booking chỉ có thể được hủy nếu yêu cầu hủy xảy ra ít nhất 30 phút trước giờ bắt đầu sạc đã đặt."
+        );
+        createPolicyIfNotExists(
+                "BR-05",
+                "Tài xế bị cấm vì \"no-show\" lặp lại. \"No-show\" được định nghĩa là không bắt đầu phiên sạc trong vòng 30 phút kể từ thời gian bắt đầu booking. Nếu tài xế tích lũy 3 lần no-show (tính vĩnh viễn), trạng thái tài khoản của họ được đặt thành BANNED (BỊ CẤM)."
+        );
+        createPolicyIfNotExists(
+                "BR-06",
+                "Để gỡ bỏ lệnh cấm, người dùng phải trả một khoản phí phạt. Phí phạt được tính bằng: (tổng thời gian slot bị lãng phí - tính bằng phút) x (đơn giá phạt mỗi phút) đã được cấu hình cho cổng sạc cụ thể đó."
+        );
+        createPolicyIfNotExists(
+                "BR-07",
+                "Tổng phí được tính bằng tổng của Phí Năng lượng (Energy Charge) dựa trên kWh tiêu thụ và Phí Thời gian Lãng phí (Wasted Time Fee). Phí Thời gian Lãng phí = (Thời gian slot đã mua - Thời gian sạc thực tế) x (Đơn giá sạc mỗi phút)."
+        );
+        createPolicyIfNotExists(
+                "BR-08",
+                "Một Nhân viên (Staff) chỉ được phân công làm việc tại một trạm duy nhất tại bất kỳ thời điểm nào."
+        );
+        createPolicyIfNotExists(
+                "BR-09",
+                "Trong khi tài khoản bị BANNED, người dùng không thể thực hiện bất kỳ booking nào."
+        );
+        createPolicyIfNotExists(
+                "BR-10",
+                "Chỉ những người dùng đã xác thực và có vai trò \"Driver\" mới có thể thực hiện hành động đặt chỗ (booking)."
+        );
+        createPolicyIfNotExists(
+                "BR-11",
+                "Khi một Admin thêm thành viên Staff, Admin sẽ tạo tài khoản Staff và cung cấp thông tin đăng nhập để sử dụng."
+        );
+        createPolicyIfNotExists(
+                "BR-12",
+                "Thanh toán được yêu cầu ngay lập tức sau khi một phiên sạc kết thúc hoặc khi người dùng yêu cầu gỡ bỏ lệnh cấm; không hỗ trợ trả sau trong những trường hợp này."
+        );
+        createPolicyIfNotExists(
+                "BR-13",
+                "Một booking có thể bao gồm nhiều slot thời gian liên tiếp liền kề và trên cùng một đầu nối (connector), tối đa là 3 slot. Độ dài slot mặc định là 60 phút và có thể cấu hình."
+        );
+        createPolicyIfNotExists(
+                "BR-14",
+                "Một số điện thoại phải là duy nhất và không thể được sử dụng cho nhiều tài khoản."
+        );
+        createPolicyIfNotExists(
+                "BR-15",
+                "Tài khoản Staff không thể tự chỉnh sửa thông tin hồ sơ cá nhân. Họ chỉ được phép sử dụng chức năng \"Đổi Mật khẩu\"."
+        );
+        createPolicyIfNotExists(
+                "BR-16",
+                "Tương tự như Staff, tài khoản Admin cũng không thể tự chỉnh sửa thông tin hồ sơ cá nhân. Họ chỉ được phép sử dụng chức năng \"Đổi Mật khẩu\"."
+        );
+        createPolicyIfNotExists(
+                "BR-17",
+                "Mỗi cổng sạc chỉ có thể có một cấu hình giá hoạt động duy nhất tại bất kỳ thời điểm nào. Cấu hình này định nghĩa các đơn giá cho cổng đó."
+        );
+        createPolicyIfNotExists(
+                "BR-18",
+                "Bất kỳ chỉnh sửa nào đối với cấu hình giá sẽ có hiệu lực ngay lập tức. Mọi tính toán sau đó đều phải sử dụng đơn giá đã cập nhật."
+        );
+        createPolicyIfNotExists(
+                "BR-19",
+                "Để gỡ bỏ lệnh cấm (và thanh toán phí phạt theo BR-06), tài xế phải trực tiếp đến trạm sạc gần nhất và yêu cầu Nhân viên (Staff) tại chỗ hỗ trợ. Nhân viên sẽ thực hiện quy trình gỡ ban."
+        );
+        createPolicyIfNotExists(
+                "BR-20",
+                "Biển số xe phải là duy nhất trong toàn bộ hệ thống (nó không thể được đăng ký bởi hai tài xế khác nhau)."
+        );
+        createPolicyIfNotExists(
+                "BR-21",
+                "Một phương tiện không thể được ngưng hoạt động khỏi hồ sơ của Tài xế nếu nó được liên kết với một booking đang hoạt động hoặc sắp diễn ra (trong tương lai)."
+        );
+        createPolicyIfNotExists(
+                "BR-22",
+                "Khi một phiên sạc bị Nhân viên dừng thủ công, phí phạt đậu xe nhàn rỗi sẽ được miễn cho phiên sạc đó. Tài xế sẽ không bị tính phí phạt."
+        );
+    }
+
+    private void createPolicyIfNotExists(String policyName, String description) {
+        try {
+            if (policyRepository.existsByPolicyName(policyName)) {
+                log.info("Policy {} already exists, skip seeding", policyName);
+                return;
+            }
+
+            Policy p = Policy.builder()
+                    .policyName(policyName)
+                    .policyDescription(description)
+                    .build();
+
+            policyRepository.save(p);
+            log.info("Created policy {}: {}", policyName, description);
+        } catch (Exception e) {
+            log.warn("Failed to create policy {}: {}", policyName, e.getMessage());
+        }
     }
 }

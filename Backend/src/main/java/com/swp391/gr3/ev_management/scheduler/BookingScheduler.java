@@ -27,26 +27,21 @@ public class BookingScheduler {
     // Chạy mỗi phút (giây 0 của mỗi phút) theo giờ Việt Nam
     @Scheduled(cron = "0 * * * * *", zone = "Asia/Ho_Chi_Minh")
     public void autoCancelOverdueBookings() {
-        // Lấy thời gian hiện tại theo múi giờ VN
         LocalDateTime now = LocalDateTime.now(TENANT_ZONE);
         log.info("[autoCancelOverdue] tick at {}", now);
 
-        // Lấy tối đa 50 booking đang CONFIRMED mà scheduledEndTime <= now
-        // => nghĩa là đã quá hạn kết thúc nhưng user chưa đến => cần auto-cancel
-        List<Booking> overdue = bookingsRepo
-                .findTop50ByStatusAndScheduledEndTimeLessThanEqualOrderByScheduledEndTimeAsc(
-                        BookingStatus.CONFIRMED, now);
+        // ✅ chỉ lấy ID, không JOIN gì nặng cả
+        List<BookingStatus> statuses = List.of(BookingStatus.CONFIRMED, BookingStatus.PENDING);
 
-        log.info("[autoCancelOverdue] found {} bookings overdue", overdue.size());
+        List<Long> overdueIds = bookingsRepo.findOverdueIds(statuses, now);
+        log.info("[autoCancelOverdue] found {} bookings overdue", overdueIds.size());
 
-        // Lặp qua từng booking quá hạn để xử lý
-        for (Booking b : overdue) {
+        for (Long bookingId : overdueIds) {
             try {
-                // Gọi handler xử lý: bao gồm cancel booking + tạo violation (nếu phù hợp)
-                overdueHandler.cancelAndCreateViolationTx(b.getBookingId());
+                overdueHandler.cancelAndCreateViolationTx(bookingId);
             } catch (Exception ex) {
-                // Nếu có lỗi, log chi tiết + bookingId để dễ trace
-                log.error("[autoCancelOverdue] Error bookingId={}: {}", b.getBookingId(), ex.getMessage(), ex);
+                log.error("[autoCancelOverdue] Error bookingId={}: {}",
+                        bookingId, ex.getMessage(), ex);
             }
         }
     }
