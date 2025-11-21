@@ -12,15 +12,25 @@ import java.util.Map;
 
 @Service
 public interface UserService {
+
     User getUser(String phoneNumber, String password);
+
     User register(RegisterRequest registerRequest);
+
     boolean existsByPhoneNumber(String phoneNumber);
+
     boolean existsByEmail(String email);
+
     ResponseEntity<?> logout(HttpServletRequest request);
+
     User authenticate(String phoneNumber, String password);
+
     void addUser(User user);
+
     List<User> findAll();
+
     User findById(Long id);
+
     User registerAsStaff(RegisterRequest req, Long stationId); // ADMIN
 
     Map<String, Object> registerStaffAndAssignStation(RegisterRequest user, Long stationId);
@@ -28,8 +38,6 @@ public interface UserService {
     List<GetUsersResponse> getAllUsersWithSessions();
 
     User findByEmail(String email);
-
-    User findUserByUserId(Long userId);
 
     long count();
 }

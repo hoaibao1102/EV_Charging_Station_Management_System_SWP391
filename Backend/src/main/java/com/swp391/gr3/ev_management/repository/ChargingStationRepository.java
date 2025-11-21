@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.entity.ChargingStation;
+import com.swp391.gr3.ev_management.enums.ChargingStationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -57,4 +58,17 @@ public interface ChargingStationRepository extends JpaRepository<ChargingStation
      * @return Optional chứa ChargingStation (nếu có), hoặc Optional.empty() nếu không tìm thấy
      */
     Optional<ChargingStation> findByStationName(String stationName);
+
+    /**
+     * ✅ Đếm số trạm sạc theo trạng thái (status).
+     *
+     * Dùng để thống kê số lượng trạm sạc đang hoạt động, bảo trì, v.v.
+     *
+     * Spring Data JPA tự động sinh câu SQL:
+     * SELECT COUNT(*) FROM charging_station WHERE status = :status;
+     *
+     * @param status Trạng thái của trạm sạc
+     * @return Số lượng trạm sạc có trạng thái tương ứng
+     */
+    long countByStatus(ChargingStationStatus status);
 }
