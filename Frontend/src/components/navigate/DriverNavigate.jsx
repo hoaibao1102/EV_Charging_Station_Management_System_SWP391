@@ -9,6 +9,7 @@ import paths from "../../path/paths.jsx";
 import { isAuthenticated } from "../../utils/authUtils.js";
 import classed from "../../assets/css/Main.module.css";
 import { useSelector } from "react-redux";
+import NotificationBell from "../NotificationBell/NotificationBell";
 
 export default function AppNavigation() {
   const location = useLocation();
@@ -66,7 +67,9 @@ export default function AppNavigation() {
             </NavLink>
           );
         })}
-        {!isLoggedIn && (
+        {isLoggedIn ? (
+          <NotificationBell />
+        ) : (
           <button
             className={classed.button}
             onClick={() => navigate(paths.login)}

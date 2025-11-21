@@ -66,14 +66,15 @@ export default function Payment() {
         return;
       }
 
-      // Xử lý thanh toán VNPay / E-Wallet
-      if (method.provider === "VNPAY" || method.methodType === "EWALLET") {
-        const response = await apiClient.post(
-          `/api/payment/vnpay/create?sessionId=${session.sessionId}&paymentMethodId=${selectedMethod}`
-        );
+      // Gọi API thanh toán cho tất cả các phương thức
+      const response = await apiClient.post(
+        `/api/payment/vnpay/create?sessionId=${session.sessionId}&paymentMethodId=${selectedMethod}`
+      );
 
+      // Xử lý response dựa trên loại phương thức
+      if (method.provider === "VNPAY" || method.methodType === "EWALLET") {
+        // VNPay/E-Wallet: redirect đến trang thanh toán
         if (response.data?.paymentUrl) {
-          // Redirect to VNPay payment page
           window.location.href = response.data.paymentUrl;
           return;
         } else {
@@ -81,16 +82,25 @@ export default function Payment() {
             position: "top-center",
           });
         }
-      }
-      // Xử lý thanh toán tiền mặt
-      else if (method.methodType === "CASH") {
-        toast.success("Thanh toán tiền mặt sẽ được xác nhận tại trạm!", {
-          position: "top-center",
-        });
-        setTimeout(() => setPaymentCompleted(true), 1500);
-      }
-      // Phương thức chưa hỗ trợ
-      else {
+      } else if (method.methodType === "CASH" || method.provider === "EVM") {
+        // CASH/EVM: xử lý thanh toán nội bộ, backend đã lưu vào DB
+        if (response.data?.message) {
+          toast.success("Thanh toán thành công! Hóa đơn đã được lưu.", {
+            position: "top-center",
+            autoClose: 2000,
+          });
+          setTimeout(() => {
+            setPaymentCompleted(true);
+            // Chuyển về trang chủ sau khi thanh toán thành công
+            navigate("/");
+          }, 2000);
+        } else {
+          toast.error("Thanh toán thất bại!", {
+            position: "top-center",
+          });
+        }
+      } else {
+        // Phương thức không được hỗ trợ
         toast.warning("Phương thức thanh toán chưa được hỗ trợ!", {
           position: "top-center",
         });
@@ -157,8 +167,10 @@ export default function Payment() {
           <div className="info-row">
             <span className="info-label">Kết thúc:</span>
             <span className="info-value">
-              {session.endTime
-                ? new Date(session.endTime).toLocaleString("vi-VN")
+              {session.endTime || session.actualEndTime
+                ? new Date(
+                    session.endTime || session.actualEndTime
+                  ).toLocaleString("vi-VN")
                 : "-"}
             </span>
           </div>
@@ -194,17 +206,53 @@ export default function Payment() {
 
         <div className="payment-section payment-summary">
           <h3 className="section-title">💰 Chi tiết thanh toán</h3>
+
+          {/* Hiển thị đơn giá theo kWh */}
+          {session.pricePerKWh != null && session.pricePerKWh > 0 && (
+            <div className="info-row">
+              <span className="info-label">Đơn giá năng lượng:</span>
+              <span className="info-value">
+                {session.pricePerKWh.toLocaleString("vi-VN")}{" "}
+                {session.currency ?? "VND"}/kWh
+              </span>
+            </div>
+          )}
+
+          {/* Tính và hiển thị đơn giá theo phút nếu có (ngược từ cost - energyCost) */}
+          {(() => {
+            const energyCost =
+              session.pricePerKWh && session.energyKWh
+                ? session.pricePerKWh * session.energyKWh
+                : 0;
+            const timeCost = (session.cost ?? 0) - energyCost;
+            const pricePerMin =
+              session.durationMinutes > 0 && timeCost > 0
+                ? Math.round(timeCost / session.durationMinutes)
+                : 0;
+
+            return pricePerMin > 0 ? (
+              <div className="info-row">
+                <span className="info-label">Đơn giá thời gian:</span>
+                <span className="info-value">
+                  {pricePerMin.toLocaleString("vi-VN")}{" "}
+                  {session.currency ?? "VND"}/phút
+                </span>
+              </div>
+            ) : null;
+          })()}
+
           <div className="info-row">
-            <span className="info-label">Đơn giá:</span>
-            <span className="info-value">
-              {(session.pricePerKWh ?? 0).toLocaleString("vi-VN")}{" "}
-              {session.currency ?? "VND"}/kWh
-            </span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Năng lượng:</span>
+            <span className="info-label">Năng lượng sạc:</span>
             <span className="info-value">{session.energyKWh ?? 0} kWh</span>
           </div>
+
+          <div className="info-row">
+            <span className="info-label">Thời lượng:</span>
+            <span className="info-value">
+              {session.durationMinutes ?? 0} phút
+            </span>
+          </div>
+
           <div className="total-row">
             <span className="total-label">Tổng cộng:</span>
             <span className="total-value">
