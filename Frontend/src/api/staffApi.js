@@ -70,3 +70,34 @@ export const getSessionsPerHourChartApi = () => {
     "Lấy dữ liệu biểu đồ thất bại"
   );
 };
+
+// ==================== STAFF TRANSACTION MANAGEMENT APIs ====================
+
+// Lấy danh sách giao dịch của trạm (có phân trang, filter, sort)
+export const getStationTransactionsApi = (params = {}) => {
+  const {
+    status = null,
+    page = 0,
+    size = 10,
+    sortBy = "createdAt",
+    sortDir = "desc",
+  } = params;
+
+  let url = `/api/staff/transactions?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
+  if (status) {
+    url += `&status=${status}`;
+  }
+
+  return handleApiCall(
+    () => apiClient.get(url),
+    "Lấy danh sách giao dịch thất bại"
+  );
+};
+
+// Lấy thống kê giao dịch của trạm
+export const getStationTransactionStatsApi = () => {
+  return handleApiCall(
+    () => apiClient.get("/api/staff/transactions/stats"),
+    "Lấy thống kê giao dịch thất bại"
+  );
+};

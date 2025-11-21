@@ -31,7 +31,20 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const status = error.response?.status;
-    if (status === 401) {
+    const requestUrl = error.config?.url || "";
+
+    // Danh sách các public endpoints không cần redirect khi 401
+    const publicEndpoints = [
+      "/api/charging-stations",
+      "/api/connector-types",
+      "/api/charging-points/station",
+    ];
+
+    const isPublicEndpoint = publicEndpoints.some((endpoint) =>
+      requestUrl.includes(endpoint)
+    );
+
+    if (status === 401 && !isPublicEndpoint) {
       console.log("Token hết hạn, tự động đăng xuất...");
 
       // Sử dụng hàm chung để xóa thông tin đăng nhập
