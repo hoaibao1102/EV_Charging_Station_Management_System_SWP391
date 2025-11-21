@@ -245,4 +245,9 @@ public class SlotAvailabilityServiceImpl implements SlotAvailabilityService {
     public List<SlotAvailability> findByConfigAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end) {
         return slotAvailabilityRepository.findByTemplate_Config_ConfigIdAndDateBetween(configId, start, end);
     }
+
+    @Override
+    public List<Long> findConnectorTypeIdByBooking(Long bookingId) {
+        return slotAvailabilityRepository.findConnectorTypeIdsByBooking(bookingId);
+    }
 }

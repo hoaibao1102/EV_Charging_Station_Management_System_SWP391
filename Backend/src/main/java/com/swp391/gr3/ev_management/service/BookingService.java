@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
+import com.swp391.gr3.ev_management.dto.request.LightBookingInfo;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
 import com.swp391.gr3.ev_management.entity.Booking;
@@ -44,4 +45,6 @@ public interface BookingService {
     List<Booking> findByStatusAndStartTimeBetween(BookingStatus bookingStatus, LocalDateTime now, LocalDateTime next2Hours);
 
     List<Booking> findTop5ByOrderByCreatedAtDesc();
+
+    Optional<LightBookingInfo> findLightBookingInfo(Long bookingId);
 }

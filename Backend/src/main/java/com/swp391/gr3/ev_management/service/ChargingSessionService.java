@@ -59,4 +59,6 @@ public interface ChargingSessionService {
     List<ChargingSession> findTop5ByOrderByStartTimeDesc();
 
     List<ChargingSession> findByStartTimeBetween(LocalDateTime startOfDay, LocalDateTime endOfDay);
+
+    Boolean existsValidSessionForBooking(Long bookingId);
 }

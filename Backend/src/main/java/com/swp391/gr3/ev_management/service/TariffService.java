@@ -26,4 +26,6 @@ public interface TariffService {
     Optional<Tariff> findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(Long connectorTypeId, LocalDateTime pricingTime, LocalDateTime pricingTime1);
 
     Collection<Tariff> findActiveByConnectorType(Long connectorTypeId, LocalDateTime pricingTime);
+
+    Optional<Double> findPricePerMinActive(Long connectorTypeId, LocalDateTime now);
 }

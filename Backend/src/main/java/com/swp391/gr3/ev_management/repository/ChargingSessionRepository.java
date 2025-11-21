@@ -223,4 +223,13 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
 
     /** Tìm danh sách phiên sạc bắt đầu trong khoảng thời gian nhất định */
     List<ChargingSession> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    /** Kiểm tra có tồn tại phiên sạc hợp lệ (PENDING, IN_PROGRESS, COMPLETED) cho bookingId không */
+    @Query("""
+        select case when count(cs) > 0 then true else false end
+        from ChargingSession cs
+        where cs.booking.bookingId = :bookingId
+          and cs.status in ('PENDING','IN_PROGRESS','COMPLETED')
+        """)
+    Boolean existsValidSessionForBooking(Long bookingId);
 }

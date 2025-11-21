@@ -2,6 +2,7 @@ package com.swp391.gr3.ev_management.enums;
 
 public enum NotificationTypes {
     USER_REGISTERED,
+    GOOGLE_FIRST_LOGIN,
     USER_BANNED,
     BOOKING_CONFIRMED,
     BOOKING_OVERDUE,

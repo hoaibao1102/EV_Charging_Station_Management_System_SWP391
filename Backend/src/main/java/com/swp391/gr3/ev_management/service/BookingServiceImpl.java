@@ -7,6 +7,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
+import com.swp391.gr3.ev_management.dto.request.LightBookingInfo;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
@@ -445,5 +446,10 @@ public class BookingServiceImpl implements BookingService {
     public List<Booking> findTop5ByOrderByCreatedAtDesc() {
         // Lấy 5 booking mới nhất theo thời gian tạo
         return bookingsRepository.findTop5ByOrderByCreatedAtDesc();
+    }
+
+    @Override
+    public Optional<LightBookingInfo> findLightBookingInfo(Long bookingId) {
+        return bookingsRepository.findLightBookingInfo(bookingId);
     }
 }

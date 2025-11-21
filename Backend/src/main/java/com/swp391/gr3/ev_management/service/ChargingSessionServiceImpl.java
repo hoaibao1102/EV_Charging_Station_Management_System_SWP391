@@ -432,4 +432,9 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
         // Lấy danh sách phiên sạc bắt đầu trong khoảng [startOfDay, endOfDay]
         return chargingSessionRepository.findByStartTimeBetween(startOfDay, endOfDay);
     }
+
+    @Override
+    public Boolean existsValidSessionForBooking(Long bookingId) {
+        return chargingSessionRepository.existsValidSessionForBooking(bookingId);
+    }
 }

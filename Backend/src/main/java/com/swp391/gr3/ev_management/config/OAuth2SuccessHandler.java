@@ -4,14 +4,18 @@ import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.Role;
 import com.swp391.gr3.ev_management.entity.User;
 import com.swp391.gr3.ev_management.enums.DriverStatus;
+import com.swp391.gr3.ev_management.events.UserGoogleFirstLoginEvent;
 import com.swp391.gr3.ev_management.repository.DriverRepository;
 import com.swp391.gr3.ev_management.repository.RoleRepository;
 import com.swp391.gr3.ev_management.repository.UserRepository;
+import com.swp391.gr3.ev_management.service.EmailService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -24,6 +28,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Component // Đánh dấu class này là một bean Spring, để Spring Security autowire làm success handler
+@RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     // ====== Dependencies chính ======
@@ -32,23 +37,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final PasswordEncoder passwordEncoder;       // Mã hoá password ngẫu nhiên cho user Google
     private final TokenService tokenService;             // Sinh JWT sau khi login thành công
     private final DriverRepository driverRepository;     // Lưu bản ghi Driver nếu user là tài xế
+    private final EmailService emailService;             // Gửi email (nếu cần)
+    private final ApplicationEventPublisher publisher;   // Để publish event trong ứng dụng
 
     // URL callback bên FE để nhận token sau khi đăng nhập Google thành công
     // Có thể cấu hình trong application.properties: app.oauth2.frontend-callback=...
     @Value("${app.oauth2.frontend-callback:http://localhost:5173/}")
     private String frontendCallback;
-
-    // Constructor injection cho các dependency
-    public OAuth2SuccessHandler(UserRepository userRepository,
-                                RoleRepository roleRepository,
-                                PasswordEncoder passwordEncoder,
-                                TokenService tokenService, DriverRepository driverRepository) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
-        this.driverRepository = driverRepository;
-    }
 
     /**
      * Hàm được Spring Security gọi khi quá trình OAuth2 (Google) authentication thành công.
@@ -117,6 +112,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
             // 4.4 PhoneNumber có thể để null, sau này FE sẽ yêu cầu bổ sung
             user = userRepository.save(user);
+
+            // 4.4.1 Gửi email báo password cho user
+            emailService.sendPasswordEmailHtml(user.getEmail(), randomPwd);
+
+            publisher.publishEvent(new UserGoogleFirstLoginEvent(
+                    user.getUserId(),
+                    user.getName()
+            ));
 
             // 4.5 Nếu role tương ứng là Driver thì tạo bản ghi Driver (ACTIVE)
             if ("Driver".equalsIgnoreCase(role.getRoleName())) {

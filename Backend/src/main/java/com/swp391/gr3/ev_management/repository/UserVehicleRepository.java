@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserVehicleRepository extends JpaRepository<UserVehicle,Long> {
@@ -65,4 +66,12 @@ public interface UserVehicleRepository extends JpaRepository<UserVehicle,Long> {
      * - Tránh lỗi ràng buộc dữ liệu (foreign key constraint) khi model vẫn đang được dùng.
      */
     long countByModel_ModelId(Long modelId);
+
+    @Query("""
+        select vm.connectorType.connectorTypeId
+        from UserVehicle v
+        join v.model vm
+        where v.vehicleId = :vehicleId
+        """)
+    Optional<Long> findConnectorTypeIdByVehicleId(Long vehicleId);
 }

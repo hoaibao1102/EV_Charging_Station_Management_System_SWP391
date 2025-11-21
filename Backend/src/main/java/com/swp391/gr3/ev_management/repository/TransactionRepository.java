@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.repository;
 
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
 import com.swp391.gr3.ev_management.entity.Transaction;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -55,18 +56,33 @@ public interface TransactionRepository extends JpaRepository<Transaction,Long> {
      * @return danh sách Transaction (bao gồm đầy đủ thông tin liên quan)
      */
     @Query("""
-           select distinct t
-           from Transaction t
-             join fetch t.invoice i
-             join fetch i.session s
-             join fetch s.booking b
-             join fetch b.vehicle v
-             join fetch v.driver d
-             join fetch d.user u
-           where u.userId = :userId
-           order by t.createdAt desc
-           """)
-    List<Transaction> findAllDeepGraphByDriverUserId(@Param("userId") Long userId);
+select new com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse(
+    t.transactionId,
+    t.amount,
+    t.currency,
+    t.description,
+    t.status,
+    t.createdAt,
+    i.invoiceId,
+    s.sessionId,
+    b.bookingId,
+    st.stationId,
+    st.stationName,
+    v.vehicleId,
+    v.vehiclePlate
+)
+from Transaction t
+join t.invoice i
+join i.session s
+join s.booking b
+join b.vehicle v
+join b.station st
+join v.driver d
+join d.user u
+where u.userId = :userId
+order by t.createdAt desc
+""")
+    List<TransactionBriefResponse> findBriefByUserId(Long userId);
 
     /**
      * ✅ Tính tổng số tiền (amount) của tất cả các giao dịch (Transaction)

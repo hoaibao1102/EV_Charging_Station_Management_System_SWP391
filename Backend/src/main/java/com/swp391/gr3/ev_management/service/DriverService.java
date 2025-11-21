@@ -51,5 +51,7 @@ public interface DriverService {
     Optional<Driver> findByUserIdWithUser(Long userId);
 
     void save(Driver driver);
+
+    Optional<Driver> findByUserIdLight(Long userId);
 }
 

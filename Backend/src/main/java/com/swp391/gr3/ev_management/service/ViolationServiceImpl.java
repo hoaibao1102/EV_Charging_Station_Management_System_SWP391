@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
+import com.swp391.gr3.ev_management.dto.request.LightBookingInfo;
 import com.swp391.gr3.ev_management.dto.request.ViolationRequest;
 import com.swp391.gr3.ev_management.dto.response.ViolationResponse;
 import com.swp391.gr3.ev_management.entity.*;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -39,126 +41,113 @@ public class ViolationServiceImpl implements ViolationService {
     private final DriverViolationTripletService driverViolationTripletService;// Gom nhóm 3 lỗi (Triplet)
     private final TariffService tariffService;                                // Lấy tariff để tính tiền phạt
     private final ViolationResponseMapper violationResponseMapper;            // Map Entity -> ViolationResponse
+    private final SlotAvailabilityService slotAvailabilityService;            // Lấy thông tin slot nhẹ
+    private final UserVehicleService userVehicleService;                        // Lấy thông tin vehicle nhẹ
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW) // Tạo 1 transaction riêng biệt (dù bên ngoài có TX hay không)
     public ViolationResponse createViolation(Long userId, ViolationRequest request) {
-        final Long bookingId = request.getBookingId();
-        log.info("Creating violation for userId={}, bookingId={}", userId, bookingId);
 
-        // 1) Nếu bookingId null thì không xử lý (đảm bảo tránh NullPointer)
-        if (bookingId == null) {
-            log.warn("[createViolation] Skip: bookingId is null (userId={})", userId);
+        Long bookingId = request.getBookingId();
+        log.info("[NO_SHOW] Create violation userId={}, bookingId={}", userId, bookingId);
+
+        if (bookingId == null) return null;
+
+    /* =======================================================
+       1) Load thông tin booking nhẹ — KHÔNG JOIN NHIỀU BẢNG
+       ======================================================= */
+        LightBookingInfo bookingInfo = bookingService.findLightBookingInfo(bookingId)
+                .orElse(null);
+
+        if (bookingInfo == null) {
+            log.warn("[NO_SHOW] Booking not found {}", bookingId);
             return null;
         }
 
-        // 2) Tìm Driver theo userId (join cả User) -> nếu không thấy thì ném lỗi
-        Driver driver = driverService.findByUserIdWithUser(userId)
-                .orElseThrow(() -> new ErrorException("Driver not found with userId " + userId));
+        LocalDateTime slotStart = bookingInfo.getStart();
+        LocalDateTime slotEnd = bookingInfo.getEnd();
+        LocalDateTime now = LocalDateTime.now(TENANT_ZONE);
 
-        // 3) Tìm Booking theo bookingId, đã load cả ConnectorType (qua slot/point/connector) để tính phí
-        Booking booking = bookingService.findByIdWithConnectorType(bookingId)
-                .orElseThrow(() -> new ErrorException("Booking not found with id " + bookingId));
+        if (now.isBefore(slotStart)) return null;
+        if (now.isBefore(slotEnd)) return null;
 
-        // 4) Lấy thời gian bắt đầu/kết thúc slot đã đặt + thời điểm hiện tại (VN time)
-        final LocalDateTime slotStart = booking.getScheduledStartTime();
-        final LocalDateTime slotEnd   = booking.getScheduledEndTime();
-        final LocalDateTime now       = LocalDateTime.now(TENANT_ZONE);
+    /* =======================================================
+       2) Check session hợp lệ (nhẹ) - chỉ SELECT status
+       ======================================================= */
+        Boolean hasValidSession =
+                chargingSessionService.existsValidSessionForBooking(bookingId);
 
-        // 5) Nếu hiện tại trước giờ bắt đầu slot → chưa thể coi là no-show, bỏ qua
-        if (now.isBefore(slotStart)) {
-            log.debug("[NO_SHOW] Skip: before slot start (bookingId={}, slotStart={}, now={})", bookingId, slotStart, now);
+        if (Boolean.TRUE.equals(hasValidSession)) {
+            log.info("[NO_SHOW] Skip: Valid session exists bookingId={}", bookingId);
             return null;
         }
 
-        // 6) Kiểm tra xem booking này đã có phiên sạc hợp lệ chưa
-        //    Nếu đã có session IN_PROGRESS / PENDING / COMPLETED thì không coi là no-show
-        boolean hasValidSession = chargingSessionService.findByBooking_BookingId(bookingId)
-                .filter(cs -> cs.getStatus() == ChargingSessionStatus.COMPLETED
-                        || cs.getStatus() == ChargingSessionStatus.PENDING
-                        || cs.getStatus() == ChargingSessionStatus.IN_PROGRESS)
-                .isPresent();
-        if (hasValidSession) {
-            log.debug("[NO_SHOW] Skip: has valid charging session (bookingId={})", bookingId);
-            return null;
-        }
+    /* =======================================================
+       3) Load connectorTypeId nhẹ – không join nặng
+       ======================================================= */
+        List<Long> connectorIds =
+                slotAvailabilityService.findConnectorTypeIdByBooking(bookingId);
 
-        // 7) Nếu slot chưa kết thúc (now < slotEnd) thì chưa xử lý no-show (chờ hết khung)
-        if (now.isBefore(slotEnd)) {
-            log.debug("[NO_SHOW] Skip: slot not finished yet (bookingId={}, slotEnd={}, now={})", bookingId, slotEnd, now);
-            return null;
-        }
-        // 8) Tới đây: now >= slotEnd, không có session hợp lệ => driver đã đặt nhưng không đến => no-show
+        Long connectorTypeId = connectorIds.stream()
+                .findFirst()   // Optional<Long>
+                .orElseGet(() ->
+                        userVehicleService
+                                .findConnectorTypeIdByVehicleId(bookingInfo.getVehicleId())
+                                .orElse(null)
+                );
 
-        // 9) Tính số giây slot đã giữ (từ slotStart tới slotEnd), đảm bảo không âm
-        long reservedSeconds = Math.max(0, java.time.Duration.between(slotStart, slotEnd).getSeconds());
-        if (reservedSeconds <= 0) {
-            // Nếu thời lượng slot không hợp lệ thì log cảnh báo và bỏ qua
-            log.warn("[NO_SHOW] Skip: invalid slot duration (bookingId={}, slotStart={}, slotEnd={})",
-                    bookingId, slotStart, slotEnd);
-            return null;
-        }
-
-        // 10) Quy đổi sang phút, làm tròn lên (mỗi 60s -> 1 phút, phần dư cũng tính 1 phút)
-        long penaltyMinutes = Math.max(1, (reservedSeconds + 59) / 60);
-
-        // 11) Lấy connectorTypeId để lấy tariff theo loại đầu nối
-        Long connectorTypeId = null;
-        try {
-            // Ưu tiên lấy từ bookingSlots -> slot -> chargingPoint -> connectorType
-            connectorTypeId = booking.getBookingSlots().stream()
-                    .filter(bs -> bs.getSlot() != null
-                            && bs.getSlot().getChargingPoint() != null
-                            && bs.getSlot().getChargingPoint().getConnectorType() != null)
-                    .findFirst()
-                    .map(bs -> bs.getSlot().getChargingPoint().getConnectorType().getConnectorTypeId())
-                    .orElse(null);
-        } catch (Exception ignored) {}
-
-        // 12) Nếu không tìm được qua slot, fallback: lấy từ vehicle.model.connectorType
         if (connectorTypeId == null) {
-            try {
-                connectorTypeId = booking.getVehicle().getModel().getConnectorType().getConnectorTypeId();
-                log.warn("[NO_SHOW] Fallback connectorTypeId via vehicle.model for bookingId={}: {}",
-                        bookingId, connectorTypeId);
-            } catch (Exception ex) {
-                // Nếu vẫn không xác định được => lỗi nghiệp vụ
-                throw new ErrorException("Không xác định được ConnectorType cho bookingId " + bookingId);
-            }
+            throw new ErrorException("Cannot determine ConnectorType for booking " + bookingId);
         }
 
-        // 13) Lấy tariff đang active cho connectorTypeId tại thời điểm hiện tại
-        Tariff activeTariff = resolveActiveTariff(connectorTypeId);
-        // pricePerMin có thể null -> fallback 0.0
-        double pricePerMin = Optional.ofNullable(activeTariff.getPricePerMin()).orElse(0.0);
-        // 14) Tính số tiền phạt = đơn giá theo phút * số phút giữ slot
-        double penaltyAmount = pricePerMin * penaltyMinutes;
+    /* =======================================================
+       4) Load giá — query rất nhẹ
+       ======================================================= */
+        Double pricePerMin =
+                tariffService.findPricePerMinActive(connectorTypeId, now)
+                        .orElse(0.0);
 
-        log.info("[NO_SHOW] bookingId={}, slotStart={}, slotEnd={}, minutes={}, connectorTypeId={}, pricePerMin={}, penalty={}",
-                bookingId, slotStart, slotEnd, penaltyMinutes, connectorTypeId, pricePerMin, penaltyAmount);
+    /* =======================================================
+       5) Tính penalty nhanh
+       ======================================================= */
+        long reservedSeconds = Duration.between(slotStart, slotEnd).getSeconds();
+        long minutes = Math.max(1, (reservedSeconds + 59) / 60);
 
-        // 15) Tạo object DriverViolation và lưu ngay xuống DB (saveAndFlush để có ID dùng tiếp)
-        DriverViolation savedViolation = violationRepository.saveAndFlush(
-                DriverViolation.builder()
-                        .driver(driver) // gán tài xế bị phạt
-                        .status(ViolationStatus.ACTIVE) // trạng thái ACTIVE
-                        .description(Optional.ofNullable(request.getDescription())
-                                .orElse("No-show: reserved slot not used")) // mô tả, nếu request không có thì ghi mặc định
-                        .occurredAt(slotEnd) // thời điểm vi phạm: cuối slot
-                        .penaltyAmount(penaltyAmount) // số tiền phạt
-                        .build()
-        );
-        log.info("[NO_SHOW] Saved violationId={} for bookingId={}", savedViolation.getViolationId(), bookingId);
+        double penaltyAmount = pricePerMin * minutes;
 
-        // 16) Đưa violation này vào Triplet (nhóm tối đa 3 vi phạm) để quản lý việc đóng/mở
-        attachViolationToTriplet(driver, savedViolation);
+    /* =======================================================
+       6) Load Driver nhanh
+       ======================================================= */
+        Driver driver = driverService.findByUserIdLight(userId)
+                .orElseThrow(() -> new ErrorException("Driver not found"));
 
-        // 17) Kiểm tra tự động: nếu số vi phạm ACTIVE >= 3 thì tự động BAN driver
+    /* =======================================================
+       7) Save Violation — nhẹ
+       ======================================================= */
+        DriverViolation violation = DriverViolation.builder()
+                .driver(driver)
+                .status(ViolationStatus.ACTIVE)
+                .occurredAt(slotEnd)
+                .description(
+                        Optional.ofNullable(request.getDescription())
+                                .orElse("No-show: reserved slot not used")
+                )
+                .penaltyAmount(penaltyAmount)
+                .build();
+
+        violationRepository.saveAndFlush(violation);
+
+        log.info("[NO_SHOW] Saved violationId={} bookingId={}",
+                violation.getViolationId(), bookingId);
+
+    /* =======================================================
+       8) Triplet + autoban (giữ nguyên logic hiện tại)
+       ======================================================= */
+        attachViolationToTriplet(driver, violation);
         boolean wasAutoBanned = autoCheckAndBanDriver(driver);
 
-        // 18) Trả về DTO response kèm cờ wasAutoBanned (cho client biết driver vừa bị ban hay chưa)
-        return violationResponseMapper.toResponse(savedViolation, wasAutoBanned);
+        return violationResponseMapper.toResponse(violation, wasAutoBanned);
     }
+
 
     /**
      * Helper: Lấy tariff đang active cho một connectorType tại thời điểm hiện tại.
