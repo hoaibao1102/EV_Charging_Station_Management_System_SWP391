@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.service;
 
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
 import com.swp391.gr3.ev_management.entity.Transaction;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import com.swp391.gr3.ev_management.repository.TransactionRepository;
@@ -35,8 +36,8 @@ public class TransactionServiceImpl implements TransactionService{
      *   driver → invoice → paymentMethod → session → booking → station...
      */
     @Override
-    public List<Transaction> findAllDeepGraphByDriverUserId(Long userId) {
-        return transactionRepository.findAllDeepGraphByDriverUserId(userId);
+    public List<TransactionBriefResponse> findAllDeepGraphByDriverUserId(Long userId) {
+        return transactionRepository.findBriefByUserId(userId);
     }
 
     /**
@@ -66,6 +67,11 @@ public class TransactionServiceImpl implements TransactionService{
     @Override
     public List<Transaction> findTop5ByStatusOrderByCreatedAtDesc(TransactionStatus completed) {
         return transactionRepository.findTop5ByStatusOrderByCreatedAtDesc(completed);
+    }
+
+    @Override
+    public List<TransactionBriefResponse> findBriefByUserId(Long userId) {
+        return transactionRepository.findBriefByUserId(userId);
     }
 
 }

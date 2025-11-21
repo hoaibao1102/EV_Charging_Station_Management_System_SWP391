@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface SlotAvailabilityService {
 
@@ -35,4 +36,6 @@ public interface SlotAvailabilityService {
     Collection<SlotAvailability> saveAll(ArrayList<SlotAvailability> toSave);
 
     List<SlotAvailability> findByConfigAndDateBetween(Long configId, LocalDateTime start, LocalDateTime end);
+
+    List<Long> findConnectorTypeIdByBooking(Long bookingId);
 }

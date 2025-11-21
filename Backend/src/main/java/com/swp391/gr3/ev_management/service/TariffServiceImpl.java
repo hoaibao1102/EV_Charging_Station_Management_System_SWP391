@@ -177,4 +177,9 @@ public class TariffServiceImpl implements TariffService {
         return tariffRepository.findActiveByConnectorType(connectorTypeId, pricingTime);
     }
 
+    @Override
+    public Optional<Double> findPricePerMinActive(Long connectorTypeId, LocalDateTime now) {
+        return tariffRepository.findPricePerMinActive(connectorTypeId, now);
+    }
+
 }

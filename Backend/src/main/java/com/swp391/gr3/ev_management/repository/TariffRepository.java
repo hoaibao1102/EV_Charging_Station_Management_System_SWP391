@@ -90,4 +90,18 @@ public interface TariffRepository extends JpaRepository<Tariff,Long> {
            """)
     List<Tariff> findActiveByConnectorType(@Param("connectorTypeId") Long connectorTypeId,
                                            @Param("now") LocalDateTime now);
+
+    @Query(value = """
+    SELECT TOP 1 t.price_per_min
+    FROM tariffs t           -- ✅ đúng tên bảng trong DB (snake_case, số nhiều)
+    WHERE t.connector_typeid = :connectorId
+      AND t.effective_from <= :now
+      AND t.effective_to   >= :now
+    ORDER BY t.effective_from DESC
+    """,
+            nativeQuery = true)
+    Optional<Double> findPricePerMinActive(
+            @Param("connectorId") Long connectorId,
+            @Param("now") LocalDateTime now
+    );
 }

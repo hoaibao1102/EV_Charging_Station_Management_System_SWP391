@@ -30,4 +30,6 @@ public interface EmailService {
                                  String slotName,
                                  String connectorType,
                                  byte[] qrBytes);
+
+    void sendPasswordEmailHtml(String to, String password);
 }
