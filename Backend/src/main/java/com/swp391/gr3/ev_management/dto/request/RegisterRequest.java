@@ -8,30 +8,28 @@ import java.time.LocalDate;
 @Data
 public class RegisterRequest {
 
-    @NotBlank(message = "Email cannot be blank")
-    @Email(message = "Email is not valid")
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotBlank(message = "Phone number cannot be blank")
-    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message="Invalid VN phone")
+    @NotBlank(message = "Số điện thoại không được để trống")
+    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message = "Số điện thoại Việt Nam không hợp lệ")
     private String phoneNumber;
 
-    @NotBlank(message = "Password cannot be blank")
-    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
-    private String passwordHash; // thực tế nên đặt là 'password' hơn là 'passwordHash'
+    @NotBlank(message = "Mật khẩu không được để trống")
+    @Size(min = 6, max = 100, message = "Mật khẩu phải từ 6 đến 100 ký tự")
+    private String passwordHash;
 
-    @NotBlank(message = "Name cannot be blank")
+    @NotBlank(message = "Tên không được để trống")
     private String name;
 
-    @NotNull(message = "Date of birth cannot be null")
-    @Past(message = "Date of birth must be in the past")
+    @NotNull(message = "Ngày sinh không được để trống")
+    @Past(message = "Ngày sinh phải là ngày trong quá khứ")
     private LocalDate dateOfBirth;
 
-    @NotBlank(message = "Gender cannot be blank")
-    private String gender; // có thể chuyển sang enum
+    @NotBlank(message = "Giới tính không được để trống")
+    private String gender; // có thể chuyển sang enum để chuẩn hơn
 
-    @NotBlank(message = "Address cannot be blank")
+    @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 }
-
-

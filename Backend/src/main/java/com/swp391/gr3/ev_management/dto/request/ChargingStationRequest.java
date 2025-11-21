@@ -15,22 +15,23 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ChargingStationRequest {
-    @NotBlank(message = "Station name is required")
+
+    @NotBlank(message = "Tên trạm sạc không được để trống")
     private String stationName;
 
-    @NotBlank(message = "Address is required")
+    @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
-    @NotBlank(message = "Latitude is required")
-    private double latitude;
+    @NotNull(message = "Vĩ độ không được để trống")
+    private Double latitude;
 
-    @NotBlank(message = "Longitude is required")
-    private double longitude;
+    @NotNull(message = "Kinh độ không được để trống")
+    private Double longitude;
 
-    @NotBlank(message = "Operating hours are required")
+    @NotBlank(message = "Giờ hoạt động không được để trống")
     private String operatingHours;
 
-    @NotBlank(message = "Status is required")
+    @NotNull(message = "Trạng thái không được để trống")
     private ChargingStationStatus status;
 
     private LocalDateTime createdAt;

@@ -12,11 +12,11 @@ import lombok.*;
 @Builder
 public class ViolationRequest {
 
-    @NotBlank(message = "Description is required")
-    @Size(max = 255, message = "Description must be less than 255 characters")
+    @NotBlank(message = "Mô tả không được để trống")
+    @Size(max = 255, message = "Mô tả không được vượt quá 255 ký tự")
     private String description;
 
-    @NotNull(message = "BookingId is required")
-    @Positive(message = "BookingId must be positive")
+    @NotNull(message = "ID đặt lịch không được để trống")
+    @Positive(message = "ID đặt lịch phải là số dương")
     private Long bookingId; // giữ đúng camelCase
 }

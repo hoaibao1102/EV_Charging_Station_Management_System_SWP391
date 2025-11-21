@@ -14,24 +14,25 @@ import java.time.LocalDate;
 @Builder
 public class DriverUpdateRequest {
 
-    @NotNull(message = "Name cannot be null")
+    @NotNull(message = "Tên không được để trống")
     private String name;
 
-    @NotNull(message = "Email cannot be blank")
-    @Email(message = "Email is not valid")
+    @NotNull(message = "Email không được để trống")
+    @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotNull(message = "Phone number cannot be null")
-    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message="Invalid VN phone")
+    @NotNull(message = "Số điện thoại không được để trống")
+    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message = "Số điện thoại Việt Nam không hợp lệ")
     private String phoneNumber;
 
-    @NotNull(message = "Address cannot be null")
+    @NotNull(message = "Địa chỉ không được để trống")
     private String address;
 
-    @NotNull(message = "Date of birth cannot be null")
-    @Past(message = "Date of birth must be in the past")
+    @NotNull(message = "Ngày sinh không được để trống")
+    @Past(message = "Ngày sinh phải là ngày trong quá khứ")
     private LocalDate dateOfBirth;
 
-    @NotNull(message = "Gender cannot be null")
+    @NotNull(message = "Giới tính không được để trống")
+    @Pattern(regexp = "^[MF]$", message = "Giới tính phải là 'M' hoặc 'F'")
     private String gender;
 }

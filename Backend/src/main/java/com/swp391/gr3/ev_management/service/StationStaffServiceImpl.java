@@ -16,28 +16,6 @@ public class StationStaffServiceImpl implements StationStaffService {
     private final StationStaffRepository stationStaffRepository; // Repository truy vấn bảng StationStaff
 
     /**
-     * Tìm StationStaff đang ACTIVE dựa theo staffId (khóa chính của bảng station_staff).
-     * @param staffId ID của Staff trong bảng StationStaff
-     * @return Optional<StationStaff> nếu tìm thấy
-     */
-    @Override
-    public Optional<StationStaff> findActiveByStationStaffId(Long staffId) {
-        // Gọi repository để tìm staff có trạng thái Active theo staffId
-        return stationStaffRepository.findActiveByStationStaffId(staffId);
-    }
-
-    /**
-     * Tìm StationStaff đang ACTIVE theo userId.
-     * Một user có thể có nhiều StationStaff theo lịch sử station assignment,
-     * nhưng chỉ có 1 record đang active.
-     */
-    @Override
-    public Optional<StationStaff> findActiveByUserId(Long userId) {
-        // Kiểm tra user nào đang làm việc tại station nào (Active)
-        return stationStaffRepository.findActiveByUserId(userId);
-    }
-
-    /**
      * Alias method — tương tự findActiveByStationStaffId, chỉ khác tên.
      * Tìm ACTIVE staff theo staffId.
      */
@@ -64,5 +42,12 @@ public class StationStaffServiceImpl implements StationStaffService {
     public StationStaff saveStationStaff(StationStaff stationStaff) {
         // Lưu và trả về StationStaff sau khi persist
         return stationStaffRepository.save(stationStaff);
+    }
+
+    @Override
+    public Long getStationIdByUserId(Long userId) {
+        StationStaff stationStaff = stationStaffRepository.findActiveByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Staff not assigned to any station"));
+        return stationStaff.getStation().getStationId();
     }
 }

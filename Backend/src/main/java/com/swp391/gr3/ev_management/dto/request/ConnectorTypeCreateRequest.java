@@ -15,23 +15,23 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ConnectorTypeCreateRequest {
 
-    @NotBlank(message = "Code cannot be blank")
-    @Size(max = 20, message = "Code must not exceed 20 characters")
+    @NotBlank(message = "Mã code không được để trống")
+    @Size(max = 20, message = "Mã code không được vượt quá 20 ký tự")
     private String code;
 
-    @NotBlank(message = "Mode cannot be blank")
-    @Size(max = 10, message = "Mode must not exceed 10 characters")
+    @NotBlank(message = "Chế độ không được để trống")
+    @Size(max = 10, message = "Chế độ không được vượt quá 10 ký tự")
     private String mode;
 
-    @NotBlank(message = "Display name cannot be blank")
-    @Size(max = 100, message = "Display name must not exceed 100 characters")
+    @NotBlank(message = "Tên hiển thị không được để trống")
+    @Size(max = 100, message = "Tên hiển thị không được vượt quá 100 ký tự")
     private String displayName;
 
-    @NotNull(message = "Default max power is required")
-    @Positive(message = "Default max power must be greater than 0")
-    private double defaultMaxPowerKW;
+    @NotNull(message = "Giá trị công suất tối đa mặc định là bắt buộc")
+    @Positive(message = "Công suất tối đa mặc định phải lớn hơn 0")
+    private Double defaultMaxPowerKW;
 
-    @NotNull(message = "isDeprecated is required")
+    @NotNull(message = "Trạng thái isDeprecated là bắt buộc")
     private Boolean isDeprecated;
 
 }
