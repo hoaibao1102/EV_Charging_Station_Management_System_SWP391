@@ -490,10 +490,13 @@ export default function ChargingSession() {
     };
   }, []);
 
-  // 🔋 Virtual SOC simulation - ALIGNED WITH BACKEND (ChargingSessionTxHandler.java)
-  // Backend formula: efficiency=0.90, estEnergy = hours × ratedKW × 0.90
-  // finalSoc = clamp(initial + (estEnergy / capacity) × 100, 0-100), +1% if charging but no change
-  // energyKWh = ((finalSoc - initialSoc) / 100) × capacity
+  // 🔋 Virtual SOC simulation - FAST CHARGING SIMULATION
+  // Real-time: Every 2 seconds = 2 minutes of charging (60x speed)
+  // Example with 11kW charger, 60kWh battery, 90% efficiency:
+  // - 10 minutes real = 10 hours simulated
+  // - Energy = 10h × 11kW × 0.9 = 99 kWh
+  // - SOC increase = (99 / 60) × 100 = 165% → clamped to 100%
+  // This allows full charge demo in ~1 minute instead of 6+ hours
   useEffect(() => {
     if (!currentSession || currentSession.status !== "IN_PROGRESS") {
       // Clean up simulation state if session is not in progress
@@ -538,22 +541,25 @@ export default function ChargingSession() {
     }
 
     const virtualChargeInterval = setInterval(() => {
-      accumulatedMinutes += 2 / 60; // +0.0333 minutes per tick (2 seconds)
+      accumulatedMinutes += 2; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
       const hours = accumulatedMinutes / 60; // Convert to hours
 
       // ⚡ Apply backend formula: estEnergy = hours × ratedKW × efficiency
       const estEnergy = +(hours * ratedKW * efficiency).toFixed(2);
-      let estFinalSoc = Math.round(initialSoc + (estEnergy / capacity) * 100);
+
+      // ⚡ Calculate SOC increase (keep decimal for smooth animation)
+      const socIncrease = (estEnergy / capacity) * 100;
+      let estFinalSoc = initialSoc + socIncrease;
 
       // ⚡ Clamp SOC to valid range [0, 100]
       estFinalSoc = Math.min(100, Math.max(initialSoc, estFinalSoc));
 
-      // ⚡ Ensure at least +1% if charging >0 min but SOC hasn't changed
-      if (accumulatedMinutes > 0 && estFinalSoc === initialSoc) {
-        estFinalSoc = initialSoc + 1;
+      // ⚡ Ensure at least +0.5% if charging >0 min but SOC hasn't changed
+      if (accumulatedMinutes > 0 && estFinalSoc <= initialSoc) {
+        estFinalSoc = initialSoc + 0.5;
       }
 
-      // ⚡ Calculate energyKWh identical to backend: ((finalSoc - initialSoc) / 100) × capacity
+      // ⚡ Calculate energyKWh from actual SOC delta
       const deltaSoc = estFinalSoc - initialSoc;
       const energyKWh = +(capacity * (deltaSoc / 100)).toFixed(2);
 
@@ -636,8 +642,13 @@ export default function ChargingSession() {
         prev ? { ...prev, status: "STOPPING" } : prev
       );
 
+      // Gửi virtualSoc (hoặc finalSoc nếu có) để backend có SOC chính xác từ frontend
+      const finalSocToSend =
+        currentSession.virtualSoc ?? currentSession.finalSoc;
+
       const response = await stationAPI.stopChargingSession(
-        currentSession.sessionId
+        currentSession.sessionId,
+        finalSocToSend
       );
       if (!response || response.success === false) {
         // Revert status if stop failed

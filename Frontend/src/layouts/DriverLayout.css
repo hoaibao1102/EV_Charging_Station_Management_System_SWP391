@@ -9,6 +9,9 @@
 .driver-layout-header {
   height: 93px;
   flex-shrink: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 999;
 }
 
 /* ========== LAYOUT CHO MÀN HÌNH NHỎ (Mobile) ========== */

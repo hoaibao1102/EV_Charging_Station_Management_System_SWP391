@@ -1,13 +1,17 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
-import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.dto.response.*;
-import com.swp391.gr3.ev_management.entity.ChargingSession;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
+import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
+import com.swp391.gr3.ev_management.dto.response.ActiveSessionView;
+import com.swp391.gr3.ev_management.dto.response.CompletedSessionView;
+import com.swp391.gr3.ev_management.dto.response.StartCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.ViewCharSessionResponse;
+import com.swp391.gr3.ev_management.entity.ChargingSession;
 
 public interface ChargingSessionService {
     StartCharSessionResponse startChargingSession(StartCharSessionRequest request);
@@ -18,7 +22,7 @@ public interface ChargingSessionService {
     List<ChargingSession> getAll();
 
     Optional<ChargingSession> findById(Long sessionId);
-    StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId);
+    StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId, Integer finalSocFromRequest);
     StopCharSessionResponse staffStopSession(Long sessionId, Long requesterUserId);
     List<ViewCharSessionResponse> getAllSessionsByStation(Long stationId);
     /**

@@ -184,9 +184,13 @@ export const getCurrentChargingSession = () => {
 };
 
 // ====== Dừng phiên sạc (driver) ======
-export const stopChargingSession = (sessionId) => {
+export const stopChargingSession = (sessionId, finalSoc = null) => {
+  const payload = { sessionId };
+  if (finalSoc !== null && finalSoc !== undefined) {
+    payload.finalSoc = Math.round(finalSoc); // Làm tròn SOC về số nguyên
+  }
   return handleApiCall(
-    () => apiClient.post("/api/charging-sessions/driver-stop", { sessionId }),
+    () => apiClient.post("/api/charging-sessions/driver-stop", payload),
     "Dừng phiên sạc thất bại"
   );
 };

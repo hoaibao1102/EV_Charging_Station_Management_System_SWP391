@@ -265,9 +265,14 @@ const Login = () => {
               />
               <span>Remember me</span>
             </label>
-            <a href="#forgot" className="auth-link">
+            <span
+              className="auth-link"
+              onClick={() => navigate("/forgot-password")}
+              role="button"
+              style={{ cursor: "pointer" }}
+            >
               Forget password?
-            </a>
+            </span>
           </div>
 
           <button
