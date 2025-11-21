@@ -497,6 +497,18 @@ export default function ChargingSession() {
   // - Energy = 10h × 11kW × 0.9 = 99 kWh
   // - SOC increase = (99 / 60) × 100 = 165% → clamped to 100%
   // This allows full charge demo in ~1 minute instead of 6+ hours
+  //
+  // 📐 CÔNG THỨC TÍNH finalSOC (khớp với Backend):
+  // 1. initialSoc = % pin ban đầu
+  // 2. estEnergy = năng lượng đã sạc (kWh) = hours × ratedKW × efficiency
+  // 3. capKWh = dung lượng pin xe (kWh)
+  // 4. deltaSOC = (estEnergy / capKWh) × 100
+  // 5. finalSOC = initialSoc + deltaSOC
+  // 6. Làm tròn finalSOC thành số nguyên gần nhất
+  // 7. Ràng buộc:
+  //    - Nếu finalSOC < initialSoc → lấy initialSoc
+  //    - Nếu finalSOC > 100 → đặt finalSOC = 100
+  //    - Nếu estEnergy > 0 nhưng finalSOC = initialSoc → ép finalSOC = initialSoc + 1
   useEffect(() => {
     if (!currentSession || currentSession.status !== "IN_PROGRESS") {
       // Clean up simulation state if session is not in progress
@@ -544,27 +556,49 @@ export default function ChargingSession() {
       accumulatedMinutes += 2; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
       const hours = accumulatedMinutes / 60; // Convert to hours
 
-      // ⚡ Apply backend formula: estEnergy = hours × ratedKW × efficiency
-      const estEnergy = +(hours * ratedKW * efficiency).toFixed(2);
+      // ⚡ BƯỚC 1: Tính năng lượng đã sạc (estEnergy)
+      // Công thức: estEnergy = hours × ratedKW × efficiency
+      const estEnergy = hours * ratedKW * efficiency;
 
-      // ⚡ Calculate SOC increase (keep decimal for smooth animation)
-      const socIncrease = (estEnergy / capacity) * 100;
-      let estFinalSoc = initialSoc + socIncrease;
+      // ⚡ BƯỚC 2: Tính deltaSOC (phần trăm SOC tăng thêm)
+      // Công thức: deltaSOC = (estEnergy / capKWh) × 100
+      const deltaSOC = (estEnergy / capacity) * 100;
 
-      // ⚡ Clamp SOC to valid range [0, 100]
-      estFinalSoc = Math.min(100, Math.max(initialSoc, estFinalSoc));
+      // ⚡ BƯỚC 3: Tính finalSOC trước khi ràng buộc
+      // Công thức: finalSOC = initialSoc + deltaSOC
+      let rawFinalSOC = initialSoc + deltaSOC;
 
-      // ⚡ Ensure at least +0.5% if charging >0 min but SOC hasn't changed
-      if (accumulatedMinutes > 0 && estFinalSoc <= initialSoc) {
-        estFinalSoc = initialSoc + 0.5;
+      // ⚡ BƯỚC 4: Làm tròn finalSOC thành số nguyên gần nhất
+      let finalSOC = Math.round(rawFinalSOC);
+
+      // ⚡ BƯỚC 5: Ràng buộc - finalSOC không được nhỏ hơn initialSoc
+      if (finalSOC < initialSoc) {
+        finalSOC = initialSoc;
       }
 
-      // ⚡ Calculate energyKWh from actual SOC delta
-      const deltaSoc = estFinalSoc - initialSoc;
-      const energyKWh = +(capacity * (deltaSoc / 100)).toFixed(2);
+      // ⚡ BƯỚC 6: Ràng buộc - finalSOC không được vượt quá 100%
+      if (finalSOC > 100) {
+        finalSOC = 100;
+      }
+
+      // ⚡ BƯỚC 7: Trường hợp đặc biệt
+      // Nếu estEnergy > 0 nhưng deltaSOC quá nhỏ khiến finalSOC = initialSoc
+      // thì ép tăng finalSOC = initialSoc + 1
+      if (estEnergy > 0 && finalSOC === initialSoc) {
+        finalSOC = initialSoc + 1;
+        // Đảm bảo không vượt quá 100%
+        if (finalSOC > 100) {
+          finalSOC = 100;
+        }
+      }
+
+      // ⚡ BƯỚC 8: Tính energyKWh thực tế từ finalSOC
+      // (năng lượng tương ứng với % pin đã tăng)
+      const actualDeltaSOC = finalSOC - initialSoc;
+      const energyKWh = +(capacity * (actualDeltaSOC / 100)).toFixed(2);
 
       // Auto-complete when reaching 100%
-      if (estFinalSoc >= 100) {
+      if (finalSOC >= 100) {
         clearInterval(virtualChargeInterval);
         clearSimState(currentSession.sessionId);
         setCurrentSession((prev) =>
@@ -585,7 +619,7 @@ export default function ChargingSession() {
       // Continuous update + persist state
       const updatedSession = {
         ...currentSession,
-        virtualSoc: estFinalSoc,
+        virtualSoc: finalSOC, // Use calculated finalSOC with smooth decimal for animation
         energyKWh,
         durationMinutes: Math.round(accumulatedMinutes),
       };

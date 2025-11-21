@@ -11,6 +11,9 @@ export default function TransactionHistory() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL"); // ALL, COMPLETED, FAILED, PENDING
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("ALL"); // ALL, TODAY, WEEK, MONTH
+  const [sortBy, setSortBy] = useState("DATE_DESC"); // DATE_DESC, DATE_ASC, AMOUNT_DESC, AMOUNT_ASC
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -20,7 +23,6 @@ export default function TransactionHistory() {
       });
       navigate(paths.login);
       return;
-      0;
     }
     fetchTransactions();
   }, [navigate]);
@@ -86,21 +88,88 @@ export default function TransactionHistory() {
   };
 
   const handleTransactionClick = (transaction) => {
-    // Navigate to transaction detail page
-    navigate(
-      paths.transactionDetail.replace(
-        ":transactionId",
-        transaction.transactionId
-      ),
-      {
-        state: { transaction },
-      }
-    );
+    // Navigate to transaction detail page (if exists)
+    if (paths.transactionDetail) {
+      navigate(
+        paths.transactionDetail.replace(
+          ":transactionId",
+          transaction.transactionId
+        ),
+        {
+          state: { transaction },
+        }
+      );
+    } else {
+      // Show detail in modal or alert
+      toast.info("Chi tiết giao dịch #" + transaction.transactionId, {
+        position: "top-center",
+      });
+    }
   };
 
-  const filteredTransactions = transactions.filter(
-    (t) => filter === "ALL" || t.status === filter
-  );
+  const filterByDate = (transaction) => {
+    if (dateFilter === "ALL") return true;
+    const txDate = new Date(transaction.createdAt);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (dateFilter) {
+      case "TODAY":
+        return txDate >= today;
+      case "WEEK": {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return txDate >= weekAgo;
+      }
+      case "MONTH": {
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return txDate >= monthAgo;
+      }
+      default:
+        return true;
+    }
+  };
+
+  // Apply all filters
+  let filteredTransactions = transactions
+    .filter((t) => filter === "ALL" || t.status === filter)
+    .filter(filterByDate)
+    .filter(
+      (t) =>
+        searchTerm === "" ||
+        t.transactionId.toString().includes(searchTerm) ||
+        t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.stationName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.vehiclePlate?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  // Apply sorting
+  filteredTransactions = [...filteredTransactions].sort((a, b) => {
+    switch (sortBy) {
+      case "DATE_DESC":
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      case "DATE_ASC":
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      case "AMOUNT_DESC":
+        return b.amount - a.amount;
+      case "AMOUNT_ASC":
+        return a.amount - b.amount;
+      default:
+        return 0;
+    }
+  });
+
+  // Calculate statistics
+  const stats = {
+    total: transactions.length,
+    completed: transactions.filter((t) => t.status === "COMPLETED").length,
+    pending: transactions.filter((t) => t.status === "PENDING").length,
+    failed: transactions.filter((t) => t.status === "FAILED").length,
+    totalAmount: transactions
+      .filter((t) => t.status === "COMPLETED")
+      .reduce((sum, t) => sum + t.amount, 0),
+  };
 
   const formatDateTime = (dateTime) => {
     if (!dateTime) return "-";
@@ -132,15 +201,103 @@ export default function TransactionHistory() {
     <div className="transaction-history-container">
       {/* Header */}
       <div className="transaction-header">
-        <button className="btn-back" onClick={() => navigate(-1)}>
-          ← Quay lại
-        </button>
         <h1 className="page-title">💸 Lịch sử giao dịch</h1>
         <button className="btn-refresh" onClick={fetchTransactions}>
           🔄 Làm mới
         </button>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="stats-grid">
+        <div className="stat-card all">
+          <div className="stat-icon">📊</div>
+          <div className="stat-info">
+            <div className="stat-label">Tổng số</div>
+            <div className="stat-value">{stats.total}</div>
+          </div>
+        </div>
+        <div className="stat-card completed">
+          <div className="stat-icon">✅</div>
+          <div className="stat-info">
+            <div className="stat-label">Hoàn tất</div>
+            <div className="stat-value">{stats.completed}</div>
+          </div>
+        </div>
+        <div className="stat-card pending">
+          <div className="stat-icon">⏳</div>
+          <div className="stat-info">
+            <div className="stat-label">Chờ duyệt</div>
+            <div className="stat-value">{stats.pending}</div>
+          </div>
+        </div>
+        <div className="stat-card failed">
+          <div className="stat-icon">❌</div>
+          <div className="stat-info">
+            <div className="stat-label">Thất bại</div>
+            <div className="stat-value">{stats.failed}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Total Amount Card */}
+      <div className="total-amount-card">
+        <div className="total-amount-icon">💰</div>
+        <div className="total-amount-info">
+          <div className="total-amount-label">Tổng tiền đã thanh toán</div>
+          <div className="total-amount-value">
+            {formatCurrency(stats.totalAmount)}
+          </div>
+        </div>
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="search-filter-bar">
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Tìm kiếm theo mã GD, trạm, biển số..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button className="search-clear" onClick={() => setSearchTerm("")}>
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Date Filter & Sort */}
+      <div className="filter-sort-bar">
+        <div className="date-filter">
+          <label className="filter-label-text">📅</label>
+          <select
+            className="filter-select"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          >
+            <option value="ALL">Tất cả</option>
+            <option value="TODAY">Hôm nay</option>
+            <option value="WEEK">7 ngày qua</option>
+            <option value="MONTH">30 ngày qua</option>
+          </select>
+        </div>
+        <div className="sort-filter">
+          <label className="filter-label-text">⇅</label>
+          <select
+            className="filter-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="DATE_DESC">Mới nhất</option>
+            <option value="DATE_ASC">Cũ nhất</option>
+            <option value="AMOUNT_DESC">Số tiền giảm dần</option>
+            <option value="AMOUNT_ASC">Số tiền tăng dần</option>
+          </select>
+        </div>
+      </div>
       {/* Filter Tabs */}
       <div className="filter-tabs">
         {["ALL", "COMPLETED", "PENDING", "FAILED"].map((status) => (
@@ -165,44 +322,6 @@ export default function TransactionHistory() {
             </span>
           </button>
         ))}
-      </div>
-
-      {/* Statistics Summary */}
-      <div className="stats-summary">
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
-          <div className="stat-info">
-            <div className="stat-label">Tổng giao dịch</div>
-            <div className="stat-value">{transactions.length}</div>
-          </div>
-        </div>
-        <div className="stat-card success">
-          <div className="stat-icon">✅</div>
-          <div className="stat-info">
-            <div className="stat-label">Hoàn tất</div>
-            <div className="stat-value">
-              {transactions.filter((t) => t.status === "COMPLETED").length}
-            </div>
-          </div>
-        </div>
-        <div className="stat-card pending">
-          <div className="stat-icon">⏳</div>
-          <div className="stat-info">
-            <div className="stat-label">Đang xử lý</div>
-            <div className="stat-value">
-              {transactions.filter((t) => t.status === "PENDING").length}
-            </div>
-          </div>
-        </div>
-        <div className="stat-card failed">
-          <div className="stat-icon">❌</div>
-          <div className="stat-info">
-            <div className="stat-label">Thất bại</div>
-            <div className="stat-value">
-              {transactions.filter((t) => t.status === "FAILED").length}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Transaction List */}
@@ -247,6 +366,7 @@ export default function TransactionHistory() {
 
               {/* Amount */}
               <div className="transaction-amount">
+                <div className="amount-label">Số tiền</div>
                 <div className="amount-value">
                   {formatCurrency(transaction.amount, transaction.currency)}
                 </div>
