@@ -18,6 +18,8 @@ export const paths = {
   information: "/profile/information",
   notifications: "/profile/notifications",
   chargeHistory: "/profile/charge-history",
+  transactionHistory: "/profile/transaction-history",
+  transactionDetail: "/profile/transaction-history/:transactionId",
   stationDetail: "/stations/:id",
   chargingSession: "/chargingSession",
   payment: "/payment",

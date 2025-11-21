@@ -11,6 +11,8 @@ import Error404 from "../pages/auth/Error404.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
 import Verify from "../pages/auth/Verify.jsx";
+import ForgotPassword from "../pages/auth/ForgotPassword.jsx";
+import ResetPassword from "../pages/auth/ResetPassword.jsx";
 
 // Driver Pages =====================================
 import Home from "../pages/home/Home.jsx";
@@ -27,6 +29,8 @@ import EditProfile from "../pages/profileDriver/EditProfile.jsx";
 import Information from "../pages/profileDriver/Information.jsx";
 import Notification from "../pages/profileDriver/Notification.jsx";
 import Vehicles from "../pages/profileDriver/Vehicles.jsx";
+import TransactionHistory from "../pages/inNavigateDriver/TransactionHistory.jsx";
+import TransactionDetail from "../pages/inNavigateDriver/TransactionDetail.jsx";
 // import ChargeHistory from "../pages/profile/ChargeHistory.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
 
@@ -60,6 +64,8 @@ const AppRouter = () => {
           <Route path={paths.login} element={<Login />} />
           <Route path={paths.register} element={<Register />} />
           <Route path={paths.verify} element={<Verify />} />
+          <Route path={paths.forgotPassword} element={<ForgotPassword />} />
+          <Route path={paths.resetPassword} element={<ResetPassword />} />
 
           <Route path={paths.stations} element={<Stations />} />
           <Route path={paths.rules} element={<Rules />} />
@@ -82,6 +88,14 @@ const AppRouter = () => {
             <Route path={paths.editProfile} element={<EditProfile />} />
             <Route path={paths.information} element={<Information />} />
             <Route path={paths.notifications} element={<Notification />} />
+            <Route
+              path={paths.transactionHistory}
+              element={<TransactionHistory />}
+            />
+            <Route
+              path={paths.transactionDetail}
+              element={<TransactionDetail />}
+            />
           </Route>
         </Route>
 

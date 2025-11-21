@@ -1,28 +1,42 @@
 package com.swp391.gr3.ev_management.controller;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.swp391.gr3.ev_management.dto.request.StartCharSessionRequest;
 import com.swp391.gr3.ev_management.dto.request.StopCharSessionRequest;
-import com.swp391.gr3.ev_management.dto.response.*;
+import com.swp391.gr3.ev_management.dto.response.ActiveSessionView;
+import com.swp391.gr3.ev_management.dto.response.ChargingSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.ChargingStatusResponse;
+import com.swp391.gr3.ev_management.dto.response.CompletedSessionView;
+import com.swp391.gr3.ev_management.dto.response.StartCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
+import com.swp391.gr3.ev_management.dto.response.ViewCharSessionResponse;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import com.swp391.gr3.ev_management.service.TokenService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController // ✅ Đánh dấu đây là REST Controller (trả về JSON thay vì view)
 @RequestMapping("/api/charging-sessions") // ✅ Prefix chung cho tất cả endpoint
@@ -168,17 +182,18 @@ public class ChargingSessionController {
     // =========================================================================
     @PreAuthorize("hasRole('DRIVER')") // 🔒 Chỉ tài xế (DRIVER)
     @PostMapping("/driver-stop") // 🔗 POST /api/charging-sessions/driver-stop
-    @Operation(summary = "Driver stops their own charging session", description = "Driver stops their own charging session using session ID")
+    @Operation(summary = "Driver stops their own charging session", description = "Driver stops their own charging session using session ID and optional finalSoc")
     public ResponseEntity<StopCharSessionResponse> driverStopSession(
-            @RequestBody StopCharSessionRequest body, // ✅ Chứa sessionId cần dừng
+            @RequestBody StopCharSessionRequest body, // ✅ Chứa sessionId và finalSoc (optional)
             HttpServletRequest httpReq // ✅ Dùng để rút userId từ token
     ) {
         // 🟢 Lấy userId từ token trong request (Authorization header/cookie)
         Long userId = tokenService.extractUserIdFromRequest(httpReq);
 
         // 🟢 Gọi service để dừng phiên sạc thuộc về chính userId này (đảm bảo quyền sở hữu)
+        //    Truyền finalSoc từ request (nếu có) - đây là virtualSoc được tính từ frontend
         StopCharSessionResponse res =
-                chargingSessionService.driverStopSession(body.getSessionId(), userId);
+                chargingSessionService.driverStopSession(body.getSessionId(), userId, body.getFinalSoc());
 
         // 🟢 Trả về 200 OK + thông tin sau khi dừng
         return ResponseEntity.ok(res);
