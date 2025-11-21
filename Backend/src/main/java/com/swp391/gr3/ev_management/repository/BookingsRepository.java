@@ -128,4 +128,17 @@ public interface BookingsRepository extends JpaRepository<Booking,Long> {
     order by b.scheduledStartTime asc
 """)
     List<ConfirmedBookingView> findConfirmedBookingsByStaff(@Param("staffId") Long staffId);
+
+    /** Đếm số booking được tạo trong khoảng thời gian nhất định */
+    long countByCreatedAtBetween(LocalDateTime localDateTime, LocalDateTime localDateTime1);
+
+    /** Tìm danh sách booking theo trạng thái và khoảng thời gian bắt đầu */
+    List<Booking> findByStatusAndScheduledStartTimeBetween(
+            BookingStatus status,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    /** Lấy 5 booking mới nhất theo thời gian tạo */
+    List<Booking> findTop5ByOrderByCreatedAtDesc();
 }

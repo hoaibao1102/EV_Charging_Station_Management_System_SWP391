@@ -1,11 +1,14 @@
 package com.swp391.gr3.ev_management.repository;
 
 import com.swp391.gr3.ev_management.entity.Transaction;
+import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -64,4 +67,43 @@ public interface TransactionRepository extends JpaRepository<Transaction,Long> {
            order by t.createdAt desc
            """)
     List<Transaction> findAllDeepGraphByDriverUserId(@Param("userId") Long userId);
+
+    /**
+     * ✅ Tính tổng số tiền (amount) của tất cả các giao dịch (Transaction)
+     *    được tạo ra trong khoảng thời gian từ `start` đến `end`.
+     *
+     * 👉 Ý nghĩa:
+     * - Dùng để thống kê tổng doanh thu trong một khoảng thời gian cụ thể.
+     * - Truy vấn này sử dụng JPQL để tính tổng giá trị của trường `amount`
+     *   trong bảng Transaction dựa trên điều kiện về thời gian tạo (`createdAt`).
+     *
+     * ⚙️ JPQL Query:
+     * SELECT COALESCE(SUM(t.amount), 0)
+     * FROM Transaction t
+     * WHERE t.createdAt >= :start
+     *   AND t.createdAt < :end
+     *
+     * 💡 Giải thích:
+     * - `SUM(t.amount)`: tính tổng giá trị của trường `amount`.
+     * - `COALESCE(..., 0)`: nếu không có giao dịch nào trong khoảng thời gian đó,
+     *   trả về 0 thay vì null.
+     * - Điều kiện `t.createdAt >= :start AND t.createdAt < :end` đảm bảo
+     *   chỉ tính các giao dịch trong khoảng thời gian đã cho.
+     *
+     * 🧩 Dùng trong báo cáo tài chính, thống kê doanh thu.
+     *
+     * @param start thời điểm bắt đầu (inclusive)
+     * @param end   thời điểm kết thúc (exclusive)
+     * @return tổng số tiền của các giao dịch trong khoảng thời gian
+     */
+    @Query("""
+           SELECT COALESCE(SUM(t.amount), 0)
+           FROM Transaction t
+           WHERE t.createdAt >= :start
+             AND t.createdAt < :end
+           """)
+    Double sumAmountByCreatedAtBetween(@Param("start") LocalDateTime start,
+                                       @Param("end") LocalDateTime end);
+
+    List<Transaction> findTop5ByStatusOrderByCreatedAtDesc(TransactionStatus completed);
 }

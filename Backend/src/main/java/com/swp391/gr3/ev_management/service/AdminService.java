@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface AdminService {
+
     void updateProfile(Long userId, UpdateAdminProfileRequest request);
+
     void updatePassword(Long userId, UpdatePasswordRequest request);
 }

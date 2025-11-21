@@ -11,8 +11,11 @@ import java.util.List;
 public interface DriverViolationTripletService {
 
     List<DriverViolationTripletResponse> getAllTriplets();
+
     List<DriverViolationTripletResponse> getTripletsByUserPhone(String phoneNumber);
+
     DriverViolationTripletResponse updateTripletStatusToPaid(Long tripletId);
+
     DriverViolationTripletResponse updateTripletStatusToCanceled(Long tripletId);
 
     boolean existsByViolation(Long violationId);
@@ -20,5 +23,6 @@ public interface DriverViolationTripletService {
     Collection<DriverViolationTriplet> findOpenByDriver(Long driverId);
 
     DriverViolationTriplet save(DriverViolationTriplet triplet);
+
     void addDriverViolationTriplet(DriverViolationTriplet triplet);
 }
