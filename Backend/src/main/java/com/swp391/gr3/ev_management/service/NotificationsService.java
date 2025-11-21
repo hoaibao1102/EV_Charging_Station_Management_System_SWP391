@@ -12,7 +12,9 @@ public interface NotificationsService {
     void save(Notification noti);
 
     List<CreateNotificationResponse> getNotificationsByUser(Long userId);
+
     Long getUnreadCount(Long userId);
+
     void markAsRead(Long notificationId, Long userId);
 
     NotificationResponse getNotificationById(Long notificationId, Long userId);

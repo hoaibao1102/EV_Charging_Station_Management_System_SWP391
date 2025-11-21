@@ -1,11 +1,14 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.Transaction;
+import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import com.swp391.gr3.ev_management.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +55,17 @@ public class TransactionServiceImpl implements TransactionService{
     @Override
     public Optional<Transaction> findById(Long transactionId) {
         return transactionRepository.findById(transactionId); // trả về Optional tránh lỗi null
+    }
+
+    @Override
+    public double sumAmountByCreatedAtBetween(LocalDateTime start, LocalDateTime end) {
+        Double sum = transactionRepository.sumAmountByCreatedAtBetween(start, end);
+        return sum != null ? sum : 0.0;
+    }
+
+    @Override
+    public List<Transaction> findTop5ByStatusOrderByCreatedAtDesc(TransactionStatus completed) {
+        return transactionRepository.findTop5ByStatusOrderByCreatedAtDesc(completed);
     }
 
 }

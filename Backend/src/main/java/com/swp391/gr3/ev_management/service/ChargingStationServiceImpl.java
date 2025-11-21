@@ -156,9 +156,16 @@ public class ChargingStationServiceImpl implements ChargingStationService {
     }
 
     @Override
-    public Collection<ChargingStation> findAll() {
+    public List<ChargingStation> findAll() {
         // Lấy toàn bộ entity ChargingStation (không map sang DTO)
         // Thích hợp cho logic nội bộ, batch job, hoặc các dịch vụ khác muốn xử lý sâu hơn
         return chargingStationRepository.findAll();
+    }
+
+    @Override
+    public long countByStatus(ChargingStationStatus active) {
+        // Đếm số trạm theo trạng thái (ACTIVE, INACTIVE, MAINTENANCE, ...)
+        // Trả về số lượng trạm phù hợp với trạng thái truyền vào
+        return chargingStationRepository.countByStatus(active);
     }
 }

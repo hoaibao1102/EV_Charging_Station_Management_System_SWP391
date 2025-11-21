@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service // Đánh dấu lớp này là một Spring Service xử lý nghiệp vụ cho ChargingPoint
 @RequiredArgsConstructor // Tự động tạo constructor cho các field final (DI)
@@ -163,5 +165,16 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         // Hàm tiện ích: lấy danh sách ChargingPoint theo cả stationId và connectorTypeId
         // Ví dụ: cần tìm tất cả điểm sạc DC tại một trạm cụ thể để hiển thị / tính năng đặt chỗ
         return chargingPointRepository.findByStation_StationIdAndConnectorType_ConnectorTypeId(stationId, connectorTypeId);
+    }
+
+    @Override
+    public Map<String, Long> countGroupByStatus() {
+        // Lấy tất cả điểm sạc rồi group theo status và đếm số lượng
+        return chargingPointRepository.findAll()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        point -> point.getStatus().name(),   // key: tên enum (AVAILABLE, OCCUPIED, ...)
+                        Collectors.counting()                // value: số lượng
+                ));
     }
 }

@@ -428,4 +428,22 @@ public class BookingServiceImpl implements BookingService {
         // Lấy Booking kèm theo thông tin connectorType (có thể dùng join fetch trong repository)
         return bookingsRepository.findByIdWithConnectorType(bookingId);
     }
+
+    @Override
+    public long countByCreatedAtBetween(LocalDateTime localDateTime, LocalDateTime localDateTime1) {
+        // Đếm số booking được tạo trong khoảng thời gian nhất định
+        return bookingsRepository.countByCreatedAtBetween(localDateTime, localDateTime1);
+    }
+
+    @Override
+    public List<Booking> findByStatusAndStartTimeBetween(BookingStatus bookingStatus, LocalDateTime now, LocalDateTime next2Hours) {
+        // Tìm danh sách booking theo trạng thái và khoảng thời gian bắt đầu
+        return bookingsRepository.findByStatusAndScheduledStartTimeBetween(bookingStatus, now, next2Hours);
+    }
+
+    @Override
+    public List<Booking> findTop5ByOrderByCreatedAtDesc() {
+        // Lấy 5 booking mới nhất theo thời gian tạo
+        return bookingsRepository.findTop5ByOrderByCreatedAtDesc();
+    }
 }
