@@ -27,25 +27,6 @@ public interface BookingsRepository extends JpaRepository<Booking,Long> {
             LocalDateTime now
     );
 
-    // ✅ Lấy một booking kèm TẤT CẢ các quan hệ cần thiết để hiển thị/ xử lý:
-    //    - vehicle -> driver -> user
-    //    - bookingSlots -> slot -> chargingPoint -> connectorType
-    //    - station
-    //    join fetch để tránh N+1 và LazyInitializationException.
-    @Query("""
-      SELECT DISTINCT b FROM Booking b
-      JOIN FETCH b.vehicle v
-      JOIN FETCH v.driver d
-      JOIN FETCH d.user u
-      LEFT JOIN FETCH b.bookingSlots bs
-      LEFT JOIN FETCH bs.slot s
-      LEFT JOIN FETCH s.chargingPoint cp
-      LEFT JOIN FETCH cp.connectorType ct
-      LEFT JOIN FETCH b.station st
-      WHERE b.bookingId = :bookingId
-    """)
-    Optional<Booking> findByIdWithAllNeeded(@Param("bookingId") Long bookingId);
-
     // ✅ Lấy một booking chủ yếu để xác định "connector type" đang dùng:
     //    - fetch bookingSlots -> slot -> chargingPoint -> connectorType (của point)
     //    - fetch vehicle -> model -> connectorType (của xe)
