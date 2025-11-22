@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { updateProfileApi } from "../../api/driverApi.js";
 import { toast } from "react-toastify";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Row } from "react-bootstrap";
 import './EditProfile.css';
 
 export default function EditProfile() {
@@ -104,10 +104,14 @@ export default function EditProfile() {
                 </Form.Group>
 
                 <div><strong>Vui lòng nhập đúng mail vì lý do bảo mật và tiện ích!</strong></div>
-
+                <Row>   
                 <Button variant="primary" type="submit"> 
                     CẬP NHẬT
                 </Button>
+                <Button variant="primary" type="button" onClick={() => navigate('/profile/information')}> 
+                    Quay lại
+                </Button>
+                </Row>
             </Form>
         </div>
     )
