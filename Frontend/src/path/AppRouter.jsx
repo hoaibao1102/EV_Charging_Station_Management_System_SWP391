@@ -32,6 +32,8 @@ import Notification from "../pages/profileDriver/Notification.jsx";
 import Vehicles from "../pages/profileDriver/Vehicles.jsx";
 import TransactionHistory from "../pages/inNavigateDriver/TransactionHistory.jsx";
 import TransactionDetail from "../pages/inNavigateDriver/TransactionDetail.jsx";
+import PaymentSuccess from "../pages/payment/PaymentSuccess.jsx";
+import PaymentFailed from "../pages/payment/PaymentFailed.jsx";
 // import ChargeHistory from "../pages/profile/ChargeHistory.jsx";
 // import MyBookings from "../pages/profile/MyBookings.jsx";
 
@@ -69,6 +71,8 @@ const AppRouter = () => {
           <Route path={paths.verify} element={<Verify />} />
           <Route path={paths.forgotPassword} element={<ForgotPassword />} />
           <Route path={paths.resetPassword} element={<ResetPassword />} />
+          <Route path={paths.paymentSuccess} element={<PaymentSuccess />} />
+          <Route path={paths.paymentFailed} element={<PaymentFailed />} />
 
           <Route path={paths.stations} element={<Stations />} />
           <Route path={paths.rules} element={<Rules />} />

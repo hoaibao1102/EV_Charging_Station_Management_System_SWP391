@@ -3,6 +3,8 @@ package com.swp391.gr3.ev_management.repository;
 import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
 import com.swp391.gr3.ev_management.entity.Transaction;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -122,4 +124,61 @@ order by t.createdAt desc
                                        @Param("end") LocalDateTime end);
 
     List<Transaction> findTop5ByStatusOrderByCreatedAtDesc(TransactionStatus completed);
+
+    // ✅ Lấy giao dịch theo stationId (có phân trang)
+    @Query("""
+select new com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse(
+    t.transactionId, t.amount, t.currency, t.description, 
+    t.status, t.createdAt,
+    i.invoiceId, s.sessionId, b.bookingId,
+    st.stationId, st.stationName,
+    v.vehicleId, v.vehiclePlate
+)
+from Transaction t
+join t.invoice i
+join i.session s
+join s.booking b
+join b.vehicle v
+join b.station st
+where st.stationId = :stationId
+order by t.createdAt desc
+""")
+    Page<TransactionBriefResponse> findByStationId(@Param("stationId") Long stationId, Pageable pageable);
+
+    // ✅ Lấy giao dịch theo stationId và status
+    @Query("""
+select new com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse(
+    t.transactionId, t.amount, t.currency, t.description, 
+    t.status, t.createdAt,
+    i.invoiceId, s.sessionId, b.bookingId,
+    st.stationId, st.stationName,
+    v.vehicleId, v.vehiclePlate
+)
+from Transaction t
+join t.invoice i
+join i.session s
+join s.booking b
+join b.vehicle v
+join b.station st
+where st.stationId = :stationId
+  and t.status = :status
+order by t.createdAt desc
+""")
+    Page<TransactionBriefResponse> findByStationIdAndStatus(
+            @Param("stationId") Long stationId,
+            @Param("status") TransactionStatus status,
+            Pageable pageable
+    );
+
+    // ✅ Đếm tổng số giao dịch theo stationId
+    @Query("SELECT COUNT(t) FROM Transaction t join t.invoice i join i.session s join s.booking b where b.station.stationId = :stationId")
+    Long countByStationId(@Param("stationId") Long stationId);
+
+    // ✅ Đếm số giao dịch theo stationId và status
+    @Query("SELECT COUNT(t) FROM Transaction t join t.invoice i join i.session s join s.booking b where b.station.stationId = :stationId and t.status = :status")
+    Long countByStationIdAndStatus(@Param("stationId") Long stationId, @Param("status") TransactionStatus status);
+
+    // ✅ Tính tổng doanh thu theo stationId và status
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t join t.invoice i join i.session s join s.booking b where b.station.stationId = :stationId and t.status = :status")
+    Double sumAmountByStationIdAndStatus(@Param("stationId") Long stationId, @Param("status") TransactionStatus status);
 }

@@ -1,7 +1,6 @@
 package com.swp391.gr3.ev_management.dto.request;
 
 import com.swp391.gr3.ev_management.enums.ChargingPointStatus;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
@@ -9,10 +8,10 @@ import lombok.Data;
 @Data
 public class StopChargingPointRequest {
 
-    @NotNull(message = "pointId is required")
-    @Positive(message = "pointId must be positive")
+    @NotNull(message = "ID điểm sạc không được để trống")
+    @Positive(message = "ID điểm sạc phải là số dương")
     private Long pointId;
 
-    @NotBlank(message = "newStatus is required")
+    @NotNull(message = "Trạng thái mới không được để trống")
     private ChargingPointStatus newStatus;
 }

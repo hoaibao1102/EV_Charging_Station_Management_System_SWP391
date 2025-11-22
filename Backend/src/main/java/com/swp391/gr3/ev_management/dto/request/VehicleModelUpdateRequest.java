@@ -13,30 +13,29 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VehicleModelUpdateRequest {
 
-    @NotBlank(message = "Vehicle model name cannot be blank")
+    @NotNull(message = "Hãng xe không được để trống")
     private String brand; // optional
 
-    @NotBlank(message = "Vehicle model cannot be null")
+    @NotNull(message = "Tên mẫu xe không được để trống")
     private String model; // optional
 
-    @NotNull(message = "Year cannot be null")
-    @Min(value = 1886, message = "Year must be realistic")
-    @Positive(message = "Year must be positive")
+    @NotNull(message = "Năm sản xuất không được để trống")
+    @Min(value = 1886, message = "Năm sản xuất phải hợp lệ")
+    @Positive(message = "Năm sản xuất phải là số dương")
     private Integer year; // optional
 
-    @NotNull(message = "Fast charging support cannot be null")
+    @NotNull(message = "URL hình ảnh không được để trống")
     private String imageUrl; // optional
 
-    @NotNull(message = "Fast charging support cannot be null")
+    @NotNull(message = "Image Public ID không được để trống")
     private String imagePublicId; // optional
 
-    @NotNull(message = "Fast charging support cannot be null")
-    @Positive(message = "Range must be positive")
+    @NotNull(message = "ID loại đầu nối không được để trống")
+    @Positive(message = "ID loại đầu nối phải là số dương")
     private Long connectorTypeId; // optional
 
-    @NotNull(message = "Fast charging support cannot be null")
+    @NotNull(message = "Dung lượng pin không được để trống")
     @JsonAlias({"batteryCapacity", "battery-capacity"})
-    @DecimalMin(value = "0.0", inclusive = false, message = "Battery Capacity must be greater than 0")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Dung lượng pin phải lớn hơn 0")
     private Double batteryCapacityKWh; // optional
 }
-

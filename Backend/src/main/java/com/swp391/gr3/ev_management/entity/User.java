@@ -52,7 +52,7 @@ public class User {
 
     @Column(name = "Gender", columnDefinition = "NVARCHAR(1)")
 //    @NotBlank(message = "Giới tính không được để trống")
-    @Pattern(regexp = "^[MFO]$", message = "Giới tính không đúng định dạng")
+    @Pattern(regexp = "^[MF]$", message = "Giới tính không đúng định dạng")
     private String gender;
 
     @Column(name = "Address", columnDefinition = "NVARCHAR(50)")

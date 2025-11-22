@@ -1,6 +1,5 @@
 package com.swp391.gr3.ev_management.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -17,20 +16,20 @@ import java.time.LocalDateTime;
 @Builder
 public class TariffUpdateRequest {
 
-    @NotNull(message = "Connector Type ID cannot be null")
-    @Positive(message = "Connector Type ID must be positive")
+    @NotNull(message = "ID loại đầu nối không được để trống")
+    @Positive(message = "ID loại đầu nối phải là số dương")
     private Long connectorTypeId;
 
-    @NotNull(message = "Tariff Name cannot be null")
-    @Positive(message = "Tariff Name must be positive")
-    private double pricePerKWh;
+    @NotNull(message = "Giá theo kWh không được để trống")
+    @Positive(message = "Giá theo kWh phải lớn hơn 0")
+    private Double pricePerKWh;
 
-    @NotNull(message = "Tariff Name cannot be null")
-    @Positive
-    private double pricePerMin;
+    @NotNull(message = "Giá theo phút không được để trống")
+    @Positive(message = "Giá theo phút phải lớn hơn 0")
+    private Double pricePerMin;
 
-    @NotNull(message = "Tariff Name cannot be null")
-    @Size(max = 10, message = "Currency must not exceed 10 characters")
+    @NotNull(message = "Đơn vị tiền tệ không được để trống")
+    @Size(max = 10, message = "Đơn vị tiền tệ không được vượt quá 10 ký tự")
     private String currency;
 
     private LocalDateTime effectiveFrom;

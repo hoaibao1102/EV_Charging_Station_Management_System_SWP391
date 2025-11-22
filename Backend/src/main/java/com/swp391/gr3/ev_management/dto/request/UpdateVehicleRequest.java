@@ -9,14 +9,14 @@ import lombok.Data;
 @Data
 public class UpdateVehicleRequest {
 
-    @NotNull(message = "VehicleId cannot be null")
-    @Positive(message = "VehicleId must be positive")
-    private Long modelId;       // optional
+    @NotNull(message = "ID mẫu xe không được để trống")
+    @Positive(message = "ID mẫu xe phải là số dương")
+    private Long modelId;   // nếu đúng là optional thì bỏ @NotNull + @Positive
 
-    @NotBlank(message = "VehicleId cannot be null")
+    @NotNull(message = "Biển số xe không được để trống")
     @Pattern(
             regexp = "^\\d{2}[A-Za-z]{1,2}\\d{4,5}$",
-            message = "License plate must follow VN structure: 2 numbers (province) + 1-2 letters + 4-5 numbers (EX: 86B381052, 30G12345, 51AB12345)"
+            message = "Biển số xe phải đúng cấu trúc VN: 2 số tỉnh + 1-2 chữ cái + 4-5 số (VD: 86B381052, 30G12345, 51AB12345)"
     )
-    private String licensePlate; // optional
+    private String licensePlate;
 }

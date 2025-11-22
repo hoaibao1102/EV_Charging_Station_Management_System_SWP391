@@ -8,8 +8,9 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 public class LightBookingInfo {
-    private Long bookingId;
-    private LocalDateTime start;
-    private LocalDateTime end;
-    private Long vehicleId;
+
+    private Long bookingId;          // ID đặt lịch
+    private LocalDateTime start;     // Thời gian bắt đầu
+    private LocalDateTime end;       // Thời gian kết thúc
+    private Long vehicleId;          // ID xe
 }

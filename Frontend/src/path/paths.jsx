@@ -5,6 +5,8 @@ export const paths = {
   verify: "/verify-otp",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  paymentSuccess: "/payment-success",
+  paymentFailed: "/payment-failed",
   error: "/error",
   //driver
   home: "/",
