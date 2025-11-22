@@ -38,6 +38,7 @@ apiClient.interceptors.response.use(
       "/api/charging-stations",
       "/api/connector-types",
       "/api/charging-points/station",
+      "/api/policies",  // Thêm API điều khoản vào public
     ];
 
     const isPublicEndpoint = publicEndpoints.some((endpoint) =>
