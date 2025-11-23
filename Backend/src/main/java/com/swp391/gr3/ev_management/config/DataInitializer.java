@@ -60,7 +60,7 @@ public class DataInitializer implements CommandLineRunner {
             initRoles();              // seed các role chuẩn
             initAdmins();             // tạo 1 admin mặc định + map bảng Admin
             initVehicleModels();      // seed VehicleModel (cần connector types)
-            initDrivers();            // seed Driver
+//            initDrivers();            // seed Driver
             initChargingStations();   // seed trạm sạc theo Seed_Data
             initChargingPoints();     // seed điểm sạc theo Seed_Data
 //            initSlotAvailability();   // seed mẫu slot theo Seed_Data
