@@ -102,6 +102,54 @@ public class DataInitializer implements CommandLineRunner {
                 "24/7"
 
         );
+        createStationIfNotExists(
+                "EVN Station - Quận 7",
+                "101 Tôn Dật Tiên, Phú Mỹ Hưng, Quận 7, TP. Hồ Chí Minh",
+                10.729884, 106.718139,
+                "06:00-23:00"
+        );
+
+        createStationIfNotExists(
+                "VinFast Station - Aeon Mall Tân Phú",
+                "30 Bờ Bao Tân Thắng, Sơn Kỳ, Tân Phú, TP. Hồ Chí Minh",
+                10.799926, 106.615821,
+                "08:00-22:00"
+        );
+
+        createStationIfNotExists(
+                "EVN Station - Quận 3",
+                "190 Nam Kỳ Khởi Nghĩa, Quận 3, TP. Hồ Chí Minh",
+                10.781219, 106.688545,
+                "24/7"
+        );
+
+        createStationIfNotExists(
+                "VinFast SmartCharge - Quận 10",
+                "285A Cách Mạng Tháng Tám, Quận 10, TP. Hồ Chí Minh",
+                10.772679, 106.667207,
+                "07:00-22:00"
+        );
+
+        createStationIfNotExists(
+                "EVN Station - Bình Tân",
+                "1/1A Kinh Dương Vương, Bình Tân, TP. Hồ Chí Minh",
+                10.751355, 106.603772,
+                "24/7"
+        );
+
+        createStationIfNotExists(
+                "VinFast Station - GigaMall Thủ Đức",
+                "242 Phạm Văn Đồng, Hiệp Bình Chánh, Thủ Đức, TP. Hồ Chí Minh",
+                10.846884, 106.732487,
+                "08:00-22:00"
+        );
+
+        createStationIfNotExists(
+                "EVN Station - Quận 5",
+                "55 An Dương Vương, Quận 5, TP. Hồ Chí Minh",
+                10.757202, 106.666325,
+                "06:00-23:00"
+        );
     }
 
     private void createStationIfNotExists(String name, String address, double lat, double lng,
@@ -128,24 +176,40 @@ public class DataInitializer implements CommandLineRunner {
 
     // ================== CHARGING POINTS ==================
     private void initChargingPoints() {
-        // Seed 10 points for station 1 as sample
-        var stationOpt = chargingStationRepository.findByStationName("VinFast SmartCharge - Quận 1");
+        seedPointsForStation("VinFast SmartCharge - Quận 1",        "S1");
+        seedPointsForStation("EVN Station - Thủ Đức City",          "S2");
+        seedPointsForStation("VinFast Station - Landmark 81",       "S3");
+        seedPointsForStation("EVN Station - Quận 7",                "S4");
+        seedPointsForStation("VinFast Station - Aeon Mall Tân Phú", "S5");
+        seedPointsForStation("EVN Station - Quận 3",                "S6");
+        seedPointsForStation("VinFast SmartCharge - Quận 10",       "S7");
+        seedPointsForStation("EVN Station - Bình Tân",              "S8");
+        seedPointsForStation("VinFast Station - GigaMall Thủ Đức",  "S9");
+        seedPointsForStation("EVN Station - Quận 5",                "S10");
+    }
+
+    /**
+     * Seed 10 charging points cho 1 trạm với prefix Sx (S1, S2, ...)
+     */
+    private void seedPointsForStation(String stationName, String codePrefix) {
+        var stationOpt = chargingStationRepository.findByStationName(stationName);
         if (stationOpt.isEmpty()) {
-            log.warn("Base station for points not found; skip point seeding");
+            log.warn("Base station for points not found: {} ; skip point seeding", stationName);
             return;
         }
         var station = stationOpt.get();
 
-        createPointIfNotExists(station, "S1-A1", ChargingPointStatus.AVAILABLE, "S1-A1-2025", 150);
-        createPointIfNotExists(station, "S1-A2", ChargingPointStatus.AVAILABLE, "S1-A2-2025", 22);
-        createPointIfNotExists(station, "S1-A3", ChargingPointStatus.OCCUPIED, "S1-A3-2025", 50);
-        createPointIfNotExists(station, "S1-A4", ChargingPointStatus.AVAILABLE, "S1-A4-2025", 250);
-        createPointIfNotExists(station, "S1-A5", ChargingPointStatus.AVAILABLE, "S1-A5-2025", 60);
-        createPointIfNotExists(station, "S1-A6", ChargingPointStatus.OCCUPIED, "S1-A6-2025", 7);
-        createPointIfNotExists(station, "S1-A7", ChargingPointStatus.AVAILABLE, "S1-A7-2025", 150);
-        createPointIfNotExists(station, "S1-A8", ChargingPointStatus.MAINTENANCE, "S1-A8-2025", 22);
-        createPointIfNotExists(station, "S1-A9", ChargingPointStatus.AVAILABLE, "S1-A9-2025", 50);
-        createPointIfNotExists(station, "S1-A10", ChargingPointStatus.AVAILABLE, "S1-A10-2025", 250);
+        // Bạn có thể tuỳ chỉnh status / công suất giống mẫu S1 ở đây
+        createPointIfNotExists(station, codePrefix + "-A1",  ChargingPointStatus.AVAILABLE,   codePrefix + "-A1-2025", 150);
+        createPointIfNotExists(station, codePrefix + "-A2",  ChargingPointStatus.AVAILABLE,   codePrefix + "-A2-2025", 22);
+        createPointIfNotExists(station, codePrefix + "-A3",  ChargingPointStatus.OCCUPIED,    codePrefix + "-A3-2025", 50);
+        createPointIfNotExists(station, codePrefix + "-A4",  ChargingPointStatus.AVAILABLE,   codePrefix + "-A4-2025", 250);
+        createPointIfNotExists(station, codePrefix + "-A5",  ChargingPointStatus.AVAILABLE,   codePrefix + "-A5-2025", 60);
+        createPointIfNotExists(station, codePrefix + "-A6",  ChargingPointStatus.OCCUPIED,    codePrefix + "-A6-2025", 7);
+        createPointIfNotExists(station, codePrefix + "-A7",  ChargingPointStatus.AVAILABLE,   codePrefix + "-A7-2025", 150);
+        createPointIfNotExists(station, codePrefix + "-A8",  ChargingPointStatus.MAINTENANCE, codePrefix + "-A8-2025", 22);
+        createPointIfNotExists(station, codePrefix + "-A9",  ChargingPointStatus.AVAILABLE,   codePrefix + "-A9-2025", 50);
+        createPointIfNotExists(station, codePrefix + "-A10", ChargingPointStatus.AVAILABLE,   codePrefix + "-A10-2025", 250);
     }
 
     private void createPointIfNotExists(
