@@ -608,7 +608,7 @@ export default function ChargingSession() {
     }
 
     const virtualChargeInterval = setInterval(() => {
-      accumulatedMinutes += 2; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
+      accumulatedMinutes += 2 / 60; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
       const hours = accumulatedMinutes / 60; // Convert to hours
 
       // ⚡ BƯỚC 1: Tính năng lượng đã sạc (estEnergy)
@@ -652,22 +652,52 @@ export default function ChargingSession() {
       const actualDeltaSOC = finalSOC - initialSoc;
       const energyKWh = +(capacity * (actualDeltaSOC / 100)).toFixed(2);
 
-      // Auto-complete when reaching 100%
-      if (finalSOC >= 100) {
+      // Auto-complete when reaching 100% or time limit exceeded
+      const timeLimit = currentSession.booking?.endTime
+        ? new Date(currentSession.booking.endTime).getTime()
+        : null;
+      const currentTime = new Date().getTime();
+      const isTimeExpired = timeLimit && currentTime >= timeLimit;
+
+      if (finalSOC >= 100 || isTimeExpired) {
+        const completionReason =
+          finalSOC >= 100
+            ? "🔋 Đã sạc đầy pin (100%)"
+            : "⏰ Hết thời gian sạc đã đặt";
+
+        console.log(`✅ Auto-completing session: ${completionReason}`);
+
         clearInterval(virtualChargeInterval);
         clearSimState(currentSession.sessionId);
-        setCurrentSession((prev) =>
-          prev
-            ? {
-                ...prev,
-                virtualSoc: 100,
-                finalSoc: 100,
-                energyKWh,
-                durationMinutes: Math.round(accumulatedMinutes),
-                status: "COMPLETED",
-              }
-            : prev
+
+        const completedSession = {
+          ...currentSession,
+          virtualSoc: finalSOC >= 100 ? 100 : finalSOC,
+          finalSoc: finalSOC >= 100 ? 100 : Math.round(finalSOC),
+          energyKWh,
+          durationMinutes: Math.round(accumulatedMinutes),
+          status: "COMPLETED",
+          completionReason, // Add reason for completion
+        };
+
+        setCurrentSession(completedSession);
+
+        // Show toast notification
+        toast.success(
+          completionReason + ". Đang chuyển sang trang thanh toán...",
+          {
+            position: "top-center",
+            autoClose: 2500,
+          }
         );
+
+        // Auto-redirect to payment after 3 seconds
+        setTimeout(() => {
+          navigate(paths.payment, {
+            state: { sessionResult: completedSession },
+          });
+        }, 3000);
+
         return;
       }
 
@@ -731,6 +761,40 @@ export default function ChargingSession() {
       }, 2000);
     }
   }, [currentSession, autoRedirected, navigate, clearSimState]);
+
+  // ⏰ Auto-stop session when booking time expires
+  useEffect(() => {
+    if (!currentSession || currentSession.status !== "IN_PROGRESS") return;
+    if (!currentSession.windowEnd) return;
+
+    const checkExpiry = setInterval(() => {
+      const now = new Date();
+      const endTime = new Date(currentSession.windowEnd);
+
+      if (now >= endTime) {
+        console.log("⏰ Booking time expired - auto-stopping session");
+
+        const finalSocValue = Math.round(
+          currentSession.virtualSoc || currentSession.initialSoc
+        );
+
+        stationAPI
+          .stopChargingSession(currentSession.sessionId, finalSocValue)
+          .then(() => {
+            console.log(
+              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry (SOC: ${finalSocValue}%)`
+            );
+          })
+          .catch((err) => {
+            console.error("❌ Failed to stop session on time expiry:", err);
+          });
+
+        clearInterval(checkExpiry);
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(checkExpiry);
+  }, [currentSession]);
 
   const handleStopSession = async () => {
     if (!currentSession?.sessionId) {
