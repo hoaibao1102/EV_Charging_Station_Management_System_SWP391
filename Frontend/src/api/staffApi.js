@@ -109,9 +109,13 @@ export const getStationTransactionStatsApi = () => {
 };
 
 // Dừng phiên sạc
-export const staffStopSessionApi = (sessionId) => {
+export const staffStopSessionApi = (sessionId, finalSoc = null) => {
+  const body = { sessionId };
+  if (finalSoc != null) {
+    body.finalSoc = finalSoc;
+  }
   return handleApiCall(
-    () => apiClient.post(`/api/staff/staff-stop-session`, { sessionId }),
+    () => apiClient.post(`/api/staff/staff-stop-session`, body),
     "Dừng phiên sạc thất bại"
   );
 };

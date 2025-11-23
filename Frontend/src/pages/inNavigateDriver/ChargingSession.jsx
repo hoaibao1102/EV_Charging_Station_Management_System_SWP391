@@ -518,10 +518,22 @@ export default function ChargingSession() {
             );
 
             if (status === "COMPLETED" || status === "FINISHED") {
-              // Status changed from IN_PROGRESS to COMPLETED - preserve virtualSoc
+              // ✅ Session completed - đồng bộ đầy đủ dữ liệu từ Backend
+              console.log(
+                `📊 Session #${prevSessionId} COMPLETED - syncing from backend:`,
+                {
+                  finalSoc: completedSession.finalSoc,
+                  energyKWh: completedSession.energyKWh,
+                  durationMinutes: completedSession.durationMinutes,
+                  endTime: completedSession.endTime,
+                  cost: completedSession.cost,
+                }
+              );
+
               return {
                 ...completedSession,
-                virtualSoc: prev.virtualSoc || completedSession.finalSoc,
+                // ✅ Đồng bộ virtualSoc với finalSoc từ Backend để UI hiển thị đúng
+                virtualSoc: completedSession.finalSoc,
               };
             }
           }
@@ -608,7 +620,7 @@ export default function ChargingSession() {
     }
 
     const virtualChargeInterval = setInterval(() => {
-      accumulatedMinutes += 2; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
+      accumulatedMinutes += 2 / 60; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
       const hours = accumulatedMinutes / 60; // Convert to hours
 
       // ⚡ BƯỚC 1: Tính năng lượng đã sạc (estEnergy)
@@ -656,15 +668,15 @@ export default function ChargingSession() {
       if (finalSOC >= 100) {
         console.log("🔋 Battery reached 100% - auto-stopping session");
 
-        // Call backend to properly stop session with rounded finalSOC
-        const finalSocValue = Math.round(finalSOC);
-
+        // ✅ Gửi finalSoc = 100 (chuẩn Backend: số nguyên)
         stationAPI
-          .stopChargingSession(currentSession.sessionId, finalSocValue)
-          .then(() => {
+          .stopChargingSession(currentSession.sessionId, 100)
+          .then((response) => {
             console.log(
               `✅ Session #${currentSession.sessionId} auto-stopped at 100% SOC`
             );
+            // Backend sẽ trả về dữ liệu đầy đủ: endTime, finalSoc, energyKWh, durationMinutes, cost
+            // Polling sẽ detect COMPLETED và update UI với dữ liệu chính xác từ Backend
           })
           .catch((err) => {
             console.error("❌ Failed to stop session at 100%:", err);
@@ -672,7 +684,7 @@ export default function ChargingSession() {
 
         clearInterval(virtualChargeInterval);
         clearSimState(currentSession.sessionId);
-        // Polling will detect COMPLETED status from backend
+        // Polling sẽ detect COMPLETED status từ backend và auto-redirect
         return;
       }
 
@@ -685,6 +697,22 @@ export default function ChargingSession() {
       };
       setCurrentSession(updatedSession);
       saveSimState(updatedSession);
+
+      // ✅ Lưu virtualSoc vào sessionStorage để Staff có thể đọc khi dừng phiên sạc
+      // Key format: session_${sessionId}_live_soc
+      try {
+        const liveDataKey = `session_${currentSession.sessionId}_live_soc`;
+        const liveData = {
+          sessionId: currentSession.sessionId,
+          virtualSoc: Math.round(finalSOC), // Lưu số nguyên
+          energyKWh,
+          durationMinutes: Math.round(accumulatedMinutes),
+          timestamp: Date.now(),
+        };
+        sessionStorage.setItem(liveDataKey, JSON.stringify(liveData));
+      } catch (err) {
+        console.debug("Failed to save live SOC to sessionStorage:", err);
+      }
     }, 2000); // Update every 2 seconds
 
     return () => {
@@ -730,6 +758,14 @@ export default function ChargingSession() {
       // Clear simulation state
       clearSimState(currentSession.sessionId);
 
+      // ✅ Xóa live SOC data khỏi sessionStorage khi phiên sạc kết thúc
+      try {
+        const liveDataKey = `session_${currentSession.sessionId}_live_soc`;
+        sessionStorage.removeItem(liveDataKey);
+      } catch (err) {
+        console.debug("Failed to remove live SOC from sessionStorage:", err);
+      }
+
       // Chuyển sang trang thanh toán sau 2s
       setTimeout(() => {
         navigate(paths.payment, { state: { sessionResult: currentSession } });
@@ -749,17 +785,29 @@ export default function ChargingSession() {
       if (now >= endTime) {
         console.log("⏰ Booking time expired - auto-stopping session");
 
-        // Use rounded virtualSoc (consistent with 100% case)
+        // ✅ Gửi finalSoc là số nguyên đã làm tròn (chuẩn Backend)
         const finalSocValue = Math.round(
           currentSession.virtualSoc || currentSession.initialSoc
         );
 
         stationAPI
           .stopChargingSession(currentSession.sessionId, finalSocValue)
-          .then(() => {
+          .then((response) => {
             console.log(
-              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry (SOC: ${finalSocValue}%)`
+              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry`
             );
+            console.log(
+              `   Backend calculated: finalSoc=${
+                response.data?.finalSoc || response.finalSoc
+              }%, ` +
+                `energyKWh=${
+                  response.data?.energyKWh || response.energyKWh
+                }, ` +
+                `duration=${
+                  response.data?.durationMinutes || response.durationMinutes
+                }min`
+            );
+            // Polling sẽ detect COMPLETED và cập nhật UI với dữ liệu chính xác từ Backend
           })
           .catch((err) => {
             console.error("❌ Failed to stop session on time expiry:", err);
@@ -789,11 +837,15 @@ export default function ChargingSession() {
         prev ? { ...prev, status: "STOPPING" } : prev
       );
 
-      // Gửi rounded virtualSoc để đồng nhất với auto-stop (100% và time expiry)
+      // ✅ Gửi finalSoc là số nguyên đã làm tròn (chuẩn Backend - nhất quán với auto-stop)
       const finalSocToSend = Math.round(
         currentSession.virtualSoc ??
           currentSession.finalSoc ??
           currentSession.initialSoc
+      );
+
+      console.log(
+        `🛑 Driver stopping session #${currentSession.sessionId} with finalSoc=${finalSocToSend}%`
       );
 
       const response = await stationAPI.stopChargingSession(
@@ -813,20 +865,26 @@ export default function ChargingSession() {
 
       const sessionResult = response.data ?? response;
 
-      // Update UI with real data from backend
+      // ✅ Cập nhật UI với dữ liệu chính xác từ Backend (đảm bảo nhất quán)
+      // Backend đã tính toán: endTime, finalSoc, energyKWh, durationMinutes, cost
+      console.log(
+        `✅ Backend response: finalSoc=${sessionResult.finalSoc}%, ` +
+          `energyKWh=${sessionResult.energyKWh}, ` +
+          `duration=${sessionResult.durationMinutes}min, ` +
+          `cost=${sessionResult.cost}`
+      );
+
       setCurrentSession((prev) =>
         prev
           ? {
               ...prev,
               status: sessionResult.status ?? "COMPLETED",
-              finalSoc:
-                sessionResult.finalSoc ?? prev.virtualSoc ?? prev.initialSoc,
-              energyKWh: sessionResult.energyKWh ?? prev.energyKWh,
-              cost: sessionResult.cost ?? prev.cost,
-              durationMinutes:
-                sessionResult.durationMinutes ?? prev.durationMinutes,
-              actualEndTime:
-                sessionResult.actualEndTime ?? new Date().toISOString(),
+              endTime: sessionResult.endTime,
+              finalSoc: sessionResult.finalSoc, // ✅ Dùng finalSoc từ Backend (số nguyên)
+              energyKWh: sessionResult.energyKWh, // ✅ Dùng energyKWh từ Backend
+              cost: sessionResult.cost,
+              durationMinutes: sessionResult.durationMinutes, // ✅ Dùng duration từ Backend
+              virtualSoc: sessionResult.finalSoc, // ✅ Sync virtualSoc = finalSoc từ Backend
             }
           : prev
       );
@@ -1307,17 +1365,20 @@ export default function ChargingSession() {
                     color: "#00BFA6",
                   }}
                 >
-                  {(
-                    currentSession.virtualSoc ??
-                    Math.min(
-                      currentSession.initialSoc +
-                        ((currentSession.energyKWh ?? 0) /
-                          DEFAULT_BATTERY_CAPACITY) *
-                          100,
-                      100
-                    )
-                  ).toFixed(1)}
-                  %
+                  {/* ✅ Ưu tiên finalSoc từ Backend (số nguyên) khi session completed */}
+                  {currentSession.status === "COMPLETED" &&
+                  currentSession.finalSoc != null
+                    ? `${currentSession.finalSoc}%`
+                    : `${(
+                        currentSession.virtualSoc ??
+                        Math.min(
+                          currentSession.initialSoc +
+                            ((currentSession.energyKWh ?? 0) /
+                              DEFAULT_BATTERY_CAPACITY) *
+                              100,
+                          100
+                        )
+                      ).toFixed(1)}%`}
                 </div>
               </div>
               {currentSession.finalSoc != null && (
