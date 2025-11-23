@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import apiClient from "../../api/apiUrls.js";
 import paths from "../../path/paths.jsx";
 import "./PaymentSuccess.css";
 
@@ -18,34 +19,128 @@ export default function PaymentSuccess() {
   });
 
   useEffect(() => {
-    // Get payment info from URL params
-    const transactionId = searchParams.get("vnp_TxnRef");
-    const amount = searchParams.get("vnp_Amount");
-    const orderInfo = searchParams.get("vnp_OrderInfo");
-    const transactionNo = searchParams.get("vnp_TransactionNo");
-    const bankCode = searchParams.get("vnp_BankCode");
-    const payDate = searchParams.get("vnp_PayDate");
-    const responseCode = searchParams.get("vnp_ResponseCode");
+    const fetchPaymentInfo = async () => {
+      try {
+        // Get payment info from URL params
+        const invoiceIdParam = searchParams.get("invoiceId");
+        const transactionIdParam = searchParams.get("transactionId");
+        const transactionNo = searchParams.get("vnp_TransactionNo");
+        const bankCode = searchParams.get("vnp_BankCode");
+        const payDate = searchParams.get("vnp_PayDate");
+        const responseCode = searchParams.get("vnp_ResponseCode");
 
-    // Check if payment is successful
-    if (responseCode && responseCode !== "00") {
-      toast.error("Thanh toán thất bại!");
-      navigate(paths.paymentFailed + `?vnp_ResponseCode=${responseCode}`);
-      return;
-    }
+        // Debug: Log all URL params
+        console.log("=== VNPay Payment Success Params ===");
+        console.log("invoiceId:", invoiceIdParam);
+        console.log("transactionId:", transactionIdParam);
+        console.log("transactionNo:", transactionNo);
+        console.log("bankCode:", bankCode);
+        console.log("payDate:", payDate);
+        console.log("responseCode:", responseCode);
 
-    setPaymentInfo({
-      transactionId: transactionId || "",
-      amount: amount ? (parseInt(amount) / 100).toLocaleString("vi-VN") : "0",
-      orderInfo: orderInfo || "",
-      transactionNo: transactionNo || "",
-      bankCode: bankCode || "",
-      payDate: payDate ? formatPayDate(payDate) : "",
-      responseCode: responseCode || "",
-    });
+        // Check if payment is successful
+        if (responseCode && responseCode !== "00") {
+          toast.error("Thanh toán thất bại!");
+          navigate(paths.paymentFailed + `?vnp_ResponseCode=${responseCode}`);
+          return;
+        }
 
-    // Show success toast
-    toast.success("Thanh toán thành công!", { position: "top-center" });
+        // Fetch transaction details from backend
+        let finalAmount = "0";
+        let finalOrderInfo = "";
+        let finalTransactionId = transactionIdParam || "";
+
+        // 💾 Lấy thông tin thanh toán từ sessionStorage (được lưu từ Payment.jsx)
+        const pendingPaymentStr = sessionStorage.getItem("pendingPayment");
+        if (pendingPaymentStr) {
+          try {
+            const pendingPayment = JSON.parse(pendingPaymentStr);
+            console.log("Pending payment from sessionStorage:", pendingPayment);
+
+            // Sử dụng số tiền từ sessionStorage
+            if (pendingPayment.amount) {
+              finalAmount = pendingPayment.amount.toLocaleString("vi-VN");
+              finalOrderInfo =
+                pendingPayment.orderInfo || `Hóa đơn #${invoiceIdParam}`;
+              console.log("Using amount from sessionStorage:", finalAmount);
+            }
+
+            // Xóa thông tin sau khi đã sử dụng
+            sessionStorage.removeItem("pendingPayment");
+          } catch (e) {
+            console.error("Error parsing pendingPayment:", e);
+          }
+        }
+
+        // Fallback: Nếu không có trong sessionStorage, thử lấy từ API
+        if (finalAmount === "0" && transactionIdParam) {
+          try {
+            console.log("Fetching transactions...");
+            const txResponse = await apiClient.get(`/api/driver/transactions`);
+            const transactions = txResponse.data || [];
+            console.log("All transactions:", transactions);
+            console.log(
+              "Looking for transactionId:",
+              parseInt(transactionIdParam)
+            );
+
+            const transaction = transactions.find(
+              (t) => t.transactionId === parseInt(transactionIdParam)
+            );
+
+            console.log("Found transaction:", transaction);
+
+            if (transaction) {
+              finalAmount = transaction.amount.toLocaleString("vi-VN");
+              finalOrderInfo =
+                transaction.description || `Hóa đơn #${invoiceIdParam}`;
+              console.log("Final amount from API:", finalAmount);
+              console.log("Final orderInfo:", finalOrderInfo);
+            } else {
+              console.warn(
+                "Transaction not found, trying to get from invoice..."
+              );
+              // Fallback: try to get invoice info
+              if (invoiceIdParam) {
+                try {
+                  const invoiceResponse = await apiClient.get(
+                    `/api/invoices/${invoiceIdParam}`
+                  );
+                  if (invoiceResponse.data) {
+                    finalAmount =
+                      invoiceResponse.data.amount.toLocaleString("vi-VN");
+                    finalOrderInfo = `Hóa đơn #${invoiceIdParam}`;
+                    console.log("Got amount from invoice:", finalAmount);
+                  }
+                } catch (invoiceError) {
+                  console.error("Error fetching invoice:", invoiceError);
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching transaction:", error);
+          }
+        }
+
+        setPaymentInfo({
+          transactionId: finalTransactionId,
+          amount: finalAmount,
+          orderInfo: finalOrderInfo,
+          transactionNo: transactionNo || "",
+          bankCode: bankCode || "",
+          payDate: payDate ? formatPayDate(payDate) : "",
+          responseCode: responseCode || "",
+        });
+
+        // Show success toast
+        toast.success("Thanh toán thành công!", { position: "top-center" });
+      } catch (error) {
+        console.error("Error in fetchPaymentInfo:", error);
+        toast.error("Có lỗi khi tải thông tin thanh toán");
+      }
+    };
+
+    fetchPaymentInfo();
   }, [searchParams, navigate]);
 
   const formatPayDate = (dateStr) => {
@@ -108,7 +203,7 @@ export default function PaymentSuccess() {
             </div>
           )}
 
-          {paymentInfo.amount && (
+          {paymentInfo.amount !== "" && (
             <div className="info-item">
               <span className="info-label">Số tiền:</span>
               <span className="info-value amount">

@@ -75,6 +75,19 @@ export default function Payment() {
       if (method.provider === "VNPAY" || method.methodType === "EWALLET") {
         // VNPay/E-Wallet: redirect đến trang thanh toán
         if (response.data?.paymentUrl) {
+          // 💾 Lưu thông tin thanh toán vào sessionStorage trước khi redirect
+          sessionStorage.setItem(
+            "pendingPayment",
+            JSON.stringify({
+              amount: session.cost || 0,
+              currency: session.currency || "VND",
+              orderInfo: `Thanh toán phiên sạc #${session.sessionId}`,
+              stationName: session.stationName,
+              vehiclePlate: session.vehiclePlate,
+              energyKWh: session.energyKWh,
+              durationMinutes: session.durationMinutes,
+            })
+          );
           window.location.href = response.data.paymentUrl;
           return;
         } else {

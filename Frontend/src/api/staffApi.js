@@ -78,12 +78,18 @@ export const getStationTransactionsApi = (params = {}) => {
   const {
     status = null,
     page = 0,
-    size = 10,
-    sortBy = "createdAt",
-    sortDir = "desc",
+    size = 100,
+    sortBy = null, // Không gửi default để tránh lỗi Backend
+    sortDir = null,
   } = params;
 
-  let url = `/api/staff/transactions?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
+  let url = `/api/staff/transactions?page=${page}&size=${size}`;
+
+  // Chỉ thêm sortBy và sortDir khi có giá trị
+  if (sortBy && sortDir) {
+    url += `&sortBy=${sortBy}&sortDir=${sortDir}`;
+  }
+
   if (status) {
     url += `&status=${status}`;
   }

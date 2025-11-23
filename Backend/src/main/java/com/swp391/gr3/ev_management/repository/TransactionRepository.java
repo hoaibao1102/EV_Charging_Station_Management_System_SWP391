@@ -1,8 +1,8 @@
 package com.swp391.gr3.ev_management.repository;
 
-import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
-import com.swp391.gr3.ev_management.entity.Transaction;
-import com.swp391.gr3.ev_management.enums.TransactionStatus;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,9 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.entity.Transaction;
+import com.swp391.gr3.ev_management.enums.TransactionStatus;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction,Long> {
@@ -141,7 +141,6 @@ join s.booking b
 join b.vehicle v
 join b.station st
 where st.stationId = :stationId
-order by t.createdAt desc
 """)
     Page<TransactionBriefResponse> findByStationId(@Param("stationId") Long stationId, Pageable pageable);
 
@@ -162,7 +161,6 @@ join b.vehicle v
 join b.station st
 where st.stationId = :stationId
   and t.status = :status
-order by t.createdAt desc
 """)
     Page<TransactionBriefResponse> findByStationIdAndStatus(
             @Param("stationId") Long stationId,
