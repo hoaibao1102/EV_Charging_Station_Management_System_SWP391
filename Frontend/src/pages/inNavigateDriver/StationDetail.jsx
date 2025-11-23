@@ -75,7 +75,9 @@ const StationDetail = () => {
             const myVehiclesRes = await getMyVehiclesApi();
             // console.log("🚗 My Vehicles:", myVehiclesRes.data);
 
-            setMyVehicles(myVehiclesRes.data);
+            setMyVehicles(
+              myVehiclesRes.data.filter((v) => v.vehicleStatus === "ACTIVE")
+            );
 
             // Tự động chọn xe đầu tiên nếu có
             if (myVehiclesRes.data?.length > 0) {

@@ -109,11 +109,6 @@ export default function BookingQRCode() {
           <p>Đang tải...</p>
         ) : (
           <>
-            <p className="booking-field">
-              <strong>Booking ID:</strong>{" "}
-              {booking?.bookingId ?? booking?.id ?? bookingIdParam ?? "-"}
-            </p>
-
             {qrUrl ? (
               <div style={{ textAlign: "center", marginTop: 12 }}>
                 <img

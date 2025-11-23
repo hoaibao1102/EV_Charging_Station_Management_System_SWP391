@@ -903,14 +903,6 @@ export default function ChargingSession() {
             <p>Đang tải thông tin booking...</p>
           ) : (
             <>
-              <p style={{ marginBottom: "10px" }}>
-                <strong>Booking ID:</strong>{" "}
-                {booking?.bookingId ??
-                  booking?.id ??
-                  bookingIdFromParams ??
-                  "-"}
-              </p>
-
               {qrUrl ? (
                 <div style={{ textAlign: "center", marginTop: 12 }}>
                   <img
