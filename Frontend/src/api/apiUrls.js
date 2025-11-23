@@ -1,7 +1,7 @@
 import axios from "axios";
 import { clearAuthData } from "../utils/authUtils.js";
 
-const API_BASE_URL = "https://shipments-reading-patrick-modern.trycloudflare.com";
+const API_BASE_URL = "http://localhost:8080"; // Thay đổi theo cấu hình của bạn
 
 // Khởi tạo Axios Instance
 const apiClient = axios.create({
@@ -38,7 +38,7 @@ apiClient.interceptors.response.use(
       "/api/charging-stations",
       "/api/connector-types",
       "/api/charging-points/station",
-      "/api/policies",  // Thêm API điều khoản vào public
+      "/api/policies", // Thêm API điều khoản vào public
     ];
 
     const isPublicEndpoint = publicEndpoints.some((endpoint) =>
