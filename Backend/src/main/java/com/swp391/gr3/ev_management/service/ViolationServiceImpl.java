@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;            // ✅ Publish event khi có Noti
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -32,17 +31,17 @@ public class ViolationServiceImpl implements ViolationService {
     private static final ZoneId TENANT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     // ====== Dependencies được inject ======
-    private final DriverViolationRepository violationRepository;              // CRUD cho DriverViolation (bản ghi vi phạm)
-    private final DriverService driverService;                                // Dùng để lấy Driver (tài xế)
-    private final NotificationsService notificationsService;                  // Lưu Notification
-    private final ApplicationEventPublisher eventPublisher;                   // Bắn event khi tạo noti
-    private final BookingService bookingService;                              // Đọc Booking liên quan
-    private final ChargingSessionService chargingSessionService;              // Kiểm tra phiên sạc có tồn tại không
-    private final DriverViolationTripletService driverViolationTripletService;// Gom nhóm 3 lỗi (Triplet)
-    private final TariffService tariffService;                                // Lấy tariff để tính tiền phạt
-    private final ViolationResponseMapper violationResponseMapper;            // Map Entity -> ViolationResponse
-    private final SlotAvailabilityService slotAvailabilityService;            // Lấy thông tin slot nhẹ
-    private final UserVehicleService userVehicleService;                        // Lấy thông tin vehicle nhẹ
+    private final DriverViolationRepository violationRepository;                // CRUD cho DriverViolation (bản ghi vi phạm)
+    private final DriverService driverService;                                  // Dùng để lấy Driver (tài xế)
+    private final NotificationsService notificationsService;                    // Lưu Notification
+    private final ApplicationEventPublisher eventPublisher;                     // Bắn event khi tạo noti
+    private final BookingService bookingService;                                // Đọc Booking liên quan
+    private final ChargingSessionService chargingSessionService;                // Kiểm tra phiên sạc có tồn tại không
+    private final DriverViolationTripletService driverViolationTripletService;  // Gom nhóm 3 lỗi (Triplet)
+    private final TariffService tariffService;                                  // Lấy tariff để tính tiền phạt
+    private final ViolationResponseMapper violationResponseMapper;              // Map Entity -> ViolationResponse
+    private final SlotAvailabilityService slotAvailabilityService;              // Lấy thông tin slot
+    private final UserVehicleService userVehicleService;                        // Lấy thông tin vehicle
 
     @Override
     public ViolationResponse createViolation(Long userId, ViolationRequest request) {
@@ -53,7 +52,7 @@ public class ViolationServiceImpl implements ViolationService {
         if (bookingId == null) return null;
 
     /* =======================================================
-       1) Load thông tin booking nhẹ — KHÔNG JOIN NHIỀU BẢNG
+       1) Load thông tin booking — KHÔNG JOIN NHIỀU BẢNG
        ======================================================= */
         LightBookingInfo bookingInfo = bookingService.findLightBookingInfo(bookingId)
                 .orElse(null);
@@ -71,7 +70,7 @@ public class ViolationServiceImpl implements ViolationService {
         if (now.isBefore(slotEnd)) return null;
 
     /* =======================================================
-       2) Check session hợp lệ (nhẹ) - chỉ SELECT status
+       2) Check session hợp lệ - chỉ SELECT status
        ======================================================= */
         Boolean hasValidSession =
                 chargingSessionService.existsValidSessionForBooking(bookingId);
@@ -82,7 +81,7 @@ public class ViolationServiceImpl implements ViolationService {
         }
 
     /* =======================================================
-       3) Load connectorTypeId nhẹ – không join nặng
+       3) Load connectorTypeId – không join nặng
        ======================================================= */
         List<Long> connectorIds =
                 slotAvailabilityService.findConnectorTypeIdByBooking(bookingId);
@@ -100,14 +99,14 @@ public class ViolationServiceImpl implements ViolationService {
         }
 
     /* =======================================================
-       4) Load giá — query rất nhẹ
+       4) Load giá — query rất
        ======================================================= */
         Double pricePerMin =
                 tariffService.findPricePerMinActive(connectorTypeId, now)
                         .orElse(0.0);
 
     /* =======================================================
-       5) Tính penalty nhanh
+       5) Tính penalty
        ======================================================= */
         long reservedSeconds = Duration.between(slotStart, slotEnd).getSeconds();
         long minutes = Math.max(1, (reservedSeconds + 59) / 60);
@@ -115,13 +114,13 @@ public class ViolationServiceImpl implements ViolationService {
         double penaltyAmount = pricePerMin * minutes;
 
     /* =======================================================
-       6) Load Driver nhanh
+       6) Load Driver
        ======================================================= */
         Driver driver = driverService.findByUserIdLight(userId)
                 .orElseThrow(() -> new ErrorException("Driver not found"));
 
     /* =======================================================
-       7) Save Violation — nhẹ
+       7) Save Violation
        ======================================================= */
         DriverViolation violation = DriverViolation.builder()
                 .driver(driver)
