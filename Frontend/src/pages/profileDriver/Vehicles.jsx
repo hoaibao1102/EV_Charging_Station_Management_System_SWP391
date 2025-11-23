@@ -15,11 +15,13 @@ export default function Vehicles() {
   const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   const handleUpdate = async (vehicle) => {
-    const newStatus = vehicle.vehicleStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    const confirmMessage = newStatus === "INACTIVE" 
-      ? "Bạn có chắc chắn muốn ngưng hoạt động xe này?" 
-      : "Bạn có chắc chắn muốn cho xe này hoạt động trở lại?";
-    
+    const newStatus =
+      vehicle.vehicleStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const confirmMessage =
+      newStatus === "INACTIVE"
+        ? "Bạn có chắc chắn muốn ngưng hoạt động xe này?"
+        : "Bạn có chắc chắn muốn cho xe này hoạt động trở lại?";
+
     if (window.confirm(confirmMessage)) {
       try {
         const response = await updateVehicleApi(vehicle.vehicleId, newStatus);
@@ -32,9 +34,10 @@ export default function Vehicles() {
                 : v
             )
           );
-          const successMessage = newStatus === "INACTIVE" 
-            ? "Ngưng hoạt động xe thành công!" 
-            : "Xe đã hoạt động trở lại!";
+          const successMessage =
+            newStatus === "INACTIVE"
+              ? "Ngưng hoạt động xe thành công!"
+              : "Xe đã hoạt động trở lại!";
           toast.success(successMessage);
         } else {
           toast.error("Cập nhật trạng thái xe thất bại!");
@@ -93,7 +96,7 @@ export default function Vehicles() {
                 <p>Không có xe nào trong danh sách. Hãy thêm xe mới!</p>
                 <button
                   className="btn btn-primary"
-                  style={{width:'200px' , marginRight:'10px'}}
+                  style={{ width: "200px", marginRight: "10px" }}
                   onClick={() => setShowAddVehicle(true)}
                 >
                   Thêm xe mới
@@ -101,27 +104,36 @@ export default function Vehicles() {
               </div>
             ) : (
               <>
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <button
                     className={classCss.button}
                     onClick={() => setShowAddVehicle(true)}
-                    style={{ width: 'auto', padding: '0.5rem 1.5rem' }}
+                    style={{ width: "auto", padding: "0.5rem 1.5rem" }}
                   >
                     Thêm xe mới
                   </button>
                 </div>
-                
+
                 {/* Xe đang hoạt động */}
                 <div className="vehicle-section">
                   <h3 className="section-title">Xe đang hoạt động</h3>
                   <Row className="g-4">
-                    {vehicles.filter(v => v.vehicleStatus === "ACTIVE").length === 0 ? (
-                      <p className="text-muted">Không có xe nào đang hoạt động</p>
+                    {vehicles.filter((v) => v.vehicleStatus === "ACTIVE")
+                      .length === 0 ? (
+                      <p className="text-muted">
+                        Không có xe nào đang hoạt động
+                      </p>
                     ) : (
                       vehicles
-                        .filter(v => v.vehicleStatus === "ACTIVE")
+                        .filter((v) => v.vehicleStatus === "ACTIVE")
                         .map((vehicle) => (
-                          <Col xs={12} sm={6} md={4} lg={3} key={vehicle.vehicleId}>
+                          <Col
+                            xs={12}
+                            sm={6}
+                            md={4}
+                            lg={3}
+                            key={vehicle.vehicleId}
+                          >
                             <VehicleCard
                               vehicle={vehicle}
                               onUpdate={() => handleUpdate(vehicle)}
@@ -136,13 +148,22 @@ export default function Vehicles() {
                 <div className="vehicle-section mt-5">
                   <h3 className="section-title">Xe ngưng hoạt động</h3>
                   <Row className="g-4">
-                    {vehicles.filter(v => v.vehicleStatus === "INACTIVE").length === 0 ? (
-                      <p className="text-muted">Không có xe nào ngưng hoạt động</p>
+                    {vehicles.filter((v) => v.vehicleStatus === "INACTIVE")
+                      .length === 0 ? (
+                      <p className="text-muted">
+                        Không có xe nào ngưng hoạt động
+                      </p>
                     ) : (
                       vehicles
-                        .filter(v => v.vehicleStatus === "INACTIVE")
+                        .filter((v) => v.vehicleStatus === "INACTIVE")
                         .map((vehicle) => (
-                          <Col xs={12} sm={6} md={4} lg={3} key={vehicle.vehicleId}>
+                          <Col
+                            xs={12}
+                            sm={6}
+                            md={4}
+                            lg={3}
+                            key={vehicle.vehicleId}
+                          >
                             <VehicleCard
                               vehicle={vehicle}
                               onUpdate={() => handleUpdate(vehicle)}

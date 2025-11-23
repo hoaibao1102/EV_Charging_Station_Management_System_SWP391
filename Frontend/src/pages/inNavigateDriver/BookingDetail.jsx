@@ -257,13 +257,6 @@ export default function BookingDetail() {
                 ? "Đang hủy..."
                 : "Hủy booking"}
             </button>
-
-            <button
-              onClick={() => navigate("/bookings")}
-              className="btn-secondary"
-            >
-              Danh sách đặt chỗ
-            </button>
           </div>
         </div>
       )}

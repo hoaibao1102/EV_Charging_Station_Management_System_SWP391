@@ -297,7 +297,7 @@
   white-space: nowrap;
   flex-shrink: 0;
   line-height: 1.2;
-  width: 106px !important;
+  width: 120px !important;
 }
 
 .status-badge.completed {

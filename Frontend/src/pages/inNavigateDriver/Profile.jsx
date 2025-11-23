@@ -38,9 +38,9 @@ export default function Profile() {
   const menuItems = [
     { label: "Thông tin chi tiết", icon: "📝", path: paths.information },
     { label: "Phương tiện của tôi", icon: "🚗", path: paths.myVehicle },
-    { label: "Giao dịch của tôi", icon: "💸", path: paths.myBookings },
+    // { label: "Giao dịch của tôi", icon: "💸", path: paths.myBookings },
     { label: "Lịch sử thanh toán", icon: "💳", path: paths.transactionHistory },
-    { label: "Lịch sử sạc", icon: "🔋", path: paths.chargeHistory },
+    // { label: "Lịch sử sạc", icon: "🔋", path: paths.chargeHistory },
   ];
 
   if (!isAuthenticated()) {

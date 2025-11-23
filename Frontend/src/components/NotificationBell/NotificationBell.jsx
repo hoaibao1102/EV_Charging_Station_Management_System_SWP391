@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { notificationAPI } from "../../api/notificationApi.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
 import "./NotificationBell.css";
 
 export default function NotificationBell() {
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const dropdownRef = useRef(null);
+  const detailsRef = useRef(null);
 
   // Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
@@ -53,17 +53,26 @@ export default function NotificationBell() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
         setShowAll(false);
+        setSelectedNotification(null); // Close details popup too
+      }
+      if (
+        detailsRef.current &&
+        !detailsRef.current.contains(event.target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setSelectedNotification(null);
       }
     };
 
-    if (isOpen) {
+    if (isOpen || selectedNotification) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, selectedNotification]);
 
   const handleToggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -94,27 +103,36 @@ export default function NotificationBell() {
       }
     }
 
-    // Navigate based on notification type
-    if (notification.relatedEntityType && notification.relatedEntityId) {
-      switch (notification.relatedEntityType) {
-        case "BOOKING":
-          navigate(`/bookings/${notification.relatedEntityId}`);
-          break;
-        case "TRANSACTION":
-          navigate(
-            `/profile/transaction-history/${notification.relatedEntityId}`
-          );
-          break;
-        case "SESSION":
-          navigate(`/chargingSession`);
-          break;
-        default:
-          break;
+    // Show modal instead of navigating
+    setSelectedNotification(notification);
+  };
+
+  const parseChargingContent = (content) => {
+    if (!content) return null;
+
+    const patterns = {
+      point: /Điểm sạc:\s*([^|]+)/,
+      duration: /Thời lượng:\s*([^|]+)/,
+      soc: /Tăng SOC:\s*([^|]+)/,
+      energy: /Năng lượng:\s*([^|]+)/,
+      timeFee: /Phí thời gian:\s*([^|]+)/,
+      energyFee: /Phí điện năng:\s*([^|]+)/,
+      total: /Tổng:\s*(.+)/,
+    };
+
+    const parsed = {};
+    for (const [key, pattern] of Object.entries(patterns)) {
+      const match = content.match(pattern);
+      if (match) {
+        parsed[key] = match[1].trim();
       }
     }
 
-    setIsOpen(false);
-    setShowAll(false);
+    return parsed;
+  };
+
+  const closeModal = () => {
+    setSelectedNotification(null);
   };
 
   const formatTime = (timestamp) => {
@@ -158,7 +176,11 @@ export default function NotificationBell() {
     : notifications.slice(0, 5);
 
   return (
-    <div className="shopee-notification-bell" ref={dropdownRef}>
+    <div
+      className="shopee-notification-bell"
+      ref={dropdownRef}
+      style={{ position: "relative" }}
+    >
       <button
         className="shopee-bell-button"
         onClick={handleToggleDropdown}
@@ -257,6 +279,462 @@ export default function NotificationBell() {
           )}
         </div>
       )}
+
+      {/* Modal hiển thị chi tiết thông báo */}
+      {selectedNotification && (
+        <div
+          ref={detailsRef}
+          style={{
+            position: "absolute",
+            top: "0",
+            right: "1000%",
+            marginRight: "8px",
+            width: "420px",
+            maxWidth: "calc(100vw - 450px)",
+            maxHeight: "85vh",
+            backgroundColor: "white",
+            borderRadius: "16px",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.25)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            animation: "slideInRight 0.25s ease-out",
+            zIndex: 10001,
+          }}
+        >
+          {/* Modal Header */}
+          <div
+            style={{
+              padding: "18px 20px",
+              borderBottom: "1px solid #f0f0f0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "12px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  opacity: 0.9,
+                  marginBottom: "4px",
+                  fontWeight: "500",
+                }}
+              >
+                {selectedNotification.type === "CHARGING_COMPLETED"
+                  ? "⚡ Hoàn thành sạc"
+                  : selectedNotification.type === "BOOKING_CONFIRMED"
+                  ? "✓ Đặt chỗ"
+                  : selectedNotification.type === "PAYMENT_SUCCESS"
+                  ? "💳 Thanh toán"
+                  : "📢 Thông báo"}
+              </div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  lineHeight: "1.4",
+                }}
+              >
+                {selectedNotification.title || "Chi tiết thông báo"}
+              </h2>
+            </div>
+            <button
+              onClick={closeModal}
+              style={{
+                background: "rgba(255, 255, 255, 0.2)",
+                border: "none",
+                fontSize: "20px",
+                cursor: "pointer",
+                color: "white",
+                padding: "4px",
+                width: "28px",
+                height: "28px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "6px",
+                transition: "all 0.2s",
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) =>
+                (e.target.style.background = "rgba(255, 255, 255, 0.3)")
+              }
+              onMouseLeave={(e) =>
+                (e.target.style.background = "rgba(255, 255, 255, 0.2)")
+              }
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <div
+            style={{
+              padding: "20px",
+              overflowY: "auto",
+              flex: 1,
+            }}
+          >
+            {selectedNotification.type === "CHARGING_COMPLETED" ? (
+              (() => {
+                const parsed = parseChargingContent(
+                  selectedNotification.content
+                );
+                return parsed ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "14px",
+                    }}
+                  >
+                    {/* Charging Point Card */}
+                    {parsed.point && (
+                      <div
+                        style={{
+                          padding: "14px",
+                          background:
+                            "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
+                          borderRadius: "10px",
+                          border: "1px solid #667eea30",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "#666",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Điểm sạc
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: "600",
+                            color: "#667eea",
+                          }}
+                        >
+                          {parsed.point}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Info Grid */}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        gap: "10px",
+                      }}
+                    >
+                      {parsed.duration && (
+                        <div
+                          style={{
+                            padding: "12px",
+                            background: "#f8f9fa",
+                            borderRadius: "8px",
+                            border: "1px solid #e9ecef",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#6c757d",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            ⏱️ Thời lượng
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#212529",
+                            }}
+                          >
+                            {parsed.duration}
+                          </div>
+                        </div>
+                      )}
+
+                      {parsed.soc && (
+                        <div
+                          style={{
+                            padding: "12px",
+                            background: "#f8f9fa",
+                            borderRadius: "8px",
+                            border: "1px solid #e9ecef",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#6c757d",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            🔋 Tăng SOC
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#28a745",
+                            }}
+                          >
+                            {parsed.soc}
+                          </div>
+                        </div>
+                      )}
+
+                      {parsed.energy && (
+                        <div
+                          style={{
+                            padding: "12px",
+                            background: "#f8f9fa",
+                            borderRadius: "8px",
+                            border: "1px solid #e9ecef",
+                            gridColumn:
+                              parsed.duration && parsed.soc ? "span 2" : "auto",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#6c757d",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            ⚡ Năng lượng
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#212529",
+                            }}
+                          >
+                            {parsed.energy}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fees Section */}
+                    <div
+                      style={{
+                        padding: "14px",
+                        background: "white",
+                        borderRadius: "10px",
+                        border: "1px solid #e9ecef",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          color: "#495057",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        Chi tiết phí
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "8px",
+                        }}
+                      >
+                        {parsed.timeFee && (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <span
+                              style={{ color: "#6c757d", fontSize: "13px" }}
+                            >
+                              Phí thời gian
+                            </span>
+                            <span
+                              style={{
+                                fontWeight: "500",
+                                color: "#212529",
+                                fontSize: "13px",
+                              }}
+                            >
+                              {parsed.timeFee}
+                            </span>
+                          </div>
+                        )}
+                        {parsed.energyFee && (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <span
+                              style={{ color: "#6c757d", fontSize: "13px" }}
+                            >
+                              Phí điện năng
+                            </span>
+                            <span
+                              style={{
+                                fontWeight: "500",
+                                color: "#212529",
+                                fontSize: "13px",
+                              }}
+                            >
+                              {parsed.energyFee}
+                            </span>
+                          </div>
+                        )}
+                        {parsed.total && (
+                          <>
+                            <div
+                              style={{
+                                height: "1px",
+                                background: "#dee2e6",
+                                margin: "4px 0",
+                              }}
+                            ></div>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontWeight: "600",
+                                  color: "#212529",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Tổng cộng
+                              </span>
+                              <span
+                                style={{
+                                  fontWeight: "700",
+                                  color: "#dc3545",
+                                  fontSize: "16px",
+                                }}
+                              >
+                                {parsed.total}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#495057",
+                      lineHeight: "1.6",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {selectedNotification.content ||
+                      selectedNotification.message ||
+                      "Không có nội dung"}
+                  </p>
+                );
+              })()
+            ) : (
+              <div
+                style={{
+                  padding: "16px",
+                  background: "#f8f9fa",
+                  borderRadius: "10px",
+                  border: "1px solid #e9ecef",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#495057",
+                    lineHeight: "1.7",
+                    fontSize: "14px",
+                  }}
+                >
+                  {selectedNotification.content ||
+                    selectedNotification.message ||
+                    "Không có nội dung"}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div
+            style={{
+              padding: "12px 20px",
+              borderTop: "1px solid #f0f0f0",
+              backgroundColor: "#fafafa",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M8 14A6 6 0 108 2a6 6 0 000 12z"
+                stroke="#999"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M8 5v3l2 2"
+                stroke="#999"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            <small style={{ color: "#6c757d", fontSize: "12px" }}>
+              {formatTime(
+                selectedNotification.createdAt || selectedNotification.timestamp
+              )}
+            </small>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideInRight {
+          from { 
+            transform: translateX(-10px);
+            opacity: 0;
+          }
+          to { 
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .shopee-notification-bell [ref="detailsRef"] {
+            left: 0 !important;
+            right: 0 !important;
+            margin: 8px !important;
+            width: auto !important;
+            max-width: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,12 +1,12 @@
 package com.swp391.gr3.ev_management.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.swp391.gr3.ev_management.dto.response.DriverResponse;
 import com.swp391.gr3.ev_management.dto.response.VehicleResponse;
 import com.swp391.gr3.ev_management.entity.Driver;
 import com.swp391.gr3.ev_management.entity.UserVehicle;
 import com.swp391.gr3.ev_management.entity.VehicleModel;
-import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
-import org.springframework.stereotype.Component;
 
 @Component
 public class DriverMapper {
@@ -36,7 +36,7 @@ public class DriverMapper {
                 .modelId(model.getModelId())
                 .modelName(model.getModel())
                 .brand(model.getBrand())
-                .vehicleStatus(UserVehicleStatus.ACTIVE)
+                .vehicleStatus(vehicle.getStatus()) // ✅ FIX: Lấy status thực từ entity (field name là 'status' không phải 'vehicleStatus')
                 .connectorTypeName(model.getConnectorType() != null ?
                         model.getConnectorType().getDisplayName() : null)
                 .build();
