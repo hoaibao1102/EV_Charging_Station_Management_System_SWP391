@@ -11,7 +11,4 @@ public class StopSessionForStaffRequest {
     @Positive(message = "ID phiên sạc phải là số dương")
     private Long sessionId;
 
-    @NotNull(message = "ID người dùng không được để trống")
-    @Positive(message = "ID người dùng phải là số dương")
-    private Long userId;
 }

@@ -21,5 +21,5 @@ public class GetUsersResponse {
     private String address;
     private String status;
     private long sessionCount;
-    private String roleName; // ADMIN, STAFF, EV_DRIVER
+    private String roleName; // ADMIN, STAFF, DRIVER
 }

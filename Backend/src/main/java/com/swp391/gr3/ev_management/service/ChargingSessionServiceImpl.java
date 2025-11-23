@@ -236,8 +236,8 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     }
 
     @Override
-    @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình
-    public StopCharSessionResponse staffStopSession(Long sessionId, Long requesterUserId) {
+    @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình (ở đây là STAFF dừng, nhưng code đang kiểm owner)
+    public StopCharSessionResponse staffStopSession(Long sessionId) {
         // 1) Tìm session kèm thông tin owner (join fetch) để kiểm tra quyền
         ChargingSession session = chargingSessionRepository.findWithOwnerById(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
@@ -248,12 +248,6 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .getDriver()
                 .getUser()
                 .getUserId();
-
-        // 3) Kiểm tra requesterUserId có trùng với ownerUserId hay không
-        //    - Ở code hiện tại đang kiểm tra như driverStopSession (nếu dùng cho staff thì tuỳ business rule)
-        if (!ownerUserId.equals(requesterUserId)) {
-            throw new org.springframework.security.access.AccessDeniedException("You are not the owner of this session");
-        }
 
         // 4) Lấy SOC cuối cùng từ cache
         Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);

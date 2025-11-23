@@ -106,12 +106,9 @@ public class StaffController {
     public ResponseEntity<StopCharSessionResponse> staffStopSession(
             @RequestBody StopSessionForStaffRequest body // ✅ Chứa sessionId và userId
     ) {
-        // 🟢 Lấy userId từ body thay vì token
-        Long userId = body.getUserId();
-
         // 🟢 Gọi service để dừng phiên sạc thuộc về chính userId này
         StopCharSessionResponse res =
-                chargingSessionService.staffStopSession(body.getSessionId(), userId);
+                chargingSessionService.staffStopSession(body.getSessionId());
 
         // 🟢 Trả về 200 OK + thông tin sau khi dừng
         return ResponseEntity.ok(res);
