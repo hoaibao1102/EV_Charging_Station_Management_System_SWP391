@@ -189,7 +189,15 @@ public class SecurityConfig {
                                         // 👇 Cho phép các endpoint OAuth2 (Google login)
                                         "/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**",
                                         // 👇 Cho phép public VNPay callback/return
-                                        "/api/payment/vnpay/**", "/api/users/forgot-password", "/api/users/reset-password"
+                                        "/api/payment/vnpay/**", "/api/users/forgot-password", "/api/users/reset-password",
+                                        
+                                        // 👇 Cho phép xem danh sách trạm sạc và connector types (không cần đăng nhập)
+                                        "/api/charging-stations", "/api/charging-stations/**",
+                                        "/api/connector-types", "/api/connector-types/**",
+                                        "/api/charging-points/station/**",
+                                        
+                                        // 👇 Cho phép xem điều khoản/chính sách (không cần đăng nhập)
+                                        "/api/policies", "/api/policies/**"
                                 ).permitAll()
                                 // Actuator (health, metrics) public
                                 .requestMatchers("/actuator/**").permitAll()

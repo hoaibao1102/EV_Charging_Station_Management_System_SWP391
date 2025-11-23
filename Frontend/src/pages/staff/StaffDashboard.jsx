@@ -9,6 +9,8 @@ import {
   getRecentActivitiesApi,
   getSessionsPerHourChartApi,
 } from "../../api/staffApi";
+import Header from '../../components/admin/Header.jsx';
+import "../admin/ManagementUser.css";
 import "./StaffDashboard.css";
 
 export default function StaffDashboard() {
@@ -34,7 +36,7 @@ export default function StaffDashboard() {
         return null;
       }
     } catch (error) {
-      toast.error("Không thể tải thông tin trạm");
+      toast.error("Không thể tải thông tin trạm" , error);
       setLoading(false);
       return null;
     }
@@ -68,7 +70,7 @@ export default function StaffDashboard() {
       if (chartRes.success) setChartData(chartRes.data || []);
       if (statsRes.success) setGeneralStats(statsRes.data);
     } catch (error) {
-      toast.error("Không thể tải dữ liệu dashboard");
+      toast.error("Không thể tải dữ liệu dashboard", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -133,17 +135,19 @@ export default function StaffDashboard() {
 
   if (loading)
     return (
-      <div className="staff-dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Đang tải dữ liệu dashboard...</p>
+      <div className="loading-overlay">
+        Đang tải dữ liệu dashboard...
       </div>
     );
   if (!myStation)
     return (
-      <div className="staff-dashboard-error">
-        <div className="error-icon">⚠️</div>
-        <h2>Chưa có trạm được phân công</h2>
-        <p>Vui lòng liên hệ quản trị viên để được phân công trạm sạc.</p>
+      <div className="management-user-container">
+        <Header />
+        <div style={{ padding: '40px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+          <h2>Chưa có trạm được phân công</h2>
+          <p>Vui lòng liên hệ quản trị viên để được phân công trạm sạc.</p>
+        </div>
       </div>
     );
 
@@ -155,70 +159,45 @@ export default function StaffDashboard() {
   ).length;
 
   return (
-    <div className="staff-dashboard">
-      <div className="dashboard-header">
-        <div className="station-info-header">
-          <div className="station-icon">🏢</div>
-          <div>
-            <h1 className="dashboard-title">Trạm #{myStation.stationId}</h1>
-            <p className="dashboard-subtitle">
-              Staff: {myStation.name} • Email: {myStation.email}
-            </p>
-          </div>
-        </div>
+    <div className="management-user-container">
+      <Header />
+      
+      {/* Action Section */}
+      <div className="action-section">
+        <h2>Dashboard Trạm #{myStation.stationId}</h2>
         <button
-          className="refresh-button"
+          className="btn-add-staff"
           onClick={() => fetchDashboardData(myStation.stationId, true)}
           disabled={refreshing}
         >
-          <span className={refreshing ? "spinning" : ""}>🔄</span>
-          {refreshing ? "Đang làm mới..." : "Làm mới"}
+          {refreshing ? "🔄 Đang làm mới..." : "🔄 Làm mới"}
         </button>
       </div>
 
-      <div className="stats-grid">
-        {[
-          {
-            icon: "⚡",
-            title: "Phiên Đang Sạc",
-            value: activeCount,
-            label: "phiên đang hoạt động",
-            className: "active-sessions",
-          },
-          {
-            icon: "📅",
-            title: "Booking Đã Xác Nhận",
-            value: todayBookings,
-            label: "booking hôm nay",
-            className: "today-bookings",
-          },
-          {
-            icon: "✅",
-            title: "Hoàn Thành Hôm Nay",
-            value: completedToday,
-            label: "phiên đã hoàn thành",
-            className: "completed-sessions",
-          },
-          {
-            icon: "📊",
-            title: "Tổng Phiên Sạc",
-            value: allSessions.length,
-            label: "tất cả phiên sạc",
-            className: "total-sessions",
-          },
-        ].map((stat, i) => (
-          <div key={i} className={`stat-card ${stat.className}`}>
-            <div className="stat-icon">{stat.icon}</div>
-            <div className="stat-content">
-              <h3>{stat.title}</h3>
-              <p className="stat-value">{stat.value}</p>
-              <span className="stat-label">{stat.label}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Statistics Section */}
+      <ul className="statistics-section">
+        <li className="stat-card">
+          ⚡ Phiên Đang Sạc
+          <strong>{activeCount}</strong>
+        </li>
+        <li className="stat-card">
+          📅 Booking Đã Xác Nhận
+          <strong>{todayBookings}</strong>
+        </li>
+        <li className="stat-card">
+          ✅ Hoàn Thành Hôm Nay
+          <strong>{completedToday}</strong>
+        </li>
+        <li className="stat-card">
+          📊 Tổng Phiên Sạc
+          <strong>{allSessions.length}</strong>
+        </li>
+      </ul>
 
-      <div className="dashboard-content">
+      {/* Table Section */}
+      <div className="table-section">
+        <div className="table-scroll-container">
+          <div className="dashboard-content">
         <div className="dashboard-left">
           <div className="dashboard-card">
             <h2 className="card-title">
@@ -393,10 +372,6 @@ export default function StaffDashboard() {
               <div className="system-stats">
                 {[
                   {
-                    label: "Trạm Hoạt Động:",
-                    value: generalStats.activeStations,
-                  },
-                  {
                     label: "Phiên Sạc Hệ Thống:",
                     value: generalStats.activeSessions,
                   },
@@ -417,6 +392,8 @@ export default function StaffDashboard() {
               </div>
             </div>
           )}
+        </div>
+          </div>
         </div>
       </div>
     </div>

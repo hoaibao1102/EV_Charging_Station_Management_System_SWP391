@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "./SessionCharging.css";
+import Nav from 'react-bootstrap/Nav';
+import Table from 'react-bootstrap/Table';
+import "../admin/ManagementUser.css";
+import Header from '../../components/admin/Header.jsx';
 import paths from "../../path/paths.jsx";
 import { stationAPI } from "../../api/stationApi.js";
 
@@ -12,6 +15,7 @@ export default function SessionCharging() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stationId, setStationId] = useState(null);
+  const [activeTab, setActiveTab] = useState('ongoing');
   const pollingRef = useRef(null);
   const isFetchingRef = useRef(false);
 
@@ -163,12 +167,14 @@ export default function SessionCharging() {
   };
 
   return (
-    <div className="session-container">
-      <div className="session-header">
-        <h1>Quản lý phiên sạc</h1>
+    <div className="management-user-container">
+      <Header />
+      
+      <div className="action-section">
+        <h2>Quản lý phiên sạc</h2>
         <div>
           <button
-            className="btn-primary"
+            className="btn-add-staff"
             onClick={() =>
               navigate(paths.manageSessionChargingCreate, {
                 state: { openCamera: true },
@@ -180,34 +186,59 @@ export default function SessionCharging() {
         </div>
       </div>
 
-      <div className="table-meta">
-        Danh sách phiên sạc của trạm {stationId ?? "(chưa xác định)"}
-      </div>
+      <ul className="statistics-section">
+        <li className="stat-card">
+          Đang sạc
+          <strong>{ongoing.length}</strong>
+        </li>
+        <li className="stat-card">
+          Đã hoàn thành
+          <strong>{completed.length}</strong>
+        </li>
+        <li className="stat-card">
+          Tổng phiên sạc
+          <strong>{sessions.length}</strong>
+        </li>
+      </ul>
 
-      {loading && (
-        <p style={{ marginTop: 8, color: "#666" }}>
-          Đang tải danh sách phiên sạc...
-        </p>
-      )}
+      <div className="table-section">
+        <div className="table-scroll-container">
+          
+          <div className="filter-section">
+            <Nav justify variant="tabs" activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+              <Nav.Item>
+                <Nav.Link eventKey="ongoing">Đang sạc</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="completed">Đã hoàn thành</Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </div>
 
-      <section className="session-section">
-        <h2>Đang sạc ({ongoing.length})</h2>
-        {ongoing.length === 0 ? (
-          <div className="no-sessions">Hiện không có phiên đang hoạt động</div>
-        ) : (
-          <div className="table-wrap">
-            <table className="session-table">
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '30px' }}>
+              Đang tải danh sách phiên sạc...
+            </div>
+          )}
+
+          {!loading && activeTab === 'ongoing' && (
+            ongoing.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px' }}>
+                Hiện không có phiên đang hoạt động
+              </div>
+            ) : (
+              <Table className="custom-table">
               <thead>
                 <tr>
-                  <th>sessionId</th>
-                  <th>cost</th>
-                  <th>startTime</th>
-                  <th>durationMinutes</th>
-                  <th>energyKWh</th>
-                  <th>initialSoc</th>
-                  <th>finalSoc</th>
-                  <th>status</th>
-                  <th>bookingId</th>
+                  <th>MÃ PHIÊN</th>
+                  <th>CHI PHÍ</th>
+                  <th>THỜI GIAN BẮT ĐẦU</th>
+                  <th>THỜI LƯỢNG (PHÚT)</th>
+                  <th>NĂNG LƯỢNG (KWH)</th>
+                  <th>SOC ĐẦU</th>
+                  <th>SOC CUỐI</th>
+                  <th>TRẠNG THÁI</th>
+                  <th>MÃ BOOKING</th>
                 </tr>
               </thead>
               <tbody>
@@ -240,15 +271,12 @@ export default function SessionCharging() {
                   return (
                     <tr
                       key={sessionId}
-                      className="row-ongoing"
-                      role="button"
                       onClick={() =>
                         navigate(paths.manageSessionChargingCreate, {
                           state: { openCamera: true, bookingId },
                         })
                       }
                       style={{ cursor: "pointer" }}
-                      title={`Mở camera để quét/khởi động phiên cho booking ${bookingId}`}
                     >
                       <td>{sessionId}</td>
                       <td>
@@ -259,40 +287,35 @@ export default function SessionCharging() {
                       <td>{energyKWh}</td>
                       <td>{initialSoc}</td>
                       <td>{finalSoc ?? "-"}</td>
-                      <td>
-                        <span className={`status-badge status-${statusKey}`}>
-                          {status}
-                        </span>
-                      </td>
+                      <td>{statusKey}</td>
                       <td>{bookingId}</td>
                     </tr>
                   );
                 })}
               </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+            </Table>
+            )
+          )}
 
-      <section className="session-section">
-        <h2>Đã hoàn thành ({completed.length})</h2>
-        {completed.length === 0 ? (
-          <div className="no-sessions">Chưa có phiên sạc hoàn thành</div>
-        ) : (
-          <div className="table-wrap">
-            <table className="session-table">
+          {!loading && activeTab === 'completed' && (
+            completed.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px' }}>
+                Chưa có phiên sạc hoàn thành
+              </div>
+            ) : (
+              <Table className="custom-table">
               <thead>
                 <tr>
-                  <th>sessionId</th>
-                  <th>cost</th>
-                  <th>startTime</th>
-                  <th>endTime</th>
-                  <th>durationMinutes</th>
-                  <th>energyKWh</th>
-                  <th>initialSoc</th>
-                  <th>finalSoc</th>
-                  <th>status</th>
-                  <th>bookingId</th>
+                  <th>MÃ PHIÊN</th>
+                  <th>CHI PHÍ</th>
+                  <th>THỜI GIAN BẮT ĐẦU</th>
+                  <th>THỜI GIAN KẾT THÚC</th>
+                  <th>THỜI LƯỢNG (PHÚT)</th>
+                  <th>NĂNG LƯỢNG (KWH)</th>
+                  <th>SOC ĐẦU</th>
+                  <th>SOC CUỐI</th>
+                  <th>TRẠNG THÁI</th>
+                  <th>MÃ BOOKING</th>
                 </tr>
               </thead>
               <tbody>
@@ -324,7 +347,7 @@ export default function SessionCharging() {
                     .toLowerCase()
                     .replace(/\s+/g, "_");
                   return (
-                    <tr key={sessionId} className="row-completed">
+                    <tr key={sessionId}>
                       <td>{sessionId}</td>
                       <td>
                         {Number(cost).toLocaleString()} {s?.currency ?? ""}
@@ -335,20 +358,17 @@ export default function SessionCharging() {
                       <td>{energyKWh}</td>
                       <td>{initialSoc}</td>
                       <td>{finalSoc}</td>
-                      <td>
-                        <span className={`status-badge status-${statusKey}`}>
-                          {status}
-                        </span>
-                      </td>
+                      <td>{statusKey}</td>
                       <td>{bookingId}</td>
                     </tr>
                   );
                 })}
               </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+            </Table>
+            )
+          )}
+        </div>
+      </div>
     </div>
   );
 }
