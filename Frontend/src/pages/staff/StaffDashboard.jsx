@@ -9,7 +9,7 @@ import {
   getRecentActivitiesApi,
   getSessionsPerHourChartApi,
 } from "../../api/staffApi";
-import Header from '../../components/admin/Header.jsx';
+import Header from "../../components/admin/Header.jsx";
 import "../admin/ManagementUser.css";
 import "./StaffDashboard.css";
 
@@ -36,7 +36,7 @@ export default function StaffDashboard() {
         return null;
       }
     } catch (error) {
-      toast.error("Không thể tải thông tin trạm" , error);
+      toast.error("Không thể tải thông tin trạm", error);
       setLoading(false);
       return null;
     }
@@ -134,17 +134,13 @@ export default function StaffDashboard() {
     }[status] || { text: status, color: "#6c757d" });
 
   if (loading)
-    return (
-      <div className="loading-overlay">
-        Đang tải dữ liệu dashboard...
-      </div>
-    );
+    return <div className="loading-overlay">Đang tải dữ liệu dashboard...</div>;
   if (!myStation)
     return (
       <div className="management-user-container">
         <Header />
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+        <div style={{ padding: "40px", textAlign: "center" }}>
+          <div style={{ fontSize: "48px", marginBottom: "20px" }}>⚠️</div>
           <h2>Chưa có trạm được phân công</h2>
           <p>Vui lòng liên hệ quản trị viên để được phân công trạm sạc.</p>
         </div>
@@ -161,7 +157,7 @@ export default function StaffDashboard() {
   return (
     <div className="management-user-container">
       <Header />
-      
+
       {/* Action Section */}
       <div className="action-section">
         <h2>Dashboard Trạm #{myStation.stationId}</h2>
@@ -198,201 +194,214 @@ export default function StaffDashboard() {
       <div className="table-section">
         <div className="table-scroll-container">
           <div className="dashboard-content">
-        <div className="dashboard-left">
-          <div className="dashboard-card">
-            <h2 className="card-title">
-              Phiên Sạc Đang Hoạt Động
-              <span className="badge">{activeCount}</span>
-            </h2>
-            <div className="sessions-list">
-              {activeSessions.length > 0 ? (
-                activeSessions.map((session) => {
-                  const badge = getSessionStatusBadge(session.status);
-                  return (
-                    <div key={session.sessionId} className="session-item">
-                      <div className="session-header">
-                        <span className="session-id">#{session.sessionId}</span>
-                        <span
-                          className="session-status"
-                          style={{ backgroundColor: badge.color }}
-                        >
-                          {badge.text}
-                        </span>
-                      </div>
-                      <div className="session-info">
-                        <p>👤 {session.driverName || "N/A"}</p>
-                        <p>🚗 {session.vehiclePlate || "N/A"}</p>
-                        <p>🔌 Cổng #{session.chargingPointId || "N/A"}</p>
-                        <p>🕐 Bắt đầu: {formatDateTime(session.startTime)}</p>
-                        {session.estimatedEndTime && (
-                          <p>
-                            ⏰ Dự kiến: {formatTime(session.estimatedEndTime)}
-                          </p>
-                        )}
-                      </div>
+            <div className="dashboard-left">
+              <div className="dashboard-card">
+                <h2 className="card-title">
+                  Phiên Sạc Đang Hoạt Động
+                  <span className="badge">{activeCount}</span>
+                </h2>
+                <div className="sessions-list">
+                  {activeSessions.length > 0 ? (
+                    activeSessions.map((session) => {
+                      const badge = getSessionStatusBadge(session.status);
+                      return (
+                        <div key={session.sessionId} className="session-item">
+                          <div className="session-header">
+                            <span className="session-id">
+                              #{session.sessionId}
+                            </span>
+                            <span
+                              className="session-status"
+                              style={{ backgroundColor: badge.color }}
+                            >
+                              {badge.text}
+                            </span>
+                          </div>
+                          <div className="session-info">
+                            <p>👤 {session.driverName || "N/A"}</p>
+                            <p>🚗 {session.vehiclePlate || "N/A"}</p>
+                            <p>🔌 Cổng #{session.chargingPointId || "N/A"}</p>
+                            <p>
+                              🕐 Bắt đầu: {formatDateTime(session.startTime)}
+                            </p>
+                            {session.estimatedEndTime && (
+                              <p>
+                                ⏰ Dự kiến:{" "}
+                                {formatTime(session.estimatedEndTime)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="no-data">
+                      Không có phiên sạc đang hoạt động
                     </div>
-                  );
-                })
-              ) : (
-                <div className="no-data">Không có phiên sạc đang hoạt động</div>
-              )}
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <h2 className="card-title">Phiên Sạc Theo Giờ (Hôm Nay)</h2>
-            <div className="chart-container">
-              {chartData.length > 0 ? (
-                <div className="bar-chart">
-                  {chartData.map((item, i) => (
-                    <div key={i} className="chart-bar">
-                      <div
-                        className="bar-fill"
-                        style={{
-                          height: `${(item.count / maxChartValue) * 100}%`,
-                          minHeight: item.count > 0 ? "5%" : "0%",
-                        }}
-                        title={`${item.count} phiên`}
-                      >
-                        <span className="bar-value">{item.count}</span>
-                      </div>
-                      <span className="bar-label">{item.hour}</span>
-                    </div>
-                  ))}
+                  )}
                 </div>
-              ) : (
-                <div className="no-data">Chưa có dữ liệu</div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div className="dashboard-card">
-            <h2 className="card-title">
-              Lịch Sử Phiên Sạc
-              <span className="badge">{allSessions.length}</span>
-            </h2>
-            <div className="sessions-list sessions-history">
-              {allSessions.slice(0, 10).map((session) => {
-                const badge = getSessionStatusBadge(session.status);
-                return (
-                  <div key={session.sessionId} className="session-item compact">
-                    <div className="session-header">
-                      <span className="session-id">#{session.sessionId}</span>
-                      <span
-                        className="session-status"
-                        style={{ backgroundColor: badge.color }}
+              <div className="dashboard-card">
+                <h2 className="card-title">Phiên Sạc Theo Giờ (Hôm Nay)</h2>
+                <div className="chart-container">
+                  {chartData.length > 0 ? (
+                    <div className="bar-chart">
+                      {chartData.map((item, i) => (
+                        <div key={i} className="chart-bar">
+                          <div
+                            className="bar-fill"
+                            style={{
+                              height: `${(item.count / maxChartValue) * 100}%`,
+                              minHeight: item.count > 0 ? "5%" : "0%",
+                            }}
+                            title={`${item.count} phiên`}
+                          >
+                            <span className="bar-value">{item.count}</span>
+                          </div>
+                          <span className="bar-label">{item.hour}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-data">Chưa có dữ liệu</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="dashboard-card">
+                <h2 className="card-title">
+                  Lịch Sử Phiên Sạc
+                  <span className="badge">{allSessions.length}</span>
+                </h2>
+                <div className="sessions-list sessions-history">
+                  {allSessions.slice(0, 10).map((session) => {
+                    const badge = getSessionStatusBadge(session.status);
+                    return (
+                      <div
+                        key={session.sessionId}
+                        className="session-item compact"
                       >
-                        {badge.text}
-                      </span>
-                    </div>
-                    <div className="session-info">
-                      <p>
-                        👤 {session.driverName || "N/A"} • 🚗{" "}
-                        {session.vehiclePlate || "N/A"}
-                      </p>
-                      <p>🕐 {formatDateTime(session.startTime)}</p>
-                    </div>
-                  </div>
-                );
-              })}
-              {allSessions.length === 0 && (
-                <div className="no-data">Chưa có phiên sạc nào</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="dashboard-right">
-          <div className="dashboard-card">
-            <h2 className="card-title">
-              Booking Đã Xác Nhận
-              <span className="badge">{confirmedBookings.length}</span>
-            </h2>
-            <div className="bookings-list">
-              {confirmedBookings.length > 0 ? (
-                confirmedBookings.map((booking) => {
-                  const badge = getBookingStatusBadge(booking.status);
-                  return (
-                    <div key={booking.bookingId} className="booking-item">
-                      <div className="booking-header">
-                        <span className="booking-id">#{booking.bookingId}</span>
-                        <span
-                          className="booking-status"
-                          style={{ backgroundColor: badge.color }}
-                        >
-                          {badge.text}
-                        </span>
+                        <div className="session-header">
+                          <span className="session-id">
+                            #{session.sessionId}
+                          </span>
+                          <span
+                            className="session-status"
+                            style={{ backgroundColor: badge.color }}
+                          >
+                            {badge.text}
+                          </span>
+                        </div>
+                        <div className="session-info">
+                          <p>🚗 {session.vehiclePlate || "N/A"}</p>
+                          <p>🕐 {formatDateTime(session.startTime)}</p>
+                        </div>
                       </div>
-                      <div className="booking-info">
-                        <p>👤 {booking.driverName || "N/A"}</p>
-                        <p>🚗 {booking.vehiclePlate || "N/A"}</p>
-                        <p>📍 Trạm #{myStation.stationId}</p>
-                        <p>🕐 {formatDateTime(booking.scheduledStartTime)}</p>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="no-data">Chưa có booking</div>
-              )}
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <h2 className="card-title">Hoạt Động Gần Đây</h2>
-            <div className="activities-list">
-              {recentActivities.length > 0 ? (
-                recentActivities.map((activity, i) => (
-                  <div
-                    key={`${activity.type}-${activity.id}-${i}`}
-                    className="activity-item"
-                  >
-                    <div className="activity-icon">
-                      {getActivityIcon(activity.type)}
-                    </div>
-                    <div className="activity-content">
-                      <p className="activity-description">
-                        {activity.description}
-                      </p>
-                      <span className="activity-time">
-                        {formatDateTime(activity.timestamp)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="no-data">Chưa có hoạt động nào</div>
-              )}
-            </div>
-          </div>
-
-          {generalStats && (
-            <div className="dashboard-card">
-              <h2 className="card-title">Thống Kê Hệ Thống</h2>
-              <div className="system-stats">
-                {[
-                  {
-                    label: "Phiên Sạc Hệ Thống:",
-                    value: generalStats.activeSessions,
-                  },
-                  {
-                    label: "Booking Hôm Nay:",
-                    value: generalStats.todayBookings,
-                  },
-                  {
-                    label: "Doanh Thu:",
-                    value: formatCurrency(generalStats.todayRevenue),
-                  },
-                ].map((stat, i) => (
-                  <div key={i} className="system-stat-item">
-                    <span className="stat-label">{stat.label}</span>
-                    <span className="stat-value">{stat.value}</span>
-                  </div>
-                ))}
+                    );
+                  })}
+                  {allSessions.length === 0 && (
+                    <div className="no-data">Chưa có phiên sạc nào</div>
+                  )}
+                </div>
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="dashboard-right">
+              <div className="dashboard-card">
+                <h2 className="card-title">
+                  Booking Đã Xác Nhận
+                  <span className="badge">{confirmedBookings.length}</span>
+                </h2>
+                <div className="bookings-list">
+                  {confirmedBookings.length > 0 ? (
+                    confirmedBookings.map((booking) => {
+                      const badge = getBookingStatusBadge(booking.status);
+                      return (
+                        <div key={booking.bookingId} className="booking-item">
+                          <div className="booking-header">
+                            <span className="booking-id">
+                              #{booking.bookingId}
+                            </span>
+                            <span
+                              className="booking-status"
+                              style={{ backgroundColor: badge.color }}
+                            >
+                              {badge.text}
+                            </span>
+                          </div>
+                          <div className="booking-info">
+                            <p>👤 {booking.driverName || "N/A"}</p>
+                            <p>🚗 {booking.vehiclePlate || "N/A"}</p>
+                            <p>📍 Trạm #{myStation.stationId}</p>
+                            <p>
+                              🕐 {formatDateTime(booking.scheduledStartTime)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="no-data">Chưa có booking</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="dashboard-card">
+                <h2 className="card-title">Hoạt Động Gần Đây</h2>
+                <div className="activities-list">
+                  {recentActivities.length > 0 ? (
+                    recentActivities.map((activity, i) => (
+                      <div
+                        key={`${activity.type}-${activity.id}-${i}`}
+                        className="activity-item"
+                      >
+                        <div className="activity-icon">
+                          {getActivityIcon(activity.type)}
+                        </div>
+                        <div className="activity-content">
+                          <p className="activity-description">
+                            {activity.description}
+                          </p>
+                          <span className="activity-time">
+                            {formatDateTime(activity.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-data">Chưa có hoạt động nào</div>
+                  )}
+                </div>
+              </div>
+
+              {generalStats && (
+                <div className="dashboard-card">
+                  <h2 className="card-title">Thống Kê Hệ Thống</h2>
+                  <div className="system-stats">
+                    {[
+                      {
+                        label: "Phiên Sạc Hệ Thống:",
+                        value: generalStats.activeSessions,
+                      },
+                      {
+                        label: "Booking Hôm Nay:",
+                        value: generalStats.todayBookings,
+                      },
+                      {
+                        label: "Doanh Thu:",
+                        value: formatCurrency(generalStats.todayRevenue),
+                      },
+                    ].map((stat, i) => (
+                      <div key={i} className="system-stat-item">
+                        <span className="stat-label">{stat.label}</span>
+                        <span className="stat-value">{stat.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

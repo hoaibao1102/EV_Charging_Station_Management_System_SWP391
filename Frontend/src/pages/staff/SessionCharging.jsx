@@ -178,10 +178,48 @@ export default function SessionCharging() {
     }
 
     try {
-      const response = await staffStopSessionApi(sessionId);
+      // ✅ Đọc virtualSoc từ sessionStorage (nếu Driver đang chạy phiên sạc)
+      let finalSocFromDriver = null;
+      try {
+        const liveDataKey = `session_${sessionId}_live_soc`;
+        const liveDataStr = sessionStorage.getItem(liveDataKey);
+        if (liveDataStr) {
+          const liveData = JSON.parse(liveDataStr);
+          // Kiểm tra dữ liệu không quá cũ (trong vòng 30 giây)
+          const age = Date.now() - (liveData.timestamp || 0);
+          if (age < 30000 && liveData.virtualSoc != null) {
+            finalSocFromDriver = liveData.virtualSoc;
+            console.log(
+              `✅ Found live SOC from Driver: ${finalSocFromDriver}% (age: ${Math.round(
+                age / 1000
+              )}s)`
+            );
+          } else {
+            console.log(
+              `⚠️ Live SOC data is too old (${Math.round(
+                age / 1000
+              )}s), ignoring`
+            );
+          }
+        }
+      } catch (err) {
+        console.debug("Could not read live SOC from sessionStorage:", err);
+      }
+
+      // ✅ Gửi finalSoc kèm trong API call (nếu có)
+      const response = await staffStopSessionApi(sessionId, finalSocFromDriver);
 
       if (response.success) {
         toast.success("Đã dừng phiên sạc thành công!");
+
+        // ✅ Xóa live SOC data sau khi dừng thành công
+        try {
+          const liveDataKey = `session_${sessionId}_live_soc`;
+          sessionStorage.removeItem(liveDataKey);
+        } catch (err) {
+          console.debug("Failed to remove live SOC:", err);
+        }
+
         // Reload sessions after stopping
         const sid = stationId ?? localStorage.getItem("stationId");
         if (sid) {
