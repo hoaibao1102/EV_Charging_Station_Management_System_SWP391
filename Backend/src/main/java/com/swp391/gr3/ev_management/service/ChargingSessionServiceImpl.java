@@ -236,7 +236,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     }
 
     @Override
-    @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình (ở đây là STAFF dừng, nhưng code đang kiểm owner)
+    @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình
     public StopCharSessionResponse staffStopSession(Long sessionId, Long requesterUserId) {
         // 1) Tìm session kèm thông tin owner (join fetch) để kiểm tra quyền
         ChargingSession session = chargingSessionRepository.findWithOwnerById(sessionId)
