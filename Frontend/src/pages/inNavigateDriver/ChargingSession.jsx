@@ -608,7 +608,7 @@ export default function ChargingSession() {
     }
 
     const virtualChargeInterval = setInterval(() => {
-      accumulatedMinutes += 2 / 60; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
+      accumulatedMinutes += 2; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
       const hours = accumulatedMinutes / 60; // Convert to hours
 
       // ⚡ BƯỚC 1: Tính năng lượng đã sạc (estEnergy)
@@ -652,52 +652,27 @@ export default function ChargingSession() {
       const actualDeltaSOC = finalSOC - initialSoc;
       const energyKWh = +(capacity * (actualDeltaSOC / 100)).toFixed(2);
 
-      // Auto-complete when reaching 100% or time limit exceeded
-      const timeLimit = currentSession.booking?.endTime
-        ? new Date(currentSession.booking.endTime).getTime()
-        : null;
-      const currentTime = new Date().getTime();
-      const isTimeExpired = timeLimit && currentTime >= timeLimit;
+      // Auto-complete when reaching 100%
+      if (finalSOC >= 100) {
+        console.log("🔋 Battery reached 100% - auto-stopping session");
 
-      if (finalSOC >= 100 || isTimeExpired) {
-        const completionReason =
-          finalSOC >= 100
-            ? "🔋 Đã sạc đầy pin (100%)"
-            : "⏰ Hết thời gian sạc đã đặt";
+        // Call backend to properly stop session with rounded finalSOC
+        const finalSocValue = Math.round(finalSOC);
 
-        console.log(`✅ Auto-completing session: ${completionReason}`);
+        stationAPI
+          .stopChargingSession(currentSession.sessionId, finalSocValue)
+          .then(() => {
+            console.log(
+              `✅ Session #${currentSession.sessionId} auto-stopped at 100% SOC`
+            );
+          })
+          .catch((err) => {
+            console.error("❌ Failed to stop session at 100%:", err);
+          });
 
         clearInterval(virtualChargeInterval);
         clearSimState(currentSession.sessionId);
-
-        const completedSession = {
-          ...currentSession,
-          virtualSoc: finalSOC >= 100 ? 100 : finalSOC,
-          finalSoc: finalSOC >= 100 ? 100 : Math.round(finalSOC),
-          energyKWh,
-          durationMinutes: Math.round(accumulatedMinutes),
-          status: "COMPLETED",
-          completionReason, // Add reason for completion
-        };
-
-        setCurrentSession(completedSession);
-
-        // Show toast notification
-        toast.success(
-          completionReason + ". Đang chuyển sang trang thanh toán...",
-          {
-            position: "top-center",
-            autoClose: 2500,
-          }
-        );
-
-        // Auto-redirect to payment after 3 seconds
-        setTimeout(() => {
-          navigate(paths.payment, {
-            state: { sessionResult: completedSession },
-          });
-        }, 3000);
-
+        // Polling will detect COMPLETED status from backend
         return;
       }
 
@@ -774,6 +749,7 @@ export default function ChargingSession() {
       if (now >= endTime) {
         console.log("⏰ Booking time expired - auto-stopping session");
 
+        // Use rounded virtualSoc (consistent with 100% case)
         const finalSocValue = Math.round(
           currentSession.virtualSoc || currentSession.initialSoc
         );
@@ -813,9 +789,12 @@ export default function ChargingSession() {
         prev ? { ...prev, status: "STOPPING" } : prev
       );
 
-      // Gửi virtualSoc (hoặc finalSoc nếu có) để backend có SOC chính xác từ frontend
-      const finalSocToSend =
-        currentSession.virtualSoc ?? currentSession.finalSoc;
+      // Gửi rounded virtualSoc để đồng nhất với auto-stop (100% và time expiry)
+      const finalSocToSend = Math.round(
+        currentSession.virtualSoc ??
+          currentSession.finalSoc ??
+          currentSession.initialSoc
+      );
 
       const response = await stationAPI.stopChargingSession(
         currentSession.sessionId,
