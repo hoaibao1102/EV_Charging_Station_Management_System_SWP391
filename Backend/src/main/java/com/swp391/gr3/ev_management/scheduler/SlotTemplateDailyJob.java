@@ -1,7 +1,9 @@
-package com.swp391.gr3.ev_management.service;
+package com.swp391.gr3.ev_management.scheduler;
 
 import com.swp391.gr3.ev_management.entity.SlotConfig;
 import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
+import com.swp391.gr3.ev_management.service.SlotConfigService;
+import com.swp391.gr3.ev_management.service.SlotTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;

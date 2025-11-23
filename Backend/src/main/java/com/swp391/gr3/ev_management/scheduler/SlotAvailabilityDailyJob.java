@@ -1,7 +1,9 @@
-package com.swp391.gr3.ev_management.service;
+package com.swp391.gr3.ev_management.scheduler;
 
 import com.swp391.gr3.ev_management.enums.SlotConfigStatus;
 import com.swp391.gr3.ev_management.repository.SlotConfigRepository;
+import com.swp391.gr3.ev_management.service.SlotAvailabilitySchedulerService;
+import com.swp391.gr3.ev_management.service.SlotAvailabilityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
