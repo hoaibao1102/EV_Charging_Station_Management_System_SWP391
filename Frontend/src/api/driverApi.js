@@ -27,7 +27,10 @@ export const getMyVehiclesApi = () => {
 //Cập nhật trạng thái phương tiện của tài xế
 export const updateVehicleApi = (vehicleId, status) => {
   return handleApiCall(
-    () => apiClient.patch(`/api/driver/vehicles/${vehicleId}/status?status=${status}`),
+    () =>
+      apiClient.patch(
+        `/api/driver/vehicles/${vehicleId}/status?status=${status}`
+      ),
     "Cập nhật trạng thái phương tiện thất bại"
   );
 };
@@ -77,5 +80,13 @@ export const changePasswordDriverApi = (passwordData) => {
   return handleApiCall(
     () => apiClient.put("/api/driver/password", passwordData),
     "Thay đổi mật khẩu thất bại"
+  );
+};
+
+// lấy danh sách tất cả phiên sạc của driver (bao gồm cả COMPLETED)
+export const getMySessions = () => {
+  return handleApiCall(
+    () => apiClient.get("/api/driver/sessions"),
+    "Lấy danh sách phiên sạc thất bại"
   );
 };
