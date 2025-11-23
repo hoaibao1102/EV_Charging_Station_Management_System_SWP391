@@ -1,7 +1,7 @@
 import axios from "axios";
 import { clearAuthData } from "../utils/authUtils.js";
 
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = "https://fa1079f63723.ngrok-free.app";
 
 // Khởi tạo Axios Instance
 const apiClient = axios.create({
