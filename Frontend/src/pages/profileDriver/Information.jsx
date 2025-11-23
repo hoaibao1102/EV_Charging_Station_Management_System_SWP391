@@ -149,9 +149,6 @@ export default function Information() {
                                     {profile.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đang ngưng hoạt động'}
                                 </span>
                             </div>
-                            {profile.status !== 'ACTIVE' && (
-                                <button className="info-activate-btn">Kích hoạt tài khoản</button>
-                            )}
                         </div>
                     </div>
                 </div>

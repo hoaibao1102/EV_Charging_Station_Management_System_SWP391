@@ -400,7 +400,7 @@ const Login = () => {
                 className="auth-social-btn google"
                 onClick={() =>
                   (window.location.href =
-                    "http://localhost:8080/oauth2/authorization/google")
+                    "https://fa1079f63723.ngrok-free.app/oauth2/authorization/google")
                 }
               >
                 G
