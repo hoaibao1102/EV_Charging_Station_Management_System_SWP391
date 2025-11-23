@@ -353,15 +353,6 @@ const Login = () => {
             </div>
           </div>
           <div className="auth-options">
-            <label className="auth-checkbox-label">
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={form.rememberMe}
-                onChange={handleChange}
-              />
-              <span>Remember me</span>
-            </label>
             <span
               className="auth-link"
               onClick={() => navigate("/forgot-password")}

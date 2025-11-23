@@ -3,10 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import "./StationDetail.css";
 import { stationAPI } from "../../api/stationApi.js";
 import { getMyVehiclesApi } from "../../api/driverApi.js";
+import { isAuthenticated } from "../../utils/authUtils.js";
 
 const StationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isLoggedIn = isAuthenticated();
 
   const [station, setStation] = useState(null);
   const [chargingPoints, setChargingPoints] = useState([]);
@@ -67,16 +69,23 @@ const StationDetail = () => {
         );
         setConnectorTypes(normalizedConnectors);
 
-        // Lấy danh sách xe của tài xế
-        const myVehiclesRes = await getMyVehiclesApi();
-        // console.log("🚗 My Vehicles:", myVehiclesRes.data);
+        // ✅ Chỉ lấy danh sách xe khi đã đăng nhập
+        if (isLoggedIn) {
+          try {
+            const myVehiclesRes = await getMyVehiclesApi();
+            // console.log("🚗 My Vehicles:", myVehiclesRes.data);
 
-        setMyVehicles(myVehiclesRes.data);
+            setMyVehicles(myVehiclesRes.data);
 
-        // Tự động chọn xe đầu tiên nếu có
-        if (myVehiclesRes.data?.length > 0) {
-          // console.log("✅ Auto-selecting first vehicle:", myVehiclesRes.data[0]);
-          setSelectedVehicle(myVehiclesRes.data[0]);
+            // Tự động chọn xe đầu tiên nếu có
+            if (myVehiclesRes.data?.length > 0) {
+              // console.log("✅ Auto-selecting first vehicle:", myVehiclesRes.data[0]);
+              setSelectedVehicle(myVehiclesRes.data[0]);
+            }
+          } catch (error) {
+            console.warn("⚠️ Không thể tải danh sách xe:", error);
+            // Không cần hiển thị lỗi vì có thể là do chưa đăng nhập
+          }
         }
       } catch (error) {
         console.error("❌ Lỗi khi tải dữ liệu:", error);
@@ -85,7 +94,7 @@ const StationDetail = () => {
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, isLoggedIn]);
 
   // ====== Tìm thông tin connector theo connectorTypeId ======
   const getConnectorDetail = (connectorTypeId) => {
@@ -254,6 +263,13 @@ const StationDetail = () => {
     setExpandedPoint(expandedPoint === pointId ? null : pointId);
 
   const handleBooking = (pointId, connectorId) => {
+    // ✅ Kiểm tra đăng nhập trước
+    if (!isLoggedIn) {
+      alert("⚠️ Vui lòng đăng nhập để đặt chỗ sạc!");
+      navigate("/login", { state: { from: `/stations/${id}` } });
+      return;
+    }
+
     // Kiểm tra xem đã chọn xe chưa
     if (!selectedVehicle) {
       alert("⚠️ Vui lòng chọn xe trước khi đặt chỗ!");
@@ -346,8 +362,70 @@ const StationDetail = () => {
         📍 {station?.Address || station?.address || "Đang cập nhật địa chỉ"}
       </p>
 
-      {/* ====== Dropdown chọn xe hoặc thông báo thêm xe ====== */}
-      {myVehicles?.length > 0 ? (
+      {/* ====== Dropdown chọn xe hoặc thông báo thêm xe hoặc đăng nhập ====== */}
+      {!isLoggedIn ? (
+        <div
+          className="vehicle-selector"
+          style={{
+            background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+            border: "2px solid #2196f3",
+            padding: "20px",
+            borderRadius: "12px",
+          }}
+        >
+          <p
+            style={{
+              color: "#1565c0",
+              fontSize: "16px",
+              fontWeight: "600",
+              marginBottom: "15px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            🔐 Đăng nhập để đặt chỗ sạc
+          </p>
+          <p
+            style={{
+              color: "#1976d2",
+              fontSize: "14px",
+              marginBottom: "15px",
+            }}
+          >
+            Bạn có thể xem thông tin trạm sạc, nhưng cần đăng nhập để đặt chỗ
+          </p>
+          <button
+            onClick={() =>
+              navigate("/login", { state: { from: `/stations/${id}` } })
+            }
+            style={{
+              background: "linear-gradient(135deg, #2196f3 0%, #1976d2 100%)",
+              color: "white",
+              border: "none",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 12px rgba(33, 150, 243, 0.3)",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 16px rgba(33, 150, 243, 0.4)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow =
+                "0 4px 12px rgba(33, 150, 243, 0.3)";
+            }}
+          >
+            Đăng nhập ngay →
+          </button>
+        </div>
+      ) : myVehicles?.length > 0 ? (
         <div className="vehicle-selector">
           <label htmlFor="vehicle-select" className="selector-label">
             🚗 Chọn xe bạn muốn sạc:
@@ -497,6 +575,7 @@ const StationDetail = () => {
                         {connector.mode}
                       </div>
                       {status?.toLowerCase() === "available" &&
+                        isLoggedIn &&
                         selectedVehicle && (
                           <button
                             className="btn-book-small"
@@ -509,6 +588,7 @@ const StationDetail = () => {
                           </button>
                         )}
                       {status?.toLowerCase() === "available" &&
+                        isLoggedIn &&
                         !selectedVehicle && (
                           <p
                             style={{
@@ -521,6 +601,18 @@ const StationDetail = () => {
                             ⚠️ Chọn xe để đặt chỗ
                           </p>
                         )}
+                      {status?.toLowerCase() === "available" && !isLoggedIn && (
+                        <p
+                          style={{
+                            color: "#2196f3",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            margin: "5px 0",
+                          }}
+                        >
+                          🔐 Đăng nhập để đặt chỗ
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
