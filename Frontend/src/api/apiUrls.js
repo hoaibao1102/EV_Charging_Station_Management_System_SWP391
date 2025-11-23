@@ -1,7 +1,7 @@
 import axios from "axios";
 import { clearAuthData } from "../utils/authUtils.js";
 
-const API_BASE_URL = "https://fa1079f63723.ngrok-free.app";
+const API_BASE_URL = "https://shipments-reading-patrick-modern.trycloudflare.com";
 
 // Khởi tạo Axios Instance
 const apiClient = axios.create({
