@@ -195,6 +195,14 @@ export const stopChargingSession = (sessionId, finalSoc = null) => {
   );
 };
 
+// ====== Lấy thông tin session theo ID (bất kể status) ======
+export const getChargingSessionById = (sessionId) => {
+  return handleApiCall(
+    () => apiClient.get(`/api/charging-sessions/${sessionId}`),
+    "Lấy thông tin phiên sạc thất bại"
+  );
+};
+
 // ====== Export default object ======
 export const stationAPI = {
   getConnectorTypes,
@@ -209,6 +217,7 @@ export const stationAPI = {
   startChargingSession,
   getCurrentChargingSession,
   stopChargingSession,
+  getChargingSessionById,
 };
 
 // ====== Lấy thông tin station-staff hiện tại (STAFF) ======

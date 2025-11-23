@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Nav from 'react-bootstrap/Nav';
-import Table from 'react-bootstrap/Table';
+import { toast } from "react-toastify";
+import Nav from "react-bootstrap/Nav";
+import Table from "react-bootstrap/Table";
 import "../admin/ManagementUser.css";
-import Header from '../../components/admin/Header.jsx';
+import Header from "../../components/admin/Header.jsx";
 import paths from "../../path/paths.jsx";
 import { stationAPI } from "../../api/stationApi.js";
+import { staffStopSessionApi } from "../../api/staffApi.js";
 
 const POLL_MS = 150000; // 5 minutes
 
@@ -15,7 +17,7 @@ export default function SessionCharging() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stationId, setStationId] = useState(null);
-  const [activeTab, setActiveTab] = useState('ongoing');
+  const [activeTab, setActiveTab] = useState("ongoing");
   const pollingRef = useRef(null);
   const isFetchingRef = useRef(false);
 
@@ -166,10 +168,38 @@ export default function SessionCharging() {
     }
   };
 
+  const handleStopSession = async (sessionId, e) => {
+    e.stopPropagation(); // Prevent row click navigation
+
+    if (
+      !window.confirm(`Bạn có chắc chắn muốn dừng phiên sạc #${sessionId}?`)
+    ) {
+      return;
+    }
+
+    try {
+      const response = await staffStopSessionApi(sessionId);
+
+      if (response.success) {
+        toast.success("Đã dừng phiên sạc thành công!");
+        // Reload sessions after stopping
+        const sid = stationId ?? localStorage.getItem("stationId");
+        if (sid) {
+          await loadSessionsForStation(sid);
+        }
+      } else {
+        toast.error(response.message || "Dừng phiên sạc thất bại!");
+      }
+    } catch (error) {
+      console.error("Error stopping session:", error);
+      toast.error("Có lỗi xảy ra khi dừng phiên sạc!");
+    }
+  };
+
   return (
     <div className="management-user-container">
       <Header />
-      
+
       <div className="action-section">
         <h2>Quản lý phiên sạc</h2>
         <div>
@@ -203,9 +233,13 @@ export default function SessionCharging() {
 
       <div className="table-section">
         <div className="table-scroll-container">
-          
           <div className="filter-section">
-            <Nav justify variant="tabs" activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+            <Nav
+              justify
+              variant="tabs"
+              activeKey={activeTab}
+              onSelect={(k) => setActiveTab(k)}
+            >
               <Nav.Item>
                 <Nav.Link eventKey="ongoing">Đang sạc</Nav.Link>
               </Nav.Item>
@@ -216,157 +250,171 @@ export default function SessionCharging() {
           </div>
 
           {loading && (
-            <div style={{ textAlign: 'center', padding: '30px' }}>
+            <div style={{ textAlign: "center", padding: "30px" }}>
               Đang tải danh sách phiên sạc...
             </div>
           )}
 
-          {!loading && activeTab === 'ongoing' && (
-            ongoing.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px' }}>
+          {!loading &&
+            activeTab === "ongoing" &&
+            (ongoing.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "30px" }}>
                 Hiện không có phiên đang hoạt động
               </div>
             ) : (
               <Table className="custom-table">
-              <thead>
-                <tr>
-                  <th>MÃ PHIÊN</th>
-                  <th>CHI PHÍ</th>
-                  <th>THỜI GIAN BẮT ĐẦU</th>
-                  <th>THỜI LƯỢNG (PHÚT)</th>
-                  <th>NĂNG LƯỢNG (KWH)</th>
-                  <th>SOC ĐẦU</th>
-                  <th>SOC CUỐI</th>
-                  <th>TRẠNG THÁI</th>
-                  <th>MÃ BOOKING</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ongoing.map((s, idx) => {
-                  const sessionId =
-                    s?.sessionId ??
-                    s?.sessionid ??
-                    s?.session_id ??
-                    s?.id ??
-                    `${idx}`;
-                  const bookingId =
-                    s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
-                  const cost = s?.cost ?? 0;
-                  const startTime = formatDate(s?.startTime ?? s?.start_time);
-                  const durationMinutes =
-                    s?.durationMinutes ??
-                    s?.duration_minutes ??
-                    s?.duration ??
-                    0;
-                  const energyKWh =
-                    s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
-                  const initialSoc =
-                    s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
-                  const finalSoc =
-                    s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
-                  const status = s?.status ?? "";
-                  const statusKey = String(status)
-                    .toLowerCase()
-                    .replace(/\s+/g, "_");
-                  return (
-                    <tr
-                      key={sessionId}
-                      onClick={() =>
-                        navigate(paths.manageSessionChargingCreate, {
-                          state: { openCamera: true, bookingId },
-                        })
-                      }
-                      style={{ cursor: "pointer" }}
-                    >
-                      <td>{sessionId}</td>
-                      <td>
-                        {Number(cost).toLocaleString()} {s?.currency ?? ""}
-                      </td>
-                      <td>{startTime}</td>
-                      <td>{durationMinutes}</td>
-                      <td>{energyKWh}</td>
-                      <td>{initialSoc}</td>
-                      <td>{finalSoc ?? "-"}</td>
-                      <td>{statusKey}</td>
-                      <td>{bookingId}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-            )
-          )}
+                <thead>
+                  <tr>
+                    <th>MÃ PHIÊN</th>
+                    <th>CHI PHÍ</th>
+                    <th>THỜI GIAN BẮT ĐẦU</th>
+                    <th>THỜI LƯỢNG (PHÚT)</th>
+                    <th>NĂNG LƯỢNG (KWH)</th>
+                    <th>SOC ĐẦU</th>
+                    <th>SOC CUỐI</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>MÃ BOOKING</th>
+                    <th>HÀNH ĐỘNG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ongoing.map((s, idx) => {
+                    const sessionId =
+                      s?.sessionId ??
+                      s?.sessionid ??
+                      s?.session_id ??
+                      s?.id ??
+                      `${idx}`;
+                    const bookingId =
+                      s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
+                    const cost = s?.cost ?? 0;
+                    const startTime = formatDate(s?.startTime ?? s?.start_time);
+                    const durationMinutes =
+                      s?.durationMinutes ??
+                      s?.duration_minutes ??
+                      s?.duration ??
+                      0;
+                    const energyKWh =
+                      s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
+                    const initialSoc =
+                      s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
+                    const finalSoc =
+                      s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
+                    const status = s?.status ?? "";
+                    const statusKey = String(status)
+                      .toLowerCase()
+                      .replace(/\s+/g, "_");
+                    return (
+                      <tr
+                        key={sessionId}
+                        onClick={() =>
+                          navigate(paths.manageSessionChargingCreate, {
+                            state: { openCamera: true, bookingId },
+                          })
+                        }
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{sessionId}</td>
+                        <td>
+                          {Number(cost).toLocaleString()} {s?.currency ?? ""}
+                        </td>
+                        <td>{startTime}</td>
+                        <td>{durationMinutes}</td>
+                        <td>{energyKWh}</td>
+                        <td>{initialSoc}</td>
+                        <td>{finalSoc ?? "-"}</td>
+                        <td>{statusKey}</td>
+                        <td>{bookingId}</td>
+                        <td>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={(e) => handleStopSession(sessionId, e)}
+                            style={{
+                              padding: "4px 12px",
+                              fontSize: "13px",
+                              fontWeight: "500",
+                            }}
+                          >
+                            ⏹ Stop
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+            ))}
 
-          {!loading && activeTab === 'completed' && (
-            completed.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px' }}>
+          {!loading &&
+            activeTab === "completed" &&
+            (completed.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "30px" }}>
                 Chưa có phiên sạc hoàn thành
               </div>
             ) : (
               <Table className="custom-table">
-              <thead>
-                <tr>
-                  <th>MÃ PHIÊN</th>
-                  <th>CHI PHÍ</th>
-                  <th>THỜI GIAN BẮT ĐẦU</th>
-                  <th>THỜI GIAN KẾT THÚC</th>
-                  <th>THỜI LƯỢNG (PHÚT)</th>
-                  <th>NĂNG LƯỢNG (KWH)</th>
-                  <th>SOC ĐẦU</th>
-                  <th>SOC CUỐI</th>
-                  <th>TRẠNG THÁI</th>
-                  <th>MÃ BOOKING</th>
-                </tr>
-              </thead>
-              <tbody>
-                {completed.map((s, idx) => {
-                  const sessionId =
-                    s?.sessionId ??
-                    s?.sessionid ??
-                    s?.session_id ??
-                    s?.id ??
-                    `${idx}`;
-                  const bookingId =
-                    s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
-                  const cost = s?.cost ?? 0;
-                  const startTime = formatDate(s?.startTime ?? s?.start_time);
-                  const endTime = formatDate(s?.endTime ?? s?.end_time);
-                  const durationMinutes =
-                    s?.durationMinutes ??
-                    s?.duration_minutes ??
-                    s?.duration ??
-                    0;
-                  const energyKWh =
-                    s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
-                  const initialSoc =
-                    s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
-                  const finalSoc =
-                    s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
-                  const status = s?.status ?? "";
-                  const statusKey = String(status)
-                    .toLowerCase()
-                    .replace(/\s+/g, "_");
-                  return (
-                    <tr key={sessionId}>
-                      <td>{sessionId}</td>
-                      <td>
-                        {Number(cost).toLocaleString()} {s?.currency ?? ""}
-                      </td>
-                      <td>{startTime}</td>
-                      <td>{endTime ?? "-"}</td>
-                      <td>{durationMinutes}</td>
-                      <td>{energyKWh}</td>
-                      <td>{initialSoc}</td>
-                      <td>{finalSoc}</td>
-                      <td>{statusKey}</td>
-                      <td>{bookingId}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-            )
-          )}
+                <thead>
+                  <tr>
+                    <th>MÃ PHIÊN</th>
+                    <th>CHI PHÍ</th>
+                    <th>THỜI GIAN BẮT ĐẦU</th>
+                    <th>THỜI GIAN KẾT THÚC</th>
+                    <th>THỜI LƯỢNG (PHÚT)</th>
+                    <th>NĂNG LƯỢNG (KWH)</th>
+                    <th>SOC ĐẦU</th>
+                    <th>SOC CUỐI</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>MÃ BOOKING</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completed.map((s, idx) => {
+                    const sessionId =
+                      s?.sessionId ??
+                      s?.sessionid ??
+                      s?.session_id ??
+                      s?.id ??
+                      `${idx}`;
+                    const bookingId =
+                      s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
+                    const cost = s?.cost ?? 0;
+                    const startTime = formatDate(s?.startTime ?? s?.start_time);
+                    const endTime = formatDate(s?.endTime ?? s?.end_time);
+                    const durationMinutes =
+                      s?.durationMinutes ??
+                      s?.duration_minutes ??
+                      s?.duration ??
+                      0;
+                    const energyKWh =
+                      s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
+                    const initialSoc =
+                      s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
+                    const finalSoc =
+                      s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
+                    const status = s?.status ?? "";
+                    const statusKey = String(status)
+                      .toLowerCase()
+                      .replace(/\s+/g, "_");
+                    return (
+                      <tr key={sessionId}>
+                        <td>{sessionId}</td>
+                        <td>
+                          {Number(cost).toLocaleString()} {s?.currency ?? ""}
+                        </td>
+                        <td>{startTime}</td>
+                        <td>{endTime ?? "-"}</td>
+                        <td>{durationMinutes}</td>
+                        <td>{energyKWh}</td>
+                        <td>{initialSoc}</td>
+                        <td>{finalSoc}</td>
+                        <td>{statusKey}</td>
+                        <td>{bookingId}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+            ))}
         </div>
       </div>
     </div>

@@ -107,3 +107,11 @@ export const getStationTransactionStatsApi = () => {
     "Lấy thống kê giao dịch thất bại"
   );
 };
+
+// Dừng phiên sạc
+export const staffStopSessionApi = (sessionId) => {
+  return handleApiCall(
+    () => apiClient.post(`/api/staff/staff-stop-session`, { sessionId }),
+    "Dừng phiên sạc thất bại"
+  );
+};

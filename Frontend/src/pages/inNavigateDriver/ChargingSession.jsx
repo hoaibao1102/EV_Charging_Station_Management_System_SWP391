@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import paths from "../../path/paths.jsx";
 import { toast } from "react-toastify";
 import { stationAPI } from "../../api/stationApi.js";
+import { getMySessions } from "../../api/driverApi.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
 
 // Add responsive styles to document
@@ -440,50 +441,104 @@ export default function ChargingSession() {
 
   // ⚡ Polling: check current session periodically (mainly for status changes)
   // During IN_PROGRESS, frontend handles all calculations via virtualSoc
+  // Poll every 2s to quickly detect when Staff stops the session
   useEffect(() => {
     let intervalId = null;
 
-    // small wrapper to call API and update state (avoids dependency on fetchCurrentSession)
+    // small wrapper to call API and update state
     const poll = async () => {
       try {
-        const response = await stationAPI.getCurrentChargingSession();
+        // ✅ Use /api/driver/sessions instead of /current
+        // This API returns ALL sessions (including COMPLETED), no error when stopped
+        const response = await getMySessions();
         if (!response || response.success === false) {
           setCurrentSession(null);
           return;
         }
-        const session = response.data ?? response;
+
+        const sessions = response.data ?? response;
+        if (!Array.isArray(sessions) || sessions.length === 0) {
+          setCurrentSession(null);
+          return;
+        }
+
+        // First, try to find IN_PROGRESS session
+        const inProgressSession = sessions.find((s) => {
+          const status = String(s.status || "").toUpperCase();
+          return status === "IN_PROGRESS";
+        });
+
+        // If found IN_PROGRESS, use it
+        if (inProgressSession) {
+          console.log(
+            `📊 Found IN_PROGRESS session #${inProgressSession.sessionId}`
+          );
+
+          setCurrentSession((prev) => {
+            if (!prev) return inProgressSession;
+
+            // If session changed, update
+            if (prev.sessionId !== inProgressSession.sessionId)
+              return inProgressSession;
+
+            // If status changed (should not happen for IN_PROGRESS to IN_PROGRESS)
+            if (prev.status !== inProgressSession.status) {
+              console.log(
+                `🔄 Session status changed: ${prev.status} → ${inProgressSession.status}`
+              );
+              return {
+                ...inProgressSession,
+                virtualSoc: prev.virtualSoc,
+              };
+            }
+
+            // Keep frontend simulation for IN_PROGRESS
+            return prev;
+          });
+          return;
+        }
+
+        // No IN_PROGRESS session found - check if we HAD one that just completed
         setCurrentSession((prev) => {
-          if (!prev) return session;
-
-          // If session changed or status changed, update
-          if (prev.sessionId !== session.sessionId) return session;
-          if (prev.status !== session.status) {
-            // Status changed (e.g., backend marked as COMPLETED)
-            // Preserve virtualSoc if we had it
-            return {
-              ...session,
-              virtualSoc: prev.virtualSoc,
-            };
+          if (!prev || !prev.sessionId) {
+            // No previous session, and no IN_PROGRESS → nothing to show
+            return null;
           }
 
-          // If IN_PROGRESS, keep using frontend calculations (virtualSoc)
-          // Don't overwrite with backend data as it doesn't update during charging
-          if (prev.status === "IN_PROGRESS") {
-            return prev; // Keep frontend simulation
+          // We had a session - check if it's now COMPLETED
+          const prevSessionId = prev.sessionId;
+          const completedSession = sessions.find(
+            (s) => s.sessionId === prevSessionId
+          );
+
+          if (completedSession) {
+            const status = String(completedSession.status || "").toUpperCase();
+            console.log(
+              `📊 Previous session #${prevSessionId} is now: ${status}`
+            );
+
+            if (status === "COMPLETED" || status === "FINISHED") {
+              // Status changed from IN_PROGRESS to COMPLETED - preserve virtualSoc
+              return {
+                ...completedSession,
+                virtualSoc: prev.virtualSoc || completedSession.finalSoc,
+              };
+            }
           }
 
-          // For other statuses, update normally
-          return session;
+          // Session not found or status unclear - keep previous
+          return prev;
         });
       } catch (err) {
-        // don't spam console on intermittent network issues
-        console.debug("Polling getCurrentChargingSession error:", err);
+        console.error("Polling getMySessions error:", err);
+        // Don't clear session on error, keep previous state
       }
     };
 
     // run immediately then set interval
     poll();
-    intervalId = setInterval(poll, 5000);
+    // ⚡ Poll every 2 seconds for faster detection when Staff stops session
+    intervalId = setInterval(poll, 2000);
 
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -634,20 +689,38 @@ export default function ChargingSession() {
   }, [currentSession?.status, currentSession?.sessionId]);
 
   // 🧭 Auto redirect to payment page when charging completes
+  // Triggers when status changes to COMPLETED or STOPPED (by Staff)
   useEffect(() => {
     if (!currentSession) return;
 
-    // Khi trạng thái chuyển sang COMPLETED và chưa redirect
-    if (currentSession.status === "COMPLETED" && !autoRedirected) {
+    console.log(
+      `🔍 Auto-redirect check: status="${currentSession.status}", autoRedirected=${autoRedirected}`
+    );
+
+    // Normalize status to uppercase for comparison (backend may return different cases)
+    const normalizedStatus = String(currentSession.status || "").toUpperCase();
+
+    // Khi trạng thái chuyển sang COMPLETED hoặc STOPPED (Staff dừng) và chưa redirect
+    const isSessionEnded =
+      normalizedStatus === "COMPLETED" ||
+      normalizedStatus === "STOPPED" ||
+      normalizedStatus === "FINISHED";
+
+    if (isSessionEnded && !autoRedirected) {
+      console.log(
+        `✅ Session ended with status: ${currentSession.status} - Redirecting to payment...`
+      );
       setAutoRedirected(true);
 
-      toast.info(
-        "⚡ Phiên sạc đã hoàn tất. Đang chuyển sang trang thanh toán...",
-        {
-          position: "top-center",
-          autoClose: 2000,
-        }
-      );
+      const message =
+        normalizedStatus === "STOPPED"
+          ? "⏹ Phiên sạc đã bị dừng. Đang chuyển sang trang thanh toán..."
+          : "⚡ Phiên sạc đã hoàn tất. Đang chuyển sang trang thanh toán...";
+
+      toast.info(message, {
+        position: "top-center",
+        autoClose: 2000,
+      });
 
       // Clear simulation state
       clearSimState(currentSession.sessionId);
@@ -1134,13 +1207,6 @@ export default function ChargingSession() {
               }
               unit="kW"
               color="#9c27b0"
-            />
-            <InfoCard
-              icon="💰"
-              label="Chi phí"
-              value={(currentSession.cost ?? 0).toLocaleString("vi-VN")}
-              unit={currentSession.currency ?? "VND"}
-              color="#ff9800"
             />
           </div>
 
