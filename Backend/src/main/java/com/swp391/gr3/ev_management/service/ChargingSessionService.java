@@ -30,7 +30,7 @@ public interface ChargingSessionService {
 
     StopCharSessionResponse driverStopSession(Long sessionId, Long requesterUserId, Integer finalSocFromRequest);
 
-    StopCharSessionResponse staffStopSession(Long sessionId, Long requesterUserId);
+    StopCharSessionResponse staffStopSession(Long sessionId);
 
     List<ViewCharSessionResponse> getAllSessionsByStation(Long stationId);
     /**
