@@ -85,4 +85,47 @@ public class ChargingPointController {
         return ResponseEntity.ok(responses);
     }
 
+    // =====================================================================
+    // ✅ 5. LẤY CHI TIẾT MỘT ĐIỂM SẠC THEO ID
+    // =====================================================================
+    @GetMapping("/{pointId}") // GET /api/charging-points/{pointId}
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    @Operation(summary = "Get charging point detail", description = "Get detail information of a specific charging point")
+    public ResponseEntity<ChargingPointResponse> getPointById(
+            @Parameter(description = "Charging Point ID") @PathVariable Long pointId
+    ) {
+        ChargingPointResponse response = pointService.getPointById(pointId);
+        return ResponseEntity.ok(response);
+    }
+
+    // =====================================================================
+    // ✅ 6. CẬP NHẬT MỘT ĐIỂM SẠC
+    // =====================================================================
+    @PutMapping("/{pointId}") // PUT /api/charging-points/{pointId}
+    @PreAuthorize("hasRole('ADMIN')") // chỉ ADMIN mới được phép sửa cấu hình điểm sạc
+    @Operation(summary = "Update charging point", description = "Update configuration of an existing charging point")
+    public ResponseEntity<ChargingPointResponse> updatePoint(
+            @Parameter(description = "Charging Point ID") @PathVariable Long pointId,
+            @Valid @RequestBody CreateChargingPointRequest request
+    ) {
+        try {
+            ChargingPointResponse response = pointService.updateChargingPoint(pointId, request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // =====================================================================
+    // ✅ 7. XOÁ MỘT ĐIỂM SẠC
+    // =====================================================================
+    @DeleteMapping("/{pointId}") // DELETE /api/charging-points/{pointId}
+    @PreAuthorize("hasRole('ADMIN')") // xoá thiết bị => chỉ ADMIN
+    @Operation(summary = "Delete charging point", description = "Delete a charging point by ID")
+    public ResponseEntity<Void> deletePoint(
+            @Parameter(description = "Charging Point ID") @PathVariable Long pointId
+    ) {
+        pointService.deleteChargingPoint(pointId);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
 }
