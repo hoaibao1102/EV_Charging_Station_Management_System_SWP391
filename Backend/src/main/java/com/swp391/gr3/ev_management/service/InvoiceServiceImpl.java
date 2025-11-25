@@ -5,13 +5,13 @@ import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
 import com.swp391.gr3.ev_management.entity.Invoice;
 import com.swp391.gr3.ev_management.entity.Tariff;
+import com.swp391.gr3.ev_management.mapper.DriverInvoiceMapper;
 import com.swp391.gr3.ev_management.repository.InvoiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +24,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     // Repository làm việc trực tiếp với DB bảng Invoice (CRUD + query custom)
     private final InvoiceRepository invoiceRepository;
     private final TariffService tariffService;
+    private final DriverInvoiceMapper mapper;
 
     @Override
     public void save(Invoice invoice) {
@@ -93,30 +94,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .map(Tariff::getPricePerKWh)
                 .orElse(null);
 
-        return DriverInvoiceDetail.builder()
-                .invoiceId(invoice.getInvoiceId())
-                .amount(invoice.getAmount())
-                .currency(invoice.getCurrency())
-                .status(invoice.getStatus())
-                .issuedAt(invoice.getIssuedAt())
-                .sessionId(invoice.getSession().getSessionId())
-                .startTime(invoice.getSession().getStartTime())
-                .endTime(invoice.getSession().getEndTime())
-                .energyKWh(invoice.getSession().getEnergyKWh())
-                .initialSoc(invoice.getSession().getInitialSoc())
-                .finalSoc(invoice.getSession().getFinalSoc())
-                .durationMinutes(
-                        (int) Duration.between(
-                                invoice.getSession().getStartTime(),
-                                invoice.getSession().getEndTime()
-                        ).toMinutes()
-                )
-                .bookingId(booking.getBookingId())
-                .stationId(booking.getStation().getStationId())
-                .stationName(booking.getStation().getStationName())
-                .pointNumber(cp.getPointNumber())
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
-                .pricePerKWh(pricePerKwh)
-                .build();
+        return mapper.toDto(invoice, booking, cp, pricePerKwh);
     }
 }
