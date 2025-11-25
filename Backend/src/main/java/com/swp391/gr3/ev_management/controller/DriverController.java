@@ -184,4 +184,18 @@ public class DriverController {
 
         return invoiceService.getDetail(invoiceId, userId); // Trả về chi tiết hóa đơn
     }
+
+    // =========================================================================
+    // ✅ 11. DRIVER XEM DANH SÁCH HÓA ĐƠN CHƯA THANH TOÁN
+    // =========================================================================
+    @GetMapping("/invoices/unpaid")
+    @PreAuthorize("hasRole('DRIVER')")
+    @Operation(summary = "Get unpaid invoices", description = "Driver retrieves all unpaid invoices")
+    public ResponseEntity<List<UnpaidInvoiceResponse>> getUnpaidInvoices(
+            HttpServletRequest request) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+        List<UnpaidInvoiceResponse> invoices = invoiceService.getUnpaidInvoices(userId);
+        return ResponseEntity.ok(invoices);
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.swp391.gr3.ev_management.repository;
 
+import com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse;
 import com.swp391.gr3.ev_management.entity.Invoice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -173,4 +174,33 @@ public interface InvoiceRepository extends JpaRepository<Invoice,Long> {
     where i.invoiceId = :invoiceId
 """)
     Optional<Invoice> findInvoiceDetail(@Param("invoiceId") Long invoiceId);
+
+    @Query("""
+    select new com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse(
+        i.invoiceId,
+        i.amount,
+        i.currency,
+        i.issuedAt,
+        s.sessionId,
+        b.bookingId,
+        st.stationId,
+        st.stationName,
+        v.vehicleId,
+        v.vehiclePlate,
+        s.startTime,
+        s.endTime,
+        i.createdAt
+    )
+    from Invoice i
+    join i.session s
+    join s.booking b
+    join b.vehicle v
+    join b.station st
+    join v.driver d
+    join d.user u
+    where u.userId = :userId
+      and i.status = 'UNPAID'
+    order by i.issuedAt desc
+    """)
+    List<UnpaidInvoiceResponse> findUnpaidByUserId(@Param("userId") Long userId);
 }

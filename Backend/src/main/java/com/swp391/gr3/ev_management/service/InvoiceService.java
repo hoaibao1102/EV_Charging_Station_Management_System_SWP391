@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.response.DriverInvoiceDetail;
+import com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse;
 import com.swp391.gr3.ev_management.entity.Invoice;
 import org.springframework.stereotype.Service;
 
@@ -26,4 +27,6 @@ public interface InvoiceService {
     double sumByStationBetween(Long stationId, LocalDateTime dayFrom, LocalDateTime dayTo);
 
     DriverInvoiceDetail getDetail(Long invoiceId, Long userId);
+
+    List<UnpaidInvoiceResponse> getUnpaidInvoices(Long userId);
 }
