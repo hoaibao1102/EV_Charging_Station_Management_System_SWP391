@@ -385,6 +385,19 @@ export default function NotificationBell() {
                 const parsed = parseChargingContent(
                   selectedNotification.content
                 );
+
+                const formatMoney = (value) => {
+                  if (!value) return "";
+
+                  const number = parseFloat(value.replace(/[^\d.-]/g, ""));
+                  if (isNaN(number)) return value;
+
+                  return number.toLocaleString("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                    minimumFractionDigits: 0,
+                  });
+                };
                 return parsed ? (
                   <div
                     style={{
@@ -572,7 +585,7 @@ export default function NotificationBell() {
                                 fontSize: "13px",
                               }}
                             >
-                              {parsed.timeFee}
+                              {formatMoney(parsed.timeFee)}
                             </span>
                           </div>
                         )}
@@ -596,7 +609,7 @@ export default function NotificationBell() {
                                 fontSize: "13px",
                               }}
                             >
-                              {parsed.energyFee}
+                              {formatMoney(parsed.energyFee)}
                             </span>
                           </div>
                         )}
@@ -632,7 +645,7 @@ export default function NotificationBell() {
                                   fontSize: "16px",
                                 }}
                               >
-                                {parsed.total}
+                                {formatMoney(parsed.total)}{" "}
                               </span>
                             </div>
                           </>

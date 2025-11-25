@@ -86,7 +86,6 @@ function normalizeSlotRecord(record, pointId, templateBase, templateMap) {
     EndTime: timeRange.end,
     Status: record?.status ?? record?.Status ?? "available",
     Date: record?.date ?? record?.Date,
-    Price: record?.price ?? record?.Price ?? "50,000",
     raw: record,
   };
 }
@@ -685,7 +684,6 @@ export default function Booking() {
                           : slot.Status}
                       </span>
                     </p>
-                    <p className="slot-price">💰 {slot.Price ?? "N/A"} VNĐ</p>
                   </div>
                 );
               })}
