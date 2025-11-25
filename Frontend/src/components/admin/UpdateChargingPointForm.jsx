@@ -37,6 +37,7 @@ export default function UpdateChargingPointForm({ pointId, onClose }) {
     status: "AVAILABLE",
   });
 
+
   // Lưu thông tin ngày từ database để gửi lại khi update
   const [originalDates, setOriginalDates] = useState({
     installationDate: "",
@@ -67,9 +68,6 @@ export default function UpdateChargingPointForm({ pointId, onClose }) {
         if (connectorTypesRes.success) {
           setConnectorTypes(connectorTypesRes.data);
           console.log("✅ Connector types loaded:", connectorTypesRes.data);
-          console.log("✅ Connector types count:", connectorTypesRes.data?.length);
-        } else {
-          console.error("❌ Failed to load connector types:", connectorTypesRes);
         }
 
         // ✅ SAU ĐÓ mới load charging point detail
@@ -123,6 +121,7 @@ export default function UpdateChargingPointForm({ pointId, onClose }) {
 
     fetchData();
   }, [pointId, onClose]);
+
 
   // Debug: Log formData changes
   useEffect(() => {

@@ -400,7 +400,7 @@ const Login = () => {
                 className="auth-social-btn google"
                 onClick={() =>
                   (window.location.href =
-                    "https://guru-spirits-verified-uniprotkb.trycloudflare.com/oauth2/authorization/google")
+                    "http://localhost:8080/oauth2/authorization/google")
                 }
               >
                 G
