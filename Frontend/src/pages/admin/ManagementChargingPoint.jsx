@@ -12,7 +12,6 @@ import UpdateChargingPointForm from '../../components/admin/UpdateChargingPointF
 const statusChargingPoint = {
     available: 'AVAILABLE', 
     occupied: 'OCCUPIED', 
-    out_of_service: 'OUT_OF_SERVICE', 
     maintenance: 'MAINTENANCE'
   };
 
@@ -97,9 +96,9 @@ export default function ManagementChargingPoint() {
 
 
   const totalChargingPoints = chargingPoints.length;
-  const totalActive = chargingPoints.filter(s => s.status === status.available || s.status === status.occupied).length;
+  const totalActive = chargingPoints.filter(s => s.status === status.available).length;
   const totalMaintenance = chargingPoints.filter(s => s.status === status.maintenance).length;
-  const totalInactive = chargingPoints.filter(s => s.status === status.out_of_service).length;
+  const totalInactive = chargingPoints.filter(s => s.status === status.occupied).length;
 
 
   const displayedChargingPoints = useMemo(() => {
@@ -107,9 +106,9 @@ export default function ManagementChargingPoint() {
 
     // Lọc theo Tab
     if (activeTab === 'active') {
-      // Logic đặc biệt cho tab "Đang hoạt động" (gộp AVAILABLE và OCCUPIED)
+      // Logic cho tab "Đang hoạt động" (chỉ AVAILABLE)
       filtered = filtered.filter(cp => 
-        cp.status === status.available || cp.status === status.occupied
+        cp.status === status.available
       );
     } else if (activeTab !== 'allChargingPoints') {
       // Logic cho các tab còn lại (MAINTENANCE, OUT_OF_SERVICE)
@@ -129,7 +128,7 @@ export default function ManagementChargingPoint() {
     }
 
     return filtered;
-  }, [chargingPoints, activeTab, searchTerm]);
+  }, [chargingPoints, activeTab, searchTerm, status]);
 
   return (
     <>
@@ -185,7 +184,7 @@ export default function ManagementChargingPoint() {
                 <Nav.Link eventKey={status.maintenance}>Đang bảo trì</Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link eventKey={status.out_of_service}>Ngưng hoạt động</Nav.Link>
+                <Nav.Link eventKey={status.occupied}>Ngưng hoạt động</Nav.Link>
               </Nav.Item>
             </Nav>
             
@@ -212,7 +211,6 @@ export default function ManagementChargingPoint() {
                   <th>TÊN CỔNG SẠC</th>
                   <th>NĂNG LƯỢNG TỐI ĐA</th>
                   <th>NGÀY TẠO</th>
-                  <th>NGÀY BẢO TRÌ GẦN NHẤT</th>
                   <th style={{ width: '220px' }}>HÀNH ĐỘNG</th>
                 </tr>
               </thead>
@@ -223,19 +221,20 @@ export default function ManagementChargingPoint() {
                       <td>{point.pointNumber}</td>
                       <td>{point.stationName}</td>
                       <td>
-                        {point.status === status.available || point.status === status.occupied ? (
+                        {point.status === status.available ? (
                           <span className="status-active">Đang hoạt động</span>
+                        ) : point.status === status.occupied ? (
+                          <span className="status-inactive">Ngưng hoạt động</span>
                         ) : point.status === status.maintenance ? (
                           <span className="status-maintenance">Đang bảo trì</span>
                         ) : (
-                          <span className="status-inactive">Ngưng hoạt động</span>
+                          <span className="status-inactive">Không xác định</span>
                         )}
                       </td>
                       <td>{point.serialNumber}</td>
                       <td>{point.connectorType}</td>
                       <td>{point.maxPowerKW}</td>
                       <td>{point.createdAt?.split('T')[0]}</td>
-                      <td>{point.lastMaintenanceDate?.split('T')[0]}</td>
                       <td>
                         {/* ✅ LUÔN HIỂN THỊ NÚT CÂP NHẬT */}
                         <div className="action-buttons">
@@ -248,9 +247,16 @@ export default function ManagementChargingPoint() {
                           </button>
                         </div>
 
-                        {/* TRƯỜNG HỢP 1: Đang hoạt động (Bình thường) */}
-                        {(point.status === status.available || point.status === status.occupied) && (
+                        {/* TRƯỜNG HỢP 1: Đang hoạt động (AVAILABLE) */}
+                        {point.status === status.available && (
                           <>
+                            <div className="action-buttons">
+                              <button 
+                                className="btn-delete" 
+                                onClick={() => handleStatusChargingPoint(point.pointId, status.occupied)}>
+                                NGƯNG HOẠT ĐỘNG
+                              </button>
+                            </div>
                             <div className="action-buttons">
                               <button 
                                 className="btn-transfer" 
@@ -258,17 +264,10 @@ export default function ManagementChargingPoint() {
                                 BẢO TRÌ
                               </button>
                             </div>
-                            <div className="action-buttons">
-                              <button 
-                                className="btn-delete" 
-                                onClick={() => handleStatusChargingPoint(point.pointId, status.out_of_service)}>
-                                NGƯNG HOẠT ĐỘNG
-                              </button>
-                            </div>
                           </>
                         )}
 
-                        {/* TRƯỜNG HỢP 2: Đang bảo trì */}
+                        {/* TRƯỜNG HỢP 2: Đang bảo trì (MAINTENANCE) */}
                         {point.status === status.maintenance && (
                           <>
                           <div className="action-buttons">
@@ -281,15 +280,16 @@ export default function ManagementChargingPoint() {
                           <div className="action-buttons">
                               <button 
                                 className="btn-delete" 
-                                onClick={() => handleStatusChargingPoint(point.pointId, status.out_of_service)}>
+                                onClick={() => handleStatusChargingPoint(point.pointId, status.occupied)}>
                                 NGƯNG HOẠT ĐỘNG
                               </button>
                             </div>
+                          
                             </>
                         )}
 
-                        {/* TRƯỜNG HỢP 3: Đang ngưng hoạt động */}
-                        {point.status === status.out_of_service && (
+                        {/* TRƯỜNG HỢP 3: Ngưng hoạt động (OCCUPIED) */}
+                        {point.status === status.occupied && (
                           <>
                           <div className="action-buttons">
                             <button 

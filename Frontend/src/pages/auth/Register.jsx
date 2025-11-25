@@ -248,18 +248,6 @@ const Register = () => {
       <ToastContainer position="top-center" autoClose={2500} theme="colored" />
 
       <div className="auth-container register-container">
-        {/* Back Button */}
-        {step > 1 && (
-          <button
-            className="auth-back-btn"
-            type="button"
-            onClick={() => setStep(step - 1)}
-            aria-label="Go back"
-          >
-            &#8592;
-          </button>
-        )}
-
         {/* Logo - Electric Car Icon */}
         <div className="auth-logo">
           <div className="auth-logo-icon auth-logo-car">
@@ -371,7 +359,7 @@ const Register = () => {
                 onClick={handleNextStep}
                 aria-label="Next step"
               >
-                ➜
+                ❯
               </button>
             </>
           )}
@@ -494,14 +482,24 @@ const Register = () => {
                 )}
               </div>
 
-              <button
-                type="button"
-                className="auth-next-btn"
-                onClick={handleNextStep}
-                aria-label="Next step"
-              >
-                ➜
-              </button>
+              <div className="auth-button-group">
+                <button
+                  type="button"
+                  className="auth-next-btn"
+                  onClick={() => setStep(step - 1)}
+                  aria-label="Go back"
+                >
+                  ❮
+                </button>
+                <button
+                  type="button"
+                  className="auth-next-btn"
+                  onClick={handleNextStep}
+                  aria-label="Next step"
+                >
+                  ❯
+                </button>
+              </div>
             </>
           )}
 
@@ -591,14 +589,24 @@ const Register = () => {
                 )}
               </div>
 
-              <button
-                type="button"
-                className="auth-next-btn"
-                onClick={handleNextStep}
-                aria-label="Next step"
-              >
-                ➜
-              </button>
+              <div className="auth-button-group">
+                <button
+                  type="button"
+                  className="auth-next-btn"
+                  onClick={() => setStep(step - 1)}
+                  aria-label="Go back"
+                >
+                  ❮
+                </button>
+                <button
+                  type="button"
+                  className="auth-next-btn"
+                  onClick={handleNextStep}
+                  aria-label="Next step"
+                >
+                  ❯
+                </button>
+              </div>
             </>
           )}
 
@@ -628,26 +636,25 @@ const Register = () => {
                 </label>
               </div>
 
-              <button
-                type="submit"
-                className="auth-button"
-                disabled={loading || !acceptTerms}
-              >
-                {loading ? "Đang đăng ký..." : "Đăng ký"}
-              </button>
+              <div className="auth-button-group">
+                <button
+                  type="button"
+                  className="auth-next-btn"
+                  onClick={() => setStep(step - 1)}
+                  aria-label="Go back"
+                >
+                  ❮
+                </button>
+                <button
+                  type="submit"
+                  className="auth-next-btn auth-submit-btn"
+                  disabled={loading || !acceptTerms}
+                >
+                  {loading ? "Đang xử lý..." : "Đăng ký"}
+                </button>
+              </div>
             </>
           )}
-
-          {/* Social Login */}
-          <div className="auth-social-group">
-            <button
-              type="button"
-              className="auth-social-btn google"
-              onClick={() => (window.location.href = "http://localhost:8080/oauth2/authorization/google")}
-            >
-              <span className="auth-social-icon">G</span>
-            </button>
-          </div>
 
           <div className="auth-footer">
             Đã có tài khoản?{" "}

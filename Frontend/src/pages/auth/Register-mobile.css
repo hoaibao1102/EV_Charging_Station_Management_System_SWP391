@@ -119,6 +119,7 @@
 /* ===== GENDER OPTIONS ===== */
 .auth-gender-options {
   display: flex;
+  height: 60px;
   gap: 12px;
   margin-top: 8px;
 }
@@ -603,6 +604,104 @@ button[type="submit"].auth-button:disabled {
 
   .auth-back-btn {
     border-width: 3px;
+  }
+}
+
+/* ===== NAVIGATION BUTTON GROUP ===== */
+.auth-button-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+  padding: 0;
+}
+
+.auth-back-btn-arrow {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  border: 2px solid #20b2aa;
+  background: linear-gradient(135deg, #20b2aa 0%, #17a2b8 100%);
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.3);
+  outline: none;
+}
+
+.auth-back-btn-arrow:hover {
+  background: linear-gradient(135deg, #1a9e98 0%, #138496 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(32, 178, 170, 0.4);
+}
+
+.auth-back-btn-arrow:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(32, 178, 170, 0.2);
+}
+
+/* Submit button styling - rectangular with rounded corners */
+.auth-submit-btn {
+  background: linear-gradient(135deg, #20b2aa 0%, #17a2b8 100%) !important;
+  color: white !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 16px 32px !important;
+  min-width: 120px !important;
+  height: 56px !important;
+  border-radius: 20px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  border: 2px solid #20b2aa !important;
+}
+
+.auth-submit-btn:hover {
+  background: linear-gradient(135deg, #1a9e98 0%, #138496 100%) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(32, 178, 170, 0.4);
+}
+
+.auth-submit-btn:disabled {
+  background: linear-gradient(135deg, #cccccc 0%, #999999 100%) !important;
+  color: #666666 !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.auth-submit-btn:disabled:hover {
+  background: linear-gradient(135deg, #cccccc 0%, #999999 100%) !important;
+  transform: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .auth-button-group {
+    gap: 12px;
+  }
+  
+  .auth-back-btn-arrow {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 20px;
+  }
+  
+  .auth-submit-btn {
+    font-size: 12px !important;
+    min-width: 100px !important;
+    padding: 12px 24px !important;
+    height: 48px !important;
+    border-radius: 16px !important;
   }
 }
 

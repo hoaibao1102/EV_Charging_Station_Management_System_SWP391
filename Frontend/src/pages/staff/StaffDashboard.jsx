@@ -207,9 +207,7 @@ export default function StaffDashboard() {
                       return (
                         <div key={session.sessionId} className="session-item">
                           <div className="session-header">
-                            <span className="session-id">
-                              #{session.sessionId}
-                            </span>
+                            <span className="session-id">#{session.sessionId}</span>
                             <span
                               className="session-status"
                               style={{ backgroundColor: badge.color }}
@@ -220,13 +218,10 @@ export default function StaffDashboard() {
                           <div className="session-info">
                             <p>🚗 {session.vehiclePlate || "N/A"}</p>
                             <p>🔌 Cổng #{session.chargingPointId || "N/A"}</p>
-                            <p>
-                              🕐 Bắt đầu: {formatDateTime(session.startTime)}
-                            </p>
+                            <p>🕐 Bắt đầu: {formatDateTime(session.startTime)}</p>
                             {session.estimatedEndTime && (
                               <p>
-                                ⏰ Dự kiến:{" "}
-                                {formatTime(session.estimatedEndTime)}
+                                ⏰ Dự kiến: {formatTime(session.estimatedEndTime)}
                               </p>
                             )}
                           </div>
@@ -234,9 +229,7 @@ export default function StaffDashboard() {
                       );
                     })
                   ) : (
-                    <div className="no-data">
-                      Không có phiên sạc đang hoạt động
-                    </div>
+                    <div className="no-data">Không có phiên sạc đang hoạt động</div>
                   )}
                 </div>
               </div>

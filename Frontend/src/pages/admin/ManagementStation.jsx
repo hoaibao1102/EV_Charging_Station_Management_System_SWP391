@@ -237,7 +237,7 @@ export default function ManagementStation() {
                           </a>
                         </td>
                         <td>{station.operatingHours}</td>
-                        <td>{station.status}</td>
+                        <td>{station.status === "ACTIVE" ? ("Đang hoạt động") : station.status === "MAINTENANCE" ? ("Đang bảo trì") : ("Ngưng hoạt động")}</td>
                         <td>
                           {slotConfigs.find(config => config.stationId === station.stationId && config.isActive === 'ACTIVE')?.slotDurationMin + ' phút' || 'Chưa cấu hình'}
                         </td>

@@ -264,27 +264,29 @@ export default function AddStationForm({ onClose, onAddSuccess, station }) {
           {formErrors.address}
         </Form.Control.Feedback>
       </Form.Group>
-
       {/* HÀNG 4: Trạng thái (dropdown) */}
       <Form.Group className="mb-3" controlId="status">
-        <Form.Label>Trạng thái</Form.Label>
-        <Form.Select
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          isInvalid={!!formErrors.status}
-          required
-        >
-          <option value="" disabled>Chọn trạng thái ban đầu...</option>
-          <option selected={stationReady?.status === 'ACTIVE'} value="ACTIVE">Hoạt động </option>
-          <option selected={stationReady?.status === 'MAINTENANCE'} value="MAINTENANCE">Bảo trì </option>
-          <option selected={stationReady?.status === 'INACTIVE'} value="INACTIVE">Ngưng hoạt động </option>
-        </Form.Select>
-        <Form.Control.Feedback type="invalid">
-          {formErrors.status}
-        </Form.Control.Feedback>
-      </Form.Group>
+    <Form.Label>Trạng thái</Form.Label>
+    <Form.Select
+        name="status"
+        value={formData.status || (stationReady ? stationReady.status : '')} 
+        onChange={handleChange}
+        onBlur={handleBlur}
+        isInvalid={!!formErrors.status}
+        required
+    >
+        <option value="" disabled>Chọn trạng thái ban đầu...</option>
+        
+        {/* Chỉ cần value, KHÔNG cần selected */}
+        <option value="ACTIVE">Hoạt động</option>
+        <option value="MAINTENANCE">Bảo trì</option>
+        <option value="INACTIVE">Ngưng hoạt động</option>
+        
+    </Form.Select>
+    <Form.Control.Feedback type="invalid">
+        {formErrors.status}
+    </Form.Control.Feedback>
+</Form.Group>
 
 
       {apiError && (

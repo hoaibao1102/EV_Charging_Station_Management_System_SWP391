@@ -10,6 +10,7 @@ import { addStaffApi } from '../../api/admin.js';
 
 // Import file CSS
 import './AddStaffForm.css';
+import { toast } from 'react-toastify';
 
 // --- Cấu trúc state cho form và lỗi ---
 const initialFormData = {
@@ -49,8 +50,9 @@ export default function AddStaffForm({ onClose, onAddSuccess }) {
       try {
         const stationList = await getAllStations();
         if (stationList.success) {
-          setStations(stationList.data);
-          console.log("Fetched stations:", stationList.data);
+          const listActiveStations = stationList.data.filter(station => !(station.status === 'INACTIVE'));
+          setStations(listActiveStations);
+          console.log("Fetched stations:", listActiveStations);
         } else {
           console.error("Failed to fetch stations:", stationList.message);
         }
@@ -173,6 +175,7 @@ export default function AddStaffForm({ onClose, onAddSuccess }) {
       const result = await addStaffApi(data);
       if (result.success) {
         console.log("Thêm nhân viên thành công:", result.data);
+        toast.success('Thêm nhân viên thành công!');
         onAddSuccess(); // Thông báo cho cha biết thêm thành công
         onClose(); // Đóng form
       } else {

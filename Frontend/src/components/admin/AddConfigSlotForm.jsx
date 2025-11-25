@@ -13,9 +13,17 @@ export default function AddConfigSlotForm({handleClose, stationId, slotMinutes})
         e.preventDefault();
         const form = e.target;
         const slotDurationMin = form.configSlot.value;
+        const slotValue = parseInt(slotDurationMin) || 15;
+        
+        // Kiểm tra input phải chia hết cho 5
+        if (slotValue % 5 !== 0) {
+            toast.error('Thời gian slot phải chia hết cho 5 phút!');
+            return;
+        }
+        
         const dataForm = {
             stationId: stationId,
-            slotDurationMin: parseInt(slotDurationMin) || 60,
+            slotDurationMin: slotValue,
             activeFrom: date.toISOString(),
             activeExpire: dateEnd.toISOString(),  
             isActive: "ACTIVE",
@@ -45,13 +53,13 @@ export default function AddConfigSlotForm({handleClose, stationId, slotMinutes})
         <Form.Control 
           type="number" 
           placeholder="Nhập thời gian slot" 
-          min={60} 
+          min={10} 
           max={120} 
-          defaultValue={slotMinutes || 60}
+          defaultValue={slotMinutes || 15}
           required
         />
         <Form.Text className="text-muted">
-          Thời gian slot được tính bằng phút và sẽ áp dụng cho trạm sạc này ngay lập tức sau khi cấu hình.
+          Thời gian slot được tính bằng phút và phải chia hết cho 5 (ví dụ:10, 15, 20, 25, 30...). Cấu hình sẽ áp dụng cho trạm sạc này ngay lập tức.
         </Form.Text>
       </Form.Group>
 

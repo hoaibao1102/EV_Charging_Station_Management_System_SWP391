@@ -238,7 +238,10 @@ export default function AdminDashboard() {
                     <td>{(station.utilization * 100).toFixed(0)}%</td>
                     <td>{station.sessions.toLocaleString()}</td>
                     <td className={station.growthPercent >= 0 ? 'growth-positive' : 'growth-negative'}>
-                      {station.growthPercent >= 0 ? '▲' : '▼'} {station.growthPercent}%
+                      <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                        {station.growthPercent >= 0 ? '+' : ''}{station.growthPercent}%
+                      </span>
+                      {station.growthPercent >= 0 ? ' ▲' : ' ▼'}
                     </td>
                     <td>{station.monthRevenue.amount.toLocaleString()} VND</td>
                   </tr>

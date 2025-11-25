@@ -40,12 +40,7 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         ChargingPoint point = chargingPointRepository.findById(request.getPointId())
                 .orElseThrow(() -> new ErrorException("Charging point not found"));
 
-        // 2) Không cho dừng nếu điểm sạc đang bận (OCCUPIED)
-        //    - Trạng thái OCCUPIED biểu thị đang có xe sử dụng, dừng lúc này có thể gây mất điện đột ngột
-        //    - Ném RuntimeException để chặn thao tác, client sẽ nhận được lỗi
-        if (point.getStatus() == ChargingPointStatus.OCCUPIED) {
-            throw new RuntimeException("Cannot stop point while in use");
-        }
+        
 
         // 3) Cập nhật trạng thái ChargingPoint theo newStatus trong request
         //    - newStatus có thể là: MAINTENANCE, INACTIVE, AVAILABLE, ...

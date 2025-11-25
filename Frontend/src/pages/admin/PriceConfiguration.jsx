@@ -168,7 +168,7 @@ export default function PriceConfiguration() {
                   <tr>
                     <th>TÊN CỔNG SẠC</th>
                     <th>GIÁ MỖI kWh</th>
-                    <th>GIÁ MỖI PHÚT(áp dụng khi quá giờ)</th>
+                    <th>GIÁ MỖI PHÚT</th>
                     <th>ĐƠN VỊ</th>
                     <th>CẬP NHẬT</th>               
                   </tr>

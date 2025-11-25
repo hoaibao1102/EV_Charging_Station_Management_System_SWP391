@@ -43,14 +43,14 @@ export default function Incident() {
 
 
   // Tính toán thống kê 
-  const totalTriplets = triplets.length;
+  const totalTriplets = triplets.filter(a => a.status === 'OPEN' || a.status === 'PAID').length;
   const TripletUnresolved = triplets.filter(a => a.status === 'OPEN').length;
   const TripletResolved = triplets.filter(a => a.status === 'PAID').length;
 
 
   // Tính toán danh sách hiển thị
   const displayedTriplets = useMemo(() => {
-    let filtered = triplets;
+    let filtered = triplets.filter(a => a.status === 'OPEN' || a.status === 'PAID');
 
     if (activeTab !== 'allTriplets') {
       filtered = filtered.filter(triplet => triplet.status === activeTab.toUpperCase());

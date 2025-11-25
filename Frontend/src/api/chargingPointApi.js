@@ -12,7 +12,7 @@ export const getAllChargingPoints = () => {
 //thay đổi trạng thái trụ sạc
 export const updateChargingPointStatus = (chargingPointId, status) => {
   return handleApiCall(
-    () => apiClient.post(`/api/charging-points/stop`, { newStatus: status, pointId: chargingPointId }),
+    () => apiClient.post(`/api/charging-points/stop`, {  pointId: chargingPointId, newStatus: status }),
     "Cập nhật trạng thái trụ sạc thất bại"
   );
 }

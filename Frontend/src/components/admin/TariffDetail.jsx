@@ -53,7 +53,7 @@ export default function TariffDetail({ handleClose, tariff, inactiveConnectorTyp
         return '';
       case 'pricePerMin':
         if (!value.toString().trim()) return 'Vui lòng nhập giá cho mỗi phút.';
-        if (Number(value) <= 500) return 'Giá cho mỗi phút phải lớn hơn 500vnd.';
+        if (Number(value) <= 1) return 'Giá cho mỗi phút phải lớn hơn 1vnd.';
         return '';
       case 'currency':
         return value.trim() ? '' : 'Vui lòng chọn loại tiền tệ.';
