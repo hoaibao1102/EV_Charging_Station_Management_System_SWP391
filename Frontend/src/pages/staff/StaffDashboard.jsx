@@ -218,7 +218,6 @@ export default function StaffDashboard() {
                             </span>
                           </div>
                           <div className="session-info">
-                            <p>👤 {session.driverName || "N/A"}</p>
                             <p>🚗 {session.vehiclePlate || "N/A"}</p>
                             <p>🔌 Cổng #{session.chargingPointId || "N/A"}</p>
                             <p>

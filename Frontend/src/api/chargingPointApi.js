@@ -25,3 +25,19 @@ export const addChargingPointApi = (chargingPointData) => {
     "Thêm mới trụ sạc thất bại"
   );
 }
+
+// ✅ Lấy chi tiết trụ sạc theo ID
+export const getChargingPointById = (pointId) => {
+  return handleApiCall(
+    () => apiClient.get(`/api/charging-points/${pointId}`),
+    "Lấy thông tin trụ sạc thất bại"
+  );
+}
+
+// ✅ Cập nhật thông tin trụ sạc
+export const updateChargingPoint = (pointId, chargingPointData) => {
+  return handleApiCall(
+    () => apiClient.put(`/api/charging-points/${pointId}`, chargingPointData),
+    "Cập nhật trụ sạc thất bại"
+  );
+}
