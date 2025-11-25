@@ -115,6 +115,63 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   grid-column: 1 / -1; /* Bố cục cho bảng */
 }
+
+/* Override cho custom-table trong dashboard */
+.dashboard-container .custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 0;
+  table-layout: auto; /* Để tự động điều chỉnh */
+}
+
+.dashboard-container .custom-table thead th {
+  position: static; /* Bỏ sticky */
+  background-color: #f9f9f9;
+  white-space: normal;
+  word-break: break-word;
+  height: auto;
+  color: #555;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: normal;
+  box-shadow: none;
+}
+
+.dashboard-container .custom-table tbody td {
+  padding: 12px 16px;
+  color: #333;
+  font-size: 14px;
+  font-weight: normal;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.dashboard-container .custom-table tbody tr {
+  transition: none;
+  border: none;
+  height: auto;
+}
+
+.dashboard-container .custom-table tbody tr:nth-child(odd) {
+  background-color: #ffffff !important;
+}
+
+.dashboard-container .custom-table tbody tr:nth-child(even) {
+  background-color: #ffffff !important;
+}
+
+.dashboard-container .custom-table tbody tr:hover {
+  background-color: #f9f9f9 !important;
+  box-shadow: none;
+}
+
 .stations-table {
   width: 100%;
   border-collapse: collapse;
@@ -153,15 +210,9 @@
 
 .growth-positive { 
   color: #008a4c; 
-  background-color: #e6f7f0;
-  padding: 4px 8px;
-  border-radius: 4px;
   font-weight: 600;
 }
 .growth-negative { 
   color: #d90000; 
-  background-color: #ffebee;
-  padding: 4px 8px;
-  border-radius: 4px;
   font-weight: 600;
 }
