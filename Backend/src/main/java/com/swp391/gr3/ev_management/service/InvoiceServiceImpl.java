@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.response.DriverInvoiceDetail;
+import com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.ChargingPoint;
 import com.swp391.gr3.ev_management.entity.Invoice;
@@ -95,5 +96,10 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .orElse(null);
 
         return mapper.toDto(invoice, booking, cp, pricePerKwh);
+    }
+
+    @Override
+    public List<UnpaidInvoiceResponse> getUnpaidInvoices(Long userId) {
+        return invoiceRepository.findUnpaidByUserId(userId);
     }
 }
