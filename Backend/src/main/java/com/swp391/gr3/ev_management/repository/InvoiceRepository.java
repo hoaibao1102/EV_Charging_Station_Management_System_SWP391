@@ -137,4 +137,40 @@ public interface InvoiceRepository extends JpaRepository<Invoice,Long> {
                                @Param("from") LocalDateTime from,
                                @Param("to") LocalDateTime to);
 
+    /**
+     * ✅ Tìm hóa đơn theo ID kèm theo tất cả các quan hệ liên quan đã được fetch.
+     * 👉 Ý nghĩa:
+     * - Dùng khi cần truy xuất hóa đơn cùng với tất cả thông tin liên quan như phiên sạc, booking, trạm, xe, ...
+     * - Tránh lỗi LazyInitializationException khi truy cập các quan hệ ngoài transaction.
+     * 🔍 JPQL:
+     * SELECT DISTINCT i
+     * FROM Invoice i
+     * LEFT JOIN FETCH i.session s
+     * LEFT JOIN FETCH s.booking b
+     * LEFT JOIN FETCH b.station st
+     * LEFT JOIN FETCH b.vehicle v
+     * LEFT JOIN FETCH b.bookingSlots bs
+     * LEFT JOIN FETCH bs.slot sl
+     * LEFT JOIN FETCH sl.chargingPoint cp
+     * WHERE i.id = :invoiceId
+     * ⚙️ Cách hoạt động:
+     * - Sử dụng LEFT JOIN FETCH để lấy tất cả các quan hệ liên quan.
+     * - DISTINCT để tránh bản ghi trùng lặp do JOIN nhiều-nhiều.
+     * @param invoiceId ID của hóa đơn cần tìm
+     * @return Optional chứa hóa đơn cùng các quan hệ nếu tìm thấy
+     */
+    @Query("""
+    select i
+    from Invoice i
+      left join fetch i.session s
+      left join fetch s.booking b
+      left join fetch b.vehicle v
+      left join fetch b.station st
+      left join fetch b.bookingSlots bs
+      left join fetch bs.slot sl
+      left join fetch sl.chargingPoint cp
+      left join fetch cp.connectorType ct
+    where i.invoiceId = :invoiceId
+""")
+    Optional<Invoice> findInvoiceDetail(@Param("invoiceId") Long invoiceId);
 }

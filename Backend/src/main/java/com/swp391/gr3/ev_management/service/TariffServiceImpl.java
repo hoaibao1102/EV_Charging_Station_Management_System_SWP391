@@ -182,4 +182,9 @@ public class TariffServiceImpl implements TariffService {
         return tariffRepository.findPricePerMinActive(connectorTypeId, now);
     }
 
+    @Override
+    public Collection<Tariff> findTariffByConnectorType(Long connectorTypeId) {
+        return tariffRepository.findTariffByConnectorType(connectorTypeId);
+    }
+
 }
