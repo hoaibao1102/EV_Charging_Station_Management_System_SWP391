@@ -7,6 +7,7 @@ import {toast} from 'react-toastify';
 import {getAllChargingPoints} from '../../api/chargingPointApi.js';
 import { updateChargingPointStatus} from '../../api/chargingPointApi.js';
 import AddChargingPointForm from '../../components/admin/AddChargingPointForm.jsx';
+import UpdateChargingPointForm from '../../components/admin/UpdateChargingPointForm.jsx';
 
 const statusChargingPoint = {
     available: 'AVAILABLE', 
@@ -21,6 +22,8 @@ export default function ManagementChargingPoint() {
   const [chargingPoints, setChargingPoints] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddChargingPointForm, setShowAddChargingPointForm] = useState(false);
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [selectedPointId, setSelectedPointId] = useState(null);
   const [loading, setLoading] = useState(false);
   
   
@@ -60,6 +63,19 @@ export default function ManagementChargingPoint() {
   const handleCloseForm = () => {
     setShowAddChargingPointForm(false);
     handleSetLoading(); 
+  };
+
+  // ✅ Mở form cập nhật trụ sạc
+  const handleUpdateChargingPoint = (pointId) => {
+    setSelectedPointId(pointId);
+    setShowUpdateForm(true);
+  };
+
+  // ✅ Đóng form cập nhật
+  const handleCloseUpdateForm = () => {
+    setShowUpdateForm(false);
+    setSelectedPointId(null);
+    handleSetLoading(); // Refresh danh sách sau khi update
   };
 
   const handleStatusChargingPoint = async (chargingPointId, newStatus) => {
@@ -118,7 +134,13 @@ export default function ManagementChargingPoint() {
   return (
     <>
       {showAddChargingPointForm && <AddChargingPointForm onClose={handleCloseForm} />}
-      {!showAddChargingPointForm && (
+      {showUpdateForm && (
+        <UpdateChargingPointForm 
+          pointId={selectedPointId} 
+          onClose={handleCloseUpdateForm} 
+        />
+      )}
+      {!showAddChargingPointForm && !showUpdateForm && (
         <div className="management-user-container">
           <Header />
 
@@ -215,6 +237,17 @@ export default function ManagementChargingPoint() {
                       <td>{point.createdAt?.split('T')[0]}</td>
                       <td>{point.lastMaintenanceDate?.split('T')[0]}</td>
                       <td>
+                        {/* ✅ LUÔN HIỂN THỊ NÚT CÂP NHẬT */}
+                        <div className="action-buttons">
+                          <button 
+                            className="btn-unblock" 
+                            onClick={() => handleUpdateChargingPoint(point.pointId)}
+                            style={{ marginBottom: '5px' }}
+                          >
+                            ✏️ CẬP NHẬT
+                          </button>
+                        </div>
+
                         {/* TRƯỜNG HỢP 1: Đang hoạt động (Bình thường) */}
                         {(point.status === status.available || point.status === status.occupied) && (
                           <>

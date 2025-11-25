@@ -12,6 +12,12 @@ import "../admin/ManagementUser.css";
 export default function ManagementTransaction() {
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState(null);
+  const [paymentStats, setPaymentStats] = useState({
+    cashRevenue: 0,
+    vnpayRevenue: 0,
+    cashCount: 0,
+    vnpayCount: 0,
+  }); // ✅ Thống kê theo phương thức thanh toán
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(null); // null = ALL, COMPLETED, PENDING, FAILED
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,13 +60,52 @@ export default function ManagementTransaction() {
         status: filter,
       });
 
-      setTransactions(response.data.content || response.data || []);
+      const txList = response.data.content || response.data || [];
+      setTransactions(txList);
+
+      // ✅ Tính toán thống kê theo payment method (Cash vs VNPay)
+      calculatePaymentStats(txList);
     } catch (error) {
       console.error("Lỗi khi tải giao dịch:", error);
       toast.error("Không thể tải danh sách giao dịch");
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Tính toán doanh thu theo phương thức thanh toán
+  const calculatePaymentStats = (txList) => {
+    let cashRevenue = 0;
+    let vnpayRevenue = 0;
+    let cashCount = 0;
+    let vnpayCount = 0;
+
+    txList.forEach((tx) => {
+      // Chỉ tính các giao dịch COMPLETED
+      if (tx.status === "COMPLETED") {
+        // Backend có thể trả về paymentMethodName hoặc description chứa thông tin
+        // Giả định: nếu description chứa "VNPay" hoặc "VNPAY" → VNPay, còn lại → Cash
+        const isVNPay =
+          tx.description?.toUpperCase().includes("VNPAY") ||
+          tx.description?.toUpperCase().includes("VN PAY");
+
+        if (isVNPay) {
+          vnpayRevenue += tx.amount || 0;
+          vnpayCount++;
+        } else {
+          // Mặc định coi là Cash (EVM)
+          cashRevenue += tx.amount || 0;
+          cashCount++;
+        }
+      }
+    });
+
+    setPaymentStats({
+      cashRevenue,
+      vnpayRevenue,
+      cashCount,
+      vnpayCount,
+    });
   };
 
   const getStatusText = (status) => {
@@ -137,6 +182,22 @@ export default function ManagementTransaction() {
           <li className="stat-card">
             Doanh thu
             <strong>{formatCurrency(stats.totalRevenue)}</strong>
+          </li>
+
+          {/* ✅ Phân loại theo phương thức thanh toán */}
+          <li className="stat-card" style={{ backgroundColor: "#e8f5e9" }}>
+            💵 Tiền mặt (Cash)
+            <strong>{formatCurrency(paymentStats.cashRevenue)}</strong>
+            <small style={{ fontSize: "0.85em", color: "#666" }}>
+              {paymentStats.cashCount} giao dịch
+            </small>
+          </li>
+          <li className="stat-card" style={{ backgroundColor: "#e3f2fd" }}>
+            💳 VNPay
+            <strong>{formatCurrency(paymentStats.vnpayRevenue)}</strong>
+            <small style={{ fontSize: "0.85em", color: "#666" }}>
+              {paymentStats.vnpayCount} giao dịch
+            </small>
           </li>
         </ul>
       )}

@@ -261,6 +261,26 @@ export default function Booking() {
           bookingObj?.id ??
           bookingObj?.booking_id;
 
+        // ✅ Lưu maxPowerKW vào sessionStorage để ChargingSession dùng
+        const maxPowerKW =
+          bookingData?.chargingPoint?.maxPowerKW ??
+          bookingData?.connector?.defaultMaxPowerKW ??
+          11.0;
+
+        if (bookingId) {
+          try {
+            sessionStorage.setItem(
+              `booking_${bookingId}_maxPowerKW`,
+              JSON.stringify(maxPowerKW)
+            );
+            console.log(
+              `✅ Saved maxPowerKW=${maxPowerKW} for booking #${bookingId}`
+            );
+          } catch (e) {
+            console.warn("Failed to save maxPowerKW to sessionStorage:", e);
+          }
+        }
+
         if (bookingId) {
           // Navigate to booking detail/confirmation page and pass booking info
           navigate(`/bookings/${bookingId}`, {
@@ -367,17 +387,40 @@ export default function Booking() {
       console.log("📊 Total normalized slots:", normalized.length);
       console.log("📊 Sample normalized slot:", normalized[0]);
 
-      // Lấy giờ hiện tại và làm tròn xuống (ví dụ: 11:28 -> 11:00)
+      // Lấy ngày hôm nay (YYYY-MM-DD) - sử dụng local date để tránh lỗi timezone
       const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const today = `${year}-${month}-${day}`;
       const currentHour = now.getHours();
 
+      console.log("📅 Today:", today);
       console.log("⏰ Current hour:", currentHour);
 
-      // Filter slots: chỉ filter theo giờ, ẩn các slot có giờ bắt đầu < giờ hiện tại
+      // Filter slots: chỉ hiển thị slot của ngày hôm nay và giờ >= giờ hiện tại
       const filteredSlots = normalized.filter((slot) => {
+        // 1. Filter theo ngày: chỉ lấy slot của ngày hôm nay
+        const slotDate = slot.Date;
+        if (!slotDate) return false;
+
+        // Extract YYYY-MM-DD từ slot.Date - hỗ trợ cả format có 'T' và có space
+        let slotDateStr = String(slotDate);
+        if (slotDateStr.includes("T")) {
+          slotDateStr = slotDateStr.split("T")[0];
+        } else if (slotDateStr.includes(" ")) {
+          slotDateStr = slotDateStr.split(" ")[0];
+        }
+
+        // Nếu không phải ngày hôm nay thì loại bỏ
+        if (slotDateStr !== today) {
+          return false;
+        }
+
+        // 2. Filter theo giờ: chỉ hiển thị slot có giờ bắt đầu >= giờ hiện tại
         const slotStartTimeStr = slot.StartTime;
 
-        // Nếu slot không có StartTime hợp lệ, GIỮ LẠI
+        // Nếu slot không có StartTime hợp lệ, GIỮ LẠI (nếu đã qua filter ngày)
         if (!slotStartTimeStr || slotStartTimeStr === "N/A") {
           return true;
         }
