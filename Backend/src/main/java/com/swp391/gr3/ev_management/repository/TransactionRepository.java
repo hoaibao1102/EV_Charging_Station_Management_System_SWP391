@@ -82,6 +82,7 @@ join b.station st
 join v.driver d
 join d.user u
 where u.userId = :userId
+  and (t.status <> 'PENDING' or i.status = 'UNPAID')
 order by t.createdAt desc
 """)
     List<TransactionBriefResponse> findBriefByUserId(Long userId);

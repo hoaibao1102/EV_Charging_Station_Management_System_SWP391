@@ -135,7 +135,7 @@ export default function TransactionDetail() {
       {/* Header */}
       <div className="detail-header">
         <button className="btn-back" onClick={() => navigate(-1)}>
-          ← Quay lại
+          Quay lại
         </button>
         <h1 className="page-title">Chi tiết giao dịch</h1>
         <div></div>
@@ -254,7 +254,7 @@ export default function TransactionDetail() {
 
         {/* Action Buttons */}
         <div className="action-buttons">
-          {transaction.sessionId && (
+          {/* {transaction.sessionId && (
             <button
               className="btn-action"
               onClick={() =>
@@ -271,7 +271,7 @@ export default function TransactionDetail() {
             >
               🧾 Xem hóa đơn
             </button>
-          )}
+          )} */}
           <button
             className="btn-action secondary"
             onClick={() => navigate(paths.transactionHistory)}

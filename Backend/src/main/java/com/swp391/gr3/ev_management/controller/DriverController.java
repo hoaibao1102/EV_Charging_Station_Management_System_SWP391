@@ -1,22 +1,39 @@
 package com.swp391.gr3.ev_management.controller;
 
-import com.swp391.gr3.ev_management.dto.request.*;
-import com.swp391.gr3.ev_management.dto.response.*;
-import com.swp391.gr3.ev_management.service.ChargingSessionService;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.swp391.gr3.ev_management.dto.request.AddVehicleRequest;
+import com.swp391.gr3.ev_management.dto.request.DriverUpdateRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdatePasswordRequest;
+import com.swp391.gr3.ev_management.dto.request.UpdateVehicleRequest;
+import com.swp391.gr3.ev_management.dto.response.ChargingSessionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.DriverInvoiceDetail;
+import com.swp391.gr3.ev_management.dto.response.DriverResponse;
+import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.dto.response.UnpaidInvoiceResponse;
+import com.swp391.gr3.ev_management.dto.response.VehicleResponse;
 import com.swp391.gr3.ev_management.service.DriverService;
 import com.swp391.gr3.ev_management.service.InvoiceService;
 import com.swp391.gr3.ev_management.service.TokenService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController // ✅ Đánh dấu class là REST Controller (tự động trả JSON thay vì view)
 @RequestMapping("/api/driver") // ✅ Đặt prefix cho toàn bộ endpoint: /api/driver/...
@@ -169,7 +186,7 @@ public class DriverController {
     // =========================================================================
     // ✅ 10. DRIVER XEM CHI TIẾT HÓA ĐƠN
     // =========================================================================
-    @GetMapping("/{invoiceId}") // 🔗 GET /api/driver/{invoiceId}
+    @GetMapping("/invoices/{invoiceId}") // 🔗 GET /api/driver/invoices/{invoiceId}
     @PreAuthorize("hasRole('DRIVER')") // 🔒 Chỉ DRIVER mới được xem chi tiết hóa đơn của chính mình
     @Operation(
             summary = "Get invoice detail",

@@ -32,14 +32,29 @@ export default function Notification() {
     fetchNotifications();
   }, []);
 
+  // -----------------------
+  // FORMAT MONEY (VIETNAMESE)
+  // -----------------------
+  const formatMoney = (value) => {
+    if (!value) return "";
+    const number = parseFloat(value.replace(/[^\d.-]/g, ""));
+    if (isNaN(number)) return value;
+
+    return number.toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      minimumFractionDigits: 0,
+    });
+  };
+
   const handleReaded = async (notification) => {
     if (notification.isRead) {
       console.log("Thông báo này đã đọc rồi.");
       return;
     }
 
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((n) =>
+    setNotifications((prev) =>
+      prev.map((n) =>
         n.notificationId === notification.notificationId
           ? { ...n, isRead: true }
           : n
@@ -50,14 +65,10 @@ export default function Notification() {
       const response = await markNotificationAsReadApi(
         notification.notificationId
       );
-      if (response.success) {
-        console.log(
-          `Đánh dấu ${notification.notificationId} thành công (server)`
-        );
-      } else {
+      if (!response.success) {
         toast.error("Đánh dấu đã đọc thất bại, vui lòng thử lại.");
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((n) =>
+        setNotifications((prev) =>
+          prev.map((n) =>
             n.notificationId === notification.notificationId
               ? { ...n, isRead: false }
               : n
@@ -65,10 +76,10 @@ export default function Notification() {
         );
       }
     } catch (error) {
-      console.error(`Lỗi khi đánh dấu đã đọc:`, error);
+      console.error("Lỗi khi đánh dấu đã đọc:", error);
       toast.error("Lỗi khi đánh dấu đã đọc.");
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((n) =>
+      setNotifications((prev) =>
+        prev.map((n) =>
           n.notificationId === notification.notificationId
             ? { ...n, isRead: false }
             : n
@@ -77,13 +88,11 @@ export default function Notification() {
     }
   };
 
-  const sortedNotifications = [...notifications].sort((a, b) => {
-    return new Date(b.createdAt) - new Date(a.createdAt);
-  });
+  const sortedNotifications = [...notifications].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
 
   const handleCardClick = (notification) => {
-    alert("CLICKED: " + notification.title);
-    console.log("Modal opening for:", notification);
     setSelectedNotification(notification);
     if (notification.status === "UNREAD") {
       handleReaded(notification);
@@ -94,6 +103,9 @@ export default function Notification() {
     setSelectedNotification(null);
   };
 
+  // -----------------------------------
+  // PARSE NỘI DUNG CHARGING SUMMARY
+  // -----------------------------------
   const parseChargingContent = (content) => {
     const info = {};
     const patterns = {
@@ -116,21 +128,8 @@ export default function Notification() {
 
   return (
     <div className="notification-container">
-      <div
-        style={{
-          background: "red",
-          color: "white",
-          padding: "30px",
-          fontSize: "24px",
-          fontWeight: "bold",
-          textAlign: "center",
-          margin: "20px",
-        }}
-      >
-        ⚠️ TEST: Code đã được load! Notifications: {notifications.length}
-      </div>
-
       <h1>Những thông báo của bạn</h1>
+
       {loading ? (
         <p className="notification-loading">Đang tải thông báo...</p>
       ) : notifications.length === 0 ? (
@@ -148,16 +147,6 @@ export default function Notification() {
                 zIndex: 1,
               }}
             >
-              <div
-                style={{
-                  background: "lightyellow",
-                  border: "2px solid red",
-                  padding: "10px",
-                  margin: "5px",
-                }}
-              >
-                DEBUG: Click me - {notification.title}
-              </div>
               <NotificationCard
                 notification={notification}
                 onSelect={handleReaded}
@@ -167,7 +156,7 @@ export default function Notification() {
         </ul>
       )}
 
-      {/* Modal */}
+      {/* ---------------- MODAL ---------------- */}
       {selectedNotification && (
         <div
           style={{
@@ -237,201 +226,205 @@ export default function Notification() {
                   const chargingInfo = parseChargingContent(
                     selectedNotification.content
                   );
-                  if (chargingInfo) {
-                    return (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "repeat(auto-fit, minmax(200px, 1fr))",
-                          gap: "16px",
-                        }}
-                      >
-                        {chargingInfo.point && (
+
+                  if (!chargingInfo) return null;
+
+                  return (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(200px, 1fr))",
+                        gap: "16px",
+                      }}
+                    >
+                      {/* Điểm sạc */}
+                      {chargingInfo.point && (
+                        <div
+                          style={{
+                            background: "#f8f9fa",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #2196f3",
+                          }}
+                        >
                           <div
                             style={{
-                              background: "#f8f9fa",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #2196f3",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              🔌 ĐIỂM SẠC
-                            </div>
-                            <div
-                              style={{ fontSize: "18px", fontWeight: "bold" }}
-                            >
-                              {chargingInfo.point}
-                            </div>
+                            🔌 ĐIỂM SẠC
                           </div>
-                        )}
-                        {chargingInfo.duration && (
+                          <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                            {chargingInfo.point}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Thời lượng */}
+                      {chargingInfo.duration && (
+                        <div
+                          style={{
+                            background: "#f8f9fa",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #9c27b0",
+                          }}
+                        >
                           <div
                             style={{
-                              background: "#f8f9fa",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #9c27b0",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              ⏱️ THỜI LƯỢNG
-                            </div>
-                            <div
-                              style={{ fontSize: "18px", fontWeight: "bold" }}
-                            >
-                              {chargingInfo.duration}
-                            </div>
+                            ⏱️ THỜI LƯỢNG
                           </div>
-                        )}
-                        {chargingInfo.soc && (
+                          <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                            {chargingInfo.duration}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SOC */}
+                      {chargingInfo.soc && (
+                        <div
+                          style={{
+                            background: "#f8f9fa",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #4caf50",
+                          }}
+                        >
                           <div
                             style={{
-                              background: "#f8f9fa",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #4caf50",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              🔋 TĂNG SOC
-                            </div>
-                            <div
-                              style={{ fontSize: "18px", fontWeight: "bold" }}
-                            >
-                              {chargingInfo.soc}
-                            </div>
+                            🔋 TĂNG SOC
                           </div>
-                        )}
-                        {chargingInfo.energy && (
+                          <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                            {chargingInfo.soc}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Năng lượng */}
+                      {chargingInfo.energy && (
+                        <div
+                          style={{
+                            background: "#f8f9fa",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #ff9800",
+                          }}
+                        >
                           <div
                             style={{
-                              background: "#f8f9fa",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #ff9800",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              ⚡ NĂNG LƯỢNG
-                            </div>
-                            <div
-                              style={{ fontSize: "18px", fontWeight: "bold" }}
-                            >
-                              {chargingInfo.energy}
-                            </div>
+                            ⚡ NĂNG LƯỢNG
                           </div>
-                        )}
-                        {chargingInfo.timeFee && (
+                          <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                            {chargingInfo.energy}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Phí thời gian */}
+                      {chargingInfo.timeFee && (
+                        <div
+                          style={{
+                            background: "#f8f9fa",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #00bcd4",
+                          }}
+                        >
                           <div
                             style={{
-                              background: "#f8f9fa",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #00bcd4",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              💵 PHÍ THỜI GIAN
-                            </div>
-                            <div
-                              style={{ fontSize: "18px", fontWeight: "bold" }}
-                            >
-                              {chargingInfo.timeFee}
-                            </div>
+                            💵 PHÍ THỜI GIAN
                           </div>
-                        )}
-                        {chargingInfo.energyFee && (
+                          <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                            {formatMoney(chargingInfo.timeFee)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Phí điện năng */}
+                      {chargingInfo.energyFee && (
+                        <div
+                          style={{
+                            background: "#f8f9fa",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #00bcd4",
+                          }}
+                        >
                           <div
                             style={{
-                              background: "#f8f9fa",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #00bcd4",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              💰 PHÍ ĐIỆN NĂNG
-                            </div>
-                            <div
-                              style={{ fontSize: "18px", fontWeight: "bold" }}
-                            >
-                              {chargingInfo.energyFee}
-                            </div>
+                            💰 PHÍ ĐIỆN NĂNG
                           </div>
-                        )}
-                        {chargingInfo.total && (
+                          <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                            {formatMoney(chargingInfo.energyFee)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tổng tiền */}
+                      {chargingInfo.total && (
+                        <div
+                          style={{
+                            gridColumn: "1 / -1",
+                            background:
+                              "linear-gradient(135deg, #e8f5e9 0%, #fff 100%)",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            borderLeft: "4px solid #4caf50",
+                          }}
+                        >
                           <div
                             style={{
-                              gridColumn: "1 / -1",
-                              background:
-                                "linear-gradient(135deg, #e8f5e9 0%, #fff 100%)",
-                              padding: "16px",
-                              borderRadius: "12px",
-                              borderLeft: "4px solid #4caf50",
+                              fontSize: "12px",
+                              color: "#666",
+                              marginBottom: "6px",
                             }}
                           >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#666",
-                                marginBottom: "6px",
-                              }}
-                            >
-                              💳 TỔNG THANH TOÁN
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "24px",
-                                fontWeight: "bold",
-                                color: "#4caf50",
-                              }}
-                            >
-                              {chargingInfo.total}
-                            </div>
+                            💳 TỔNG THANH TOÁN
                           </div>
-                        )}
-                      </div>
-                    );
-                  }
+                          <div
+                            style={{
+                              fontSize: "24px",
+                              fontWeight: "bold",
+                              color: "#4caf50",
+                            }}
+                          >
+                            {formatMoney(chargingInfo.total)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
                 }
+
+                // Default content
                 return (
                   <div
                     style={{

@@ -175,7 +175,7 @@ function BatteryProgressCircle({
               marginBottom: "5px",
             }}
           >
-            {animatedSoc.toFixed(1)}%
+            {animatedSoc.toFixed(0)}%
           </div>
           <div
             style={{

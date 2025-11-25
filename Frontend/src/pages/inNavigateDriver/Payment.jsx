@@ -120,7 +120,27 @@ export default function Payment() {
       }
     } catch (error) {
       console.error("❌ Lỗi khi gọi API thanh toán:", error);
-      toast.error("Thanh toán thất bại", { position: "top-center" });
+
+      // Enhanced error message
+      let errorMessage = "Thanh toán thất bại";
+
+      if (error.response) {
+        // Server responded with error
+        const status = error.response.status;
+        const data = error.response.data;
+
+        if (status === 409) {
+          errorMessage = "Hóa đơn đã được thanh toán rồi!";
+        } else if (status === 404) {
+          errorMessage = "Không tìm thấy thông tin phiên sạc hoặc hóa đơn!";
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+      } else if (error.request) {
+        errorMessage = "Không thể kết nối đến server!";
+      }
+
+      toast.error(errorMessage, { position: "top-center" });
     } finally {
       setPaymentProcessing(false);
     }
@@ -135,16 +155,67 @@ export default function Payment() {
   return (
     <div className="payment-container">
       <button className="btn-back" onClick={() => navigate(-1)}>
-        ← Quay lại
+        Quay lại
       </button>
 
-      <h1 className="payment-header">Thanh toán phiên sạc</h1>
+      <h1
+        className="payment-header"
+        style={{
+          textAlign: "center",
+          fontSize: "32px",
+          fontWeight: "700",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          marginBottom: "30px",
+        }}
+      >
+        💳 Thanh toán phiên sạc
+      </h1>
 
-      <div className="payment-card">
-        <div className="payment-status">
-          <div className="status-icon">✅</div>
-          <h2>Phiên sạc hoàn thành!</h2>
-          <p className="status-text">Vui lòng thanh toán để hoàn tất</p>
+      <div
+        className="payment-card"
+        style={{
+          background: "white",
+          borderRadius: "16px",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+          padding: "30px",
+          maxWidth: "800px",
+          margin: "0 auto",
+        }}
+      >
+        <div
+          className="payment-status"
+          style={{
+            textAlign: "center",
+            padding: "30px",
+            background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+            borderRadius: "12px",
+            marginBottom: "30px",
+          }}
+        >
+          <div
+            className="status-icon"
+            style={{ fontSize: "64px", marginBottom: "15px" }}
+          >
+            ✅
+          </div>
+          <h2
+            style={{
+              color: "#2e7d32",
+              fontSize: "28px",
+              fontWeight: "700",
+              marginBottom: "10px",
+            }}
+          >
+            Phiên sạc hoàn thành!
+          </h2>
+          <p
+            className="status-text"
+            style={{ color: "#558b2f", fontSize: "16px" }}
+          >
+            Vui lòng thanh toán để hoàn tất giao dịch
+          </p>
         </div>
 
         <div className="payment-section">
@@ -220,55 +291,75 @@ export default function Payment() {
         <div className="payment-section payment-summary">
           <h3 className="section-title">💰 Chi tiết thanh toán</h3>
 
-          {/* Hiển thị đơn giá theo kWh */}
+          {/* ✅ HIỂN thị đơn giá năng lượng (Backend: pricePerKWh) */}
           {session.pricePerKWh != null && session.pricePerKWh > 0 && (
             <div className="info-row">
-              <span className="info-label">Đơn giá năng lượng:</span>
-              <span className="info-value">
+              <span className="info-label">💵 Đơn giá điện năng:</span>
+              <span
+                className="info-value"
+                style={{ fontWeight: "600", color: "#667eea" }}
+              >
                 {session.pricePerKWh.toLocaleString("vi-VN")}{" "}
                 {session.currency ?? "VND"}/kWh
               </span>
             </div>
           )}
 
-          {/* Tính và hiển thị đơn giá theo phút nếu có (ngược từ cost - energyCost) */}
-          {(() => {
-            const energyCost =
-              session.pricePerKWh && session.energyKWh
-                ? session.pricePerKWh * session.energyKWh
-                : 0;
-            const timeCost = (session.cost ?? 0) - energyCost;
-            const pricePerMin =
-              session.durationMinutes > 0 && timeCost > 0
-                ? Math.round(timeCost / session.durationMinutes)
-                : 0;
-
-            return pricePerMin > 0 ? (
-              <div className="info-row">
-                <span className="info-label">Đơn giá thời gian:</span>
-                <span className="info-value">
-                  {pricePerMin.toLocaleString("vi-VN")}{" "}
-                  {session.currency ?? "VND"}/phút
-                </span>
-              </div>
-            ) : null;
-          })()}
-
+          {/* ✅ Năng lượng đã sạc */}
           <div className="info-row">
-            <span className="info-label">Năng lượng sạc:</span>
-            <span className="info-value">{session.energyKWh ?? 0} kWh</span>
+            <span className="info-label">⚡ Năng lượng tiêu thụ:</span>
+            <span
+              className="info-value"
+              style={{ fontWeight: "600", color: "#27ae60" }}
+            >
+              {(session.energyKWh ?? 0).toFixed(2)} kWh
+            </span>
           </div>
 
+          {/* ✅ Thời lượng sạc */}
           <div className="info-row">
-            <span className="info-label">Thời lượng:</span>
+            <span className="info-label">⏱️ Thời gian sạc:</span>
             <span className="info-value">
               {session.durationMinutes ?? 0} phút
             </span>
           </div>
 
-          <div className="total-row">
-            <span className="total-label">Tổng cộng:</span>
-            <span className="total-value">
+          {/* ✅ Divider */}
+          <div
+            style={{
+              borderTop: "2px dashed #e0e0e0",
+              margin: "15px 0",
+            }}
+          ></div>
+
+          {/* ✅ TỔNG TIỀN (từ Backend, đã tính sẵn) */}
+          <div
+            className="total-row"
+            style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              padding: "15px 20px",
+              borderRadius: "10px",
+              marginTop: "10px",
+            }}
+          >
+            <span
+              className="total-label"
+              style={{
+                color: "white",
+                fontSize: "18px",
+                fontWeight: "700",
+              }}
+            >
+              💳 Tổng thanh toán:
+            </span>
+            <span
+              className="total-value"
+              style={{
+                color: "white",
+                fontSize: "24px",
+                fontWeight: "800",
+              }}
+            >
               {(session.cost ?? 0).toLocaleString("vi-VN")}{" "}
               {session.currency ?? "VND"}
             </span>
@@ -277,18 +368,55 @@ export default function Payment() {
 
         {/* Payment Methods Section */}
         {!paymentCompleted && (
-          <div className="payment-section">
-            <h3 className="section-title">💳 Phương thức thanh toán</h3>
+          <div
+            className="payment-section"
+            style={{
+              background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+              padding: "25px",
+              borderRadius: "12px",
+              marginTop: "20px",
+            }}
+          >
+            <h3
+              className="section-title"
+              style={{
+                fontSize: "20px",
+                fontWeight: "700",
+                marginBottom: "20px",
+                color: "#2c3e50",
+              }}
+            >
+              💳 Chọn phương thức thanh toán
+            </h3>
             {loadingMethods ? (
-              <p style={{ textAlign: "center", color: "#666" }}>
-                Đang tải phương thức thanh toán...
-              </p>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "40px",
+                  color: "#666",
+                }}
+              >
+                <div style={{ fontSize: "48px", marginBottom: "15px" }}>⏳</div>
+                <p>Đang tải phương thức thanh toán...</p>
+              </div>
             ) : paymentMethods.length === 0 ? (
-              <p style={{ textAlign: "center", color: "#f44336" }}>
-                Không có phương thức thanh toán khả dụng
-              </p>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "40px",
+                  color: "#f44336",
+                  background: "white",
+                  borderRadius: "8px",
+                }}
+              >
+                <div style={{ fontSize: "48px", marginBottom: "15px" }}>⚠️</div>
+                <p>Không có phương thức thanh toán khả dụng</p>
+              </div>
             ) : (
-              <div className="method-list">
+              <div
+                className="method-list"
+                style={{ display: "grid", gap: "12px" }}
+              >
                 {paymentMethods.map((method) => (
                   <button
                     key={method.methodId}
@@ -297,13 +425,45 @@ export default function Payment() {
                     }`}
                     onClick={() => setSelectedMethod(method.methodId)}
                     disabled={paymentProcessing}
+                    style={{
+                      padding: "18px 24px",
+                      border:
+                        selectedMethod === method.methodId
+                          ? "3px solid #667eea"
+                          : "2px solid #ddd",
+                      borderRadius: "10px",
+                      background:
+                        selectedMethod === method.methodId
+                          ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                          : "white",
+                      color:
+                        selectedMethod === method.methodId ? "white" : "#333",
+                      cursor: paymentProcessing ? "not-allowed" : "pointer",
+                      transition: "all 0.3s ease",
+                      textAlign: "left",
+                      fontWeight: "600",
+                      boxShadow:
+                        selectedMethod === method.methodId
+                          ? "0 8px 20px rgba(102, 126, 234, 0.4)"
+                          : "0 2px 8px rgba(0,0,0,0.1)",
+                    }}
                   >
-                    <div className="method-name">
-                      💳 {method.provider} ({method.methodType})
+                    <div
+                      className="method-name"
+                      style={{ fontSize: "16px", marginBottom: "5px" }}
+                    >
+                      {method.provider === "VNPAY" ? "💳" : "💵"}{" "}
+                      {method.provider} ({method.methodType})
                     </div>
                     {method.accountNo && (
-                      <div className="method-description">
-                        Tài khoản: {method.accountNo}
+                      <div
+                        className="method-description"
+                        style={{
+                          fontSize: "13px",
+                          opacity: 0.9,
+                        }}
+                      >
+                        📋 Tài khoản: {method.accountNo}
                       </div>
                     )}
                   </button>

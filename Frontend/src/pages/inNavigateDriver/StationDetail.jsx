@@ -346,7 +346,7 @@ const StationDetail = () => {
     return (
       <div className="station-container">
         <h3>Không tìm thấy trạm sạc</h3>
-        <button onClick={() => navigate(-1)}>← Quay lại</button>
+        <button onClick={() => navigate(-1)}> Quay lại</button>
       </div>
     );
 
@@ -354,7 +354,7 @@ const StationDetail = () => {
   return (
     <div className="station-container">
       <button className="btn-back" onClick={() => navigate(-1)}>
-        ← Quay lại danh sách
+        Quay lại danh sách
       </button>
 
       <h1 className="station-title">
@@ -557,7 +557,6 @@ const StationDetail = () => {
 
               <div className="point-meta">
                 <span>⚡ Công suất: {maxPowerKW} kW</span>
-                <span>🔧 Bảo trì: {lastMaintenanceDate || "N/A"}</span>
               </div>
 
               {expanded && connector && (
@@ -666,7 +665,6 @@ const StationDetail = () => {
 
               <div className="point-meta">
                 <span>⚡ Công suất: {maxPowerKW} kW</span>
-                <span>🔧 Bảo trì: {lastMaintenanceDate || "N/A"}</span>
               </div>
 
               {expanded && connector && (
