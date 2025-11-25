@@ -286,6 +286,7 @@ export default function ChargingSession() {
   const [loading, setLoading] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [autoRedirected, setAutoRedirected] = useState(false);
+  const [currentPower, setCurrentPower] = useState(0); // ✅ Track maxPowerKW separately
 
   // QR / booking state (merged behavior)
   const qrFromState = location?.state?.qrBlobUrl;
@@ -348,15 +349,27 @@ export default function ChargingSession() {
     }
   }, []);
 
-  const clearSimState = useCallback((sessionId) => {
-    if (!sessionId) return;
-    try {
-      const key = getSimulationKey(sessionId);
-      if (key) localStorage.removeItem(key);
-    } catch (err) {
-      console.debug("Failed to clear simulation state:", err);
-    }
-  }, []);
+  const clearSimState = useCallback(
+    (sessionId) => {
+      if (!sessionId) return;
+      try {
+        const key = getSimulationKey(sessionId);
+        if (key) localStorage.removeItem(key);
+
+        // ✅ Also clear maxPowerKW from sessionStorage
+        if (currentSession?.bookingId) {
+          const powerKey = `booking_${currentSession.bookingId}_maxPowerKW`;
+          sessionStorage.removeItem(powerKey);
+          console.log(
+            `🗑️ Cleared maxPowerKW for booking #${currentSession.bookingId}`
+          );
+        }
+      } catch (err) {
+        console.debug("Failed to clear simulation state:", err);
+      }
+    },
+    [currentSession]
+  );
 
   // If navigation state didn't include qrBlobUrl, try to restore from sessionStorage (data URL)
   useEffect(() => {
@@ -424,10 +437,61 @@ export default function ChargingSession() {
       setLoading(true);
       const response = await stationAPI.getCurrentChargingSession();
       if (!response || response.success === false) {
+        console.log("❌ No current session");
         setCurrentSession(null);
+        setCurrentPower(0);
         return;
       }
       const session = response.data ?? response;
+      console.log("✅ Current session data:", session);
+
+      // ✅ Try to get maxPowerKW from sessionStorage first (saved during booking)
+      let power = 0;
+      const bookingId = session.bookingId;
+
+      console.log("🔍 DEBUG - Looking for power with bookingId:", bookingId);
+      console.log(
+        "🔍 DEBUG - SessionStorage keys:",
+        Object.keys(sessionStorage)
+      );
+
+      if (bookingId) {
+        try {
+          const key = `booking_${bookingId}_maxPowerKW`;
+          console.log("🔍 DEBUG - Looking for key:", key);
+          const storedPower = sessionStorage.getItem(key);
+          console.log("🔍 DEBUG - Found value:", storedPower);
+
+          if (storedPower) {
+            power = JSON.parse(storedPower);
+            console.log(
+              `✅ Retrieved maxPowerKW=${power} from sessionStorage for booking #${bookingId}`
+            );
+          } else {
+            console.warn(
+              `❌ No maxPowerKW found in sessionStorage for booking #${bookingId}`
+            );
+          }
+        } catch (e) {
+          console.warn("Failed to retrieve maxPowerKW from sessionStorage:", e);
+        }
+      } else {
+        console.warn("❌ No bookingId in session object");
+      }
+
+      // ✅ Fallback to response data if not in sessionStorage
+      if (!power) {
+        power =
+          session.chargingPoint?.maxPowerKW ??
+          session.maxPowerKW ??
+          session.ratedKW ??
+          session.powerKW ??
+          response.maxPowerKW ??
+          11.0; // Default fallback
+        console.log("🔍 Final extracted maxPowerKW from API:", power);
+      }
+
+      setCurrentPower(power);
       setCurrentSession(session);
     } catch (error) {
       console.error("Lỗi khi lấy phiên sạc hiện tại:", error);
@@ -438,6 +502,46 @@ export default function ChargingSession() {
       setLoading(false);
     }
   };
+
+  // ⚡ Polling maxPowerKW: Update charging power realtime when database changes
+  useEffect(() => {
+    if (!currentSession || currentSession.status !== "IN_PROGRESS") return;
+
+    const pollPowerInterval = setInterval(async () => {
+      try {
+        const response = await stationAPI.getCurrentChargingSession();
+        const updatedSession = response.data ?? response;
+
+        // ✅ Sử dụng callback để đọc giá trị mới nhất (tránh stale closure)
+        setCurrentSession((prev) => {
+          if (!prev) return prev;
+
+          const oldPower = prev.chargingPoint?.maxPowerKW;
+          const newPower = updatedSession.chargingPoint?.maxPowerKW;
+
+          if (newPower && newPower !== oldPower) {
+            console.log(`⚡ Power updated: ${oldPower} kW → ${newPower} kW`);
+            setCurrentPower(newPower); // ✅ Update currentPower state
+
+            return {
+              ...prev,
+              chargingPoint: {
+                ...prev.chargingPoint,
+                maxPowerKW: newPower,
+              },
+            };
+          }
+
+          return prev;
+        });
+      } catch (err) {
+        console.debug("Polling power error:", err);
+      }
+    }, 10000); // Mỗi 10 giây
+
+    return () => clearInterval(pollPowerInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSession?.sessionId, currentSession?.status]); // ✅ Chỉ restart khi sessionId hoặc status thay đổi
 
   // ⚡ Polling: check current session periodically (mainly for status changes)
   // During IN_PROGRESS, frontend handles all calculations via virtualSoc
@@ -473,6 +577,24 @@ export default function ChargingSession() {
           console.log(
             `📊 Found IN_PROGRESS session #${inProgressSession.sessionId}`
           );
+
+          // ✅ Update currentPower from sessionStorage when session starts
+          const bookingId = inProgressSession.bookingId;
+          if (bookingId) {
+            try {
+              const key = `booking_${bookingId}_maxPowerKW`;
+              const storedPower = sessionStorage.getItem(key);
+              if (storedPower) {
+                const power = JSON.parse(storedPower);
+                setCurrentPower(power);
+                console.log(
+                  `⚡ Auto-loaded maxPowerKW=${power} kW from sessionStorage for booking #${bookingId}`
+                );
+              }
+            } catch (e) {
+              console.debug("Failed to auto-load maxPowerKW:", e);
+            }
+          }
 
           setCurrentSession((prev) => {
             if (!prev) return inProgressSession;
@@ -557,25 +679,9 @@ export default function ChargingSession() {
     };
   }, []);
 
-  // 🔋 Virtual SOC simulation - FAST CHARGING SIMULATION
-  // Real-time: Every 2 seconds = 2 minutes of charging (60x speed)
-  // Example with 11kW charger, 60kWh battery, 90% efficiency:
-  // - 10 minutes real = 10 hours simulated
-  // - Energy = 10h × 11kW × 0.9 = 99 kWh
-  // - SOC increase = (99 / 60) × 100 = 165% → clamped to 100%
-  // This allows full charge demo in ~1 minute instead of 6+ hours
-  //
-  // 📐 CÔNG THỨC TÍNH finalSOC (khớp với Backend):
-  // 1. initialSoc = % pin ban đầu
-  // 2. estEnergy = năng lượng đã sạc (kWh) = hours × ratedKW × efficiency
-  // 3. capKWh = dung lượng pin xe (kWh)
-  // 4. deltaSOC = (estEnergy / capKWh) × 100
-  // 5. finalSOC = initialSoc + deltaSOC
-  // 6. Làm tròn finalSOC thành số nguyên gần nhất
-  // 7. Ràng buộc:
-  //    - Nếu finalSOC < initialSoc → lấy initialSoc
-  //    - Nếu finalSOC > 100 → đặt finalSOC = 100
-  //    - Nếu estEnergy > 0 nhưng finalSOC = initialSoc → ép finalSOC = initialSoc + 1
+  // 🔋 Virtual SOC simulation - REALTIME CHARGING
+  // Tính toán dựa trên thời gian thực từ startTime
+  // Công thức: duration = now - startTime → energy = duration × power × efficiency → SOC = energy / capacity
   useEffect(() => {
     if (!currentSession || currentSession.status !== "IN_PROGRESS") {
       // Clean up simulation state if session is not in progress
@@ -585,141 +691,132 @@ export default function ChargingSession() {
       return;
     }
 
-    // Get parameters from session or use defaults (one-time retrieval)
+    // Get parameters from session or use defaults
     const capacity =
       currentSession.vehicle?.model?.batteryCapacityKWh ??
       DEFAULT_BATTERY_CAPACITY;
-    const ratedKW = currentSession.chargingPoint?.maxPowerKW ?? 11.0; // Default 11 kW charger
     const efficiency = 0.9; // ✅ Match backend exactly (ChargingSessionTxHandler)
     const initialSoc = currentSession.initialSoc ?? 20;
 
-    // Try to restore previous simulation state (for page reload)
-    let accumulatedMinutes = currentSession.durationMinutes ?? 0;
-    const savedState = loadSimState(currentSession.sessionId);
-
-    if (savedState && savedState.sessionId === currentSession.sessionId) {
-      // Restore from saved state
-      accumulatedMinutes = savedState.durationMinutes ?? accumulatedMinutes;
-
-      // Update current session with restored values
-      setCurrentSession((prev) =>
-        prev
-          ? {
-              ...prev,
-              virtualSoc: savedState.virtualSoc ?? initialSoc,
-              energyKWh: savedState.energyKWh ?? prev.energyKWh,
-              durationMinutes: accumulatedMinutes,
-            }
-          : prev
-      );
-    } else if (!currentSession.virtualSoc) {
-      // Initialize virtual SOC for first time
+    // ✅ Initialize virtualSoc if not set
+    if (!currentSession.virtualSoc) {
       setCurrentSession((prev) =>
         prev ? { ...prev, virtualSoc: initialSoc } : prev
       );
     }
 
     const virtualChargeInterval = setInterval(() => {
-      accumulatedMinutes += 2 / 60; // +2 minutes per tick (2 seconds in real-time = 2 minutes simulation)
-      const hours = accumulatedMinutes / 60; // Convert to hours
+      setCurrentSession((prev) => {
+        if (!prev || prev.status !== "IN_PROGRESS") return prev;
 
-      // ⚡ BƯỚC 1: Tính năng lượng đã sạc (estEnergy)
-      // Công thức: estEnergy = hours × ratedKW × efficiency
-      const estEnergy = hours * ratedKW * efficiency;
+        // ✅ ĐỌC maxPowerKW từ currentPower state (đã lấy từ sessionStorage)
+        const ratedKW = currentPower || 11.0;
 
-      // ⚡ BƯỚC 2: Tính deltaSOC (phần trăm SOC tăng thêm)
-      // Công thức: deltaSOC = (estEnergy / capKWh) × 100
-      const deltaSOC = (estEnergy / capacity) * 100;
+        console.log(
+          `⚡ Using power: ${ratedKW} kW (currentPower=${currentPower})`
+        );
 
-      // ⚡ BƯỚC 3: Tính finalSOC trước khi ràng buộc
-      // Công thức: finalSOC = initialSoc + deltaSOC
-      let rawFinalSOC = initialSoc + deltaSOC;
+        // ✅ Tính thời lượng thực tế từ startTime (CHÍNH XÁC TUYỆT ĐỐI)
+        const startTime = new Date(prev.startTime);
+        const now = new Date();
+        const durationMs = now - startTime;
+        const newDurationMinutes = durationMs / (1000 * 60); // Convert ms to minutes
+        const hours = newDurationMinutes / 60; // Convert to hours
 
-      // ⚡ BƯỚC 4: Làm tròn finalSOC thành số nguyên gần nhất
-      let finalSOC = Math.round(rawFinalSOC);
+        // ⚡ CÔNG THỨC GIỐNG BACKEND (ChargingSessionTxHandler.java line 376-389)
 
-      // ⚡ BƯỚC 5: Ràng buộc - finalSOC không được nhỏ hơn initialSoc
-      if (finalSOC < initialSoc) {
-        finalSOC = initialSoc;
-      }
+        // 6️⃣ Ước lượng điện năng nạp được (kWh) = giờ * kW * hiệu suất
+        const estEnergy = hours * ratedKW * efficiency;
 
-      // ⚡ BƯỚC 6: Ràng buộc - finalSOC không được vượt quá 100%
-      if (finalSOC > 100) {
-        finalSOC = 100;
-      }
+        // 7️⃣ Chuyển đổi từ kWh sang % pin: (estEnergy / capKWh) * 100
+        let rawFinalSOC = initialSoc + (estEnergy / capacity) * 100.0;
 
-      // ⚡ BƯỚC 7: Trường hợp đặc biệt
-      // Nếu estEnergy > 0 nhưng deltaSOC quá nhỏ khiến finalSOC = initialSoc
-      // thì ép tăng finalSOC = initialSoc + 1
-      if (estEnergy > 0 && finalSOC === initialSoc) {
-        finalSOC = initialSoc + 1;
-        // Đảm bảo không vượt quá 100%
-        if (finalSOC > 100) {
-          finalSOC = 100;
+        // Làm tròn thành số nguyên (Backend dùng Math.round)
+        let finalSOC = Math.round(rawFinalSOC);
+
+        // 8️⃣ Nếu có thời gian sạc > 0 mà % không đổi -> tăng tối thiểu 1% cho hợp lý
+        if (newDurationMinutes > 0 && finalSOC === initialSoc) {
+          finalSOC = initialSoc + 1;
         }
-      }
 
-      // ⚡ BƯỚC 8: Tính energyKWh thực tế từ finalSOC
-      // (năng lượng tương ứng với % pin đã tăng)
-      const actualDeltaSOC = finalSOC - initialSoc;
-      const energyKWh = +(capacity * (actualDeltaSOC / 100)).toFixed(2);
+        // ⚡ Clamp kết quả trong [initialSoc .. 100]
+        finalSOC = Math.min(100, Math.max(initialSoc, finalSOC));
 
-      // Auto-complete when reaching 100%
-      if (finalSOC >= 100) {
-        console.log("🔋 Battery reached 100% - auto-stopping session");
+        // ⚡ Tính energyKWh thực tế từ finalSOC (để đồng bộ với % hiển thị)
+        const actualDeltaSOC = finalSOC - initialSoc;
+        const energyKWh = +(capacity * (actualDeltaSOC / 100)).toFixed(2);
 
-        // ✅ Gửi finalSoc = 100 (chuẩn Backend: số nguyên)
-        stationAPI
-          .stopChargingSession(currentSession.sessionId, 100)
-          .then((response) => {
-            console.log(
-              `✅ Session #${currentSession.sessionId} auto-stopped at 100% SOC`
-            );
-            // Backend sẽ trả về dữ liệu đầy đủ: endTime, finalSoc, energyKWh, durationMinutes, cost
-            // Polling sẽ detect COMPLETED và update UI với dữ liệu chính xác từ Backend
-          })
-          .catch((err) => {
-            console.error("❌ Failed to stop session at 100%:", err);
-          });
+        // Auto-complete when reaching 100%
+        if (finalSOC >= 100) {
+          console.log("🔋 Battery reached 100% - auto-stopping session");
 
-        clearInterval(virtualChargeInterval);
-        clearSimState(currentSession.sessionId);
-        // Polling sẽ detect COMPLETED status từ backend và auto-redirect
-        return;
-      }
+          // ✅ Gửi finalSoc = 100 (chuẩn Backend: số nguyên)
+          stationAPI
+            .stopChargingSession(prev.sessionId, 100)
+            .then(() => {
+              console.log(
+                `✅ Session #${prev.sessionId} auto-stopped at 100% SOC`
+              );
+              // Backend sẽ trả về dữ liệu đầy đủ: endTime, finalSoc, energyKWh, durationMinutes, cost
+              // Polling sẽ detect COMPLETED và update UI với dữ liệu chính xác từ Backend
+            })
+            .catch((err) => {
+              console.error("❌ Failed to stop session at 100%:", err);
+            });
 
-      // Continuous update + persist state
-      const updatedSession = {
-        ...currentSession,
-        virtualSoc: finalSOC, // Use calculated finalSOC with smooth decimal for animation
-        energyKWh,
-        durationMinutes: Math.round(accumulatedMinutes),
-      };
-      setCurrentSession(updatedSession);
-      saveSimState(updatedSession);
+          clearInterval(virtualChargeInterval);
+          clearSimState(prev.sessionId);
+          // Polling sẽ detect COMPLETED status từ backend và auto-redirect
+          return prev;
+        }
 
-      // ✅ Lưu virtualSoc vào sessionStorage để Staff có thể đọc khi dừng phiên sạc
-      // Key format: session_${sessionId}_live_soc
-      try {
-        const liveDataKey = `session_${currentSession.sessionId}_live_soc`;
-        const liveData = {
-          sessionId: currentSession.sessionId,
-          virtualSoc: Math.round(finalSOC), // Lưu số nguyên
+        // ✅ Log để debug
+        if (
+          Math.floor(newDurationMinutes) % 5 === 0 &&
+          newDurationMinutes > 0
+        ) {
+          console.log(
+            `📊 Charging stats: duration=${newDurationMinutes.toFixed(
+              1
+            )}min, power=${ratedKW}kW, energy=${energyKWh}kWh, SOC=${finalSOC}%`
+          );
+        }
+
+        // Continuous update + persist state
+        const updatedSession = {
+          ...prev,
+          virtualSoc: finalSOC,
           energyKWh,
-          durationMinutes: Math.round(accumulatedMinutes),
-          timestamp: Date.now(),
+          durationMinutes: newDurationMinutes,
         };
-        sessionStorage.setItem(liveDataKey, JSON.stringify(liveData));
-      } catch (err) {
-        console.debug("Failed to save live SOC to sessionStorage:", err);
-      }
-    }, 2000); // Update every 2 seconds
+
+        saveSimState(updatedSession);
+
+        // ✅ Lưu virtualSoc vào sessionStorage để Staff có thể đọc khi dừng phiên sạc
+        // Key format: session_${sessionId}_live_soc
+        try {
+          const liveDataKey = `session_${prev.sessionId}_live_soc`;
+          const liveData = {
+            sessionId: prev.sessionId,
+            virtualSoc: Math.round(finalSOC), // Lưu số nguyên
+            energyKWh,
+            durationMinutes: newDurationMinutes,
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem(liveDataKey, JSON.stringify(liveData));
+        } catch (err) {
+          console.debug("Failed to save live SOC to sessionStorage:", err);
+        }
+
+        return updatedSession;
+      });
+    }, 1000); // Update every 1 second (realtime mode)
 
     return () => {
       clearInterval(virtualChargeInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSession?.status, currentSession?.sessionId]);
+  }, [currentSession?.sessionId, currentSession?.status, currentPower]); // ✅ Thêm currentPower để interval đọc giá trị mới nhất
 
   // 🧭 Auto redirect to payment page when charging completes
   // Triggers when status changes to COMPLETED or STOPPED (by Staff)
@@ -1291,21 +1388,14 @@ export default function ChargingSession() {
             <InfoCard
               icon="⏱️"
               label="Thời lượng"
-              value={Math.round(currentSession.durationMinutes ?? 0)}
-              unit=""
+              value={(currentSession.durationMinutes ?? 0).toFixed(0)}
+              unit="phút"
               color="#2196f3"
             />
             <InfoCard
-              icon="⚙️"
-              label="Công suất TB"
-              value={
-                currentSession.durationMinutes > 0
-                  ? (
-                      (currentSession.energyKWh ?? 0) /
-                      (currentSession.durationMinutes / 60)
-                    ).toFixed(1)
-                  : "0"
-              }
+              icon="⚡"
+              label="Công suất sạc"
+              value={currentPower.toFixed(1)}
               unit="kW"
               color="#9c27b0"
             />

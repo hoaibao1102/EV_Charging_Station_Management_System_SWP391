@@ -12,7 +12,7 @@ export const getAllChargingPoints = () => {
 //thay đổi trạng thái trụ sạc
 export const updateChargingPointStatus = (chargingPointId, status) => {
   return handleApiCall(
-    () => apiClient.post(`/api/charging-points/stop`, { newStatus: status, pointId: chargingPointId }),
+    () => apiClient.post(`/api/charging-points/stop`, {  pointId: chargingPointId, newStatus: status }),
     "Cập nhật trạng thái trụ sạc thất bại"
   );
 }
@@ -23,5 +23,21 @@ export const addChargingPointApi = (chargingPointData) => {
   return handleApiCall(
     () => apiClient.post("/api/charging-points/create", chargingPointData),
     "Thêm mới trụ sạc thất bại"
+  );
+}
+
+// ✅ Lấy chi tiết trụ sạc theo ID
+export const getChargingPointById = (pointId) => {
+  return handleApiCall(
+    () => apiClient.get(`/api/charging-points/${pointId}`),
+    "Lấy thông tin trụ sạc thất bại"
+  );
+}
+
+// ✅ Cập nhật thông tin trụ sạc
+export const updateChargingPoint = (pointId, chargingPointData) => {
+  return handleApiCall(
+    () => apiClient.put(`/api/charging-points/${pointId}`, chargingPointData),
+    "Cập nhật trụ sạc thất bại"
   );
 }

@@ -40,12 +40,7 @@ public class ChargingPointServiceImpl implements ChargingPointService {
         ChargingPoint point = chargingPointRepository.findById(request.getPointId())
                 .orElseThrow(() -> new ErrorException("Charging point not found"));
 
-        // 2) Không cho dừng nếu điểm sạc đang bận (OCCUPIED)
-        //    - Trạng thái OCCUPIED biểu thị đang có xe sử dụng, dừng lúc này có thể gây mất điện đột ngột
-        //    - Ném RuntimeException để chặn thao tác, client sẽ nhận được lỗi
-        if (point.getStatus() == ChargingPointStatus.OCCUPIED) {
-            throw new RuntimeException("Cannot stop point while in use");
-        }
+        
 
         // 3) Cập nhật trạng thái ChargingPoint theo newStatus trong request
         //    - newStatus có thể là: MAINTENANCE, INACTIVE, AVAILABLE, ...
@@ -176,5 +171,86 @@ public class ChargingPointServiceImpl implements ChargingPointService {
                         point -> point.getStatus().name(),   // key: tên enum (AVAILABLE, OCCUPIED, ...)
                         Collectors.counting()                // value: số lượng
                 ));
+    }
+
+    @Override
+    public ChargingPointResponse getPointById (Long pointId) {
+        // Tìm điểm sạc theo ID và map sang DTO để trả về
+        ChargingPoint point = chargingPointRepository.findById(pointId)
+                .orElseThrow(() -> new ErrorException("Charging point not found"));
+        return chargingPointMapper.toResponse(point);
+    }
+
+    @Override
+    @Transactional
+    public ChargingPointResponse updateChargingPoint(Long pointId, CreateChargingPointRequest request){
+        // 1) Lấy điểm sạc hiện tại
+        ChargingPoint point = chargingPointRepository.findById(pointId)
+                .orElseThrow(() -> new ErrorException("Charging point not found"));
+
+        // 2) Validate trạm sạc
+        var station = chargingStationService.findById(request.getStationId())
+                .orElseThrow(() -> new ErrorException("Station not found"));
+
+        // 3) Validate loại đầu nối
+        var connectorType = connectorTypeService.findById(request.getConnectorTypeId())
+                .orElseThrow(() -> new ErrorException("Connector type not found"));
+
+        // 4) Không cho dùng loại đầu nối đã deprecated
+        if (Boolean.TRUE.equals(connectorType.getIsDeprecated())) {
+            throw new ErrorException("Cannot update charging point: connector type is deprecated");
+        }
+
+        // 5) Check trùng pointNumber trong cùng station (chỉ check nếu có thay đổi)
+        if (!point.getPointNumber().equals(request.getPointNumber())) {
+            if (chargingPointRepository.findByStation_StationIdAndPointNumber(
+                    request.getStationId(), request.getPointNumber()).isPresent()) {
+                throw new ErrorException("Point number already exists in this station");
+            }
+        }
+
+        // 6) Check trùng serialNumber toàn hệ thống (chỉ check nếu có thay đổi)
+        if (!point.getSerialNumber().equals(request.getSerialNumber())) {
+            if (chargingPointRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
+                throw new ErrorException("Serial number already exists");
+            }
+        }
+
+        // 7) Gán lại dữ liệu vào entity
+        point.setStation(station);
+        point.setConnectorType(connectorType);
+        point.setPointNumber(request.getPointNumber());
+        point.setSerialNumber(request.getSerialNumber());
+
+        // installationDate và lastMaintenanceDate: dùng dữ liệu request (không default nữa)
+        point.setInstallationDate(request.getInstallationDate());
+        point.setLastMaintenanceDate(request.getLastMaintenanceDate());
+
+        // maxPowerKW: nếu null hoặc <= 0 thì fallback giống mapper (22.0)
+        Double reqPower = request.getMaxPowerKW();
+        point.setMaxPowerKW(reqPower != null && reqPower > 0 ? reqPower : 22.0);
+
+        // status: dùng status từ request
+        point.setStatus(request.getStatus());
+
+        // updatedAt: cập nhật thời gian sửa
+        point.setUpdatedAt(LocalDateTime.now());
+
+        // 8) Lưu lại vào DB
+        chargingPointRepository.save(point);
+
+        // 9) Map sang response
+        return chargingPointMapper.toResponse(point);
+    }
+
+    @Override
+    @Transactional
+    public void deleteChargingPoint(Long pointId) {
+
+        // 1) Đảm bảo điểm sạc tồn tại
+        ChargingPoint point = chargingPointRepository.findById(pointId)
+                .orElseThrow(() -> new ErrorException("Charging point not found"));
+        // 2) Xoá
+        chargingPointRepository.delete(point);
     }
 }

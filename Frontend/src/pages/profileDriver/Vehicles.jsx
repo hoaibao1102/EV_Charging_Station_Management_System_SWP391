@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { getMyVehiclesApi } from "../../api/driverApi.js";
 import VehicleCard from "../../components/driver/VehicleCard.jsx";
 import { toast } from "react-toastify";
@@ -9,6 +10,7 @@ import AddVehicle from "./AddVehicle.jsx";
 import classCss from "../../assets/css/Main.module.css";
 
 export default function Vehicles() {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,10 +88,21 @@ export default function Vehicles() {
           />
         ) : (
           <div className="vehicle-list">
+            <button 
+            onClick={() => navigate(-1)} 
+            style={{ 
+              background: '#20b2aa', 
+              border: 'none', 
+              fontSize: '1rem', 
+              cursor: 'pointer',
+              marginRight: '1rem',
+              borderRadius: '15px',
+            }}
+          >
+            ← Quay lại
+          </button>
             {loading ? (
-              <div className="loading-spinner">
                 <p>Đang tải...</p>
-              </div>
             ) : vehicles.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">🚗</div>

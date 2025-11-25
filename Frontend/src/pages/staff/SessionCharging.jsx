@@ -9,7 +9,7 @@ import paths from "../../path/paths.jsx";
 import { stationAPI } from "../../api/stationApi.js";
 import { staffStopSessionApi } from "../../api/staffApi.js";
 
-const POLL_MS = 150000; // 5 minutes
+const POLL_MS = 50000; // 5 minutes
 
 export default function SessionCharging() {
   const navigate = useNavigate();

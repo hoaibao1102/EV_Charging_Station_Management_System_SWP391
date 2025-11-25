@@ -23,4 +23,10 @@ public interface ChargingPointService {
     List<ChargingPoint> findByStation_StationIdAndConnectorType_ConnectorTypeId(Long stationId, Long connectorTypeId);
 
     Map<String, Long> countGroupByStatus();
+
+    ChargingPointResponse getPointById(Long pointId);
+
+    ChargingPointResponse updateChargingPoint(Long pointId, CreateChargingPointRequest request);
+
+    void deleteChargingPoint(Long pointId);
 }

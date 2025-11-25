@@ -3,7 +3,26 @@
 .management-user-container {
   padding: 20px;
   background-color: #f8f9fa;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Scrollbar cho main container */
+.management-user-container::-webkit-scrollbar {
+  width: 12px;
+}
+.management-user-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.management-user-container::-webkit-scrollbar-thumb {
+  background: #20b2aa;
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+}
+.management-user-container::-webkit-scrollbar-thumb:hover {
+  background: #17a396;
 }
 
 /* Action Section */
@@ -114,21 +133,21 @@
 
 /* Filter Section */
 .filter-section {
-  /* ✅ THÊM 3 DÒNG NÀY ĐỂ DÍNH FILTER LẠI */
+  /* ✅ STICKY Ở TRÊN CÙNG KHÔNG HỞ */
   position: sticky;
-  top: 0px;
-  z-index: 11; /* Phải cao hơn z-index của header (10) */
+  top: -20px; /* Dính ngay ở trên cùng */
+  z-index: 200; /* Cao hơn thead */
 
   /* Style cũ của bạn */
   height: 111px;
   background: white;
-  padding: 5px;
+  padding: 0px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   margin: 2px;
 
   /* ✅ THÊM: Cần viền dưới để trông đẹp hơn khi dính */
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .nav-tabs {
@@ -180,6 +199,7 @@
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   margin-top: 20px;
+  position: relative;
 }
 
 /* Scrollbar */
@@ -199,23 +219,24 @@
   background: #17a396;
 }
 .table-scroll-container {
-  scrollbar-width: thin;
-  scrollbar-color: #20b2aa #f1f1f1;
+  /* Không cần scroll ở đây nữa - đã chuyển lên table-section */
+  position: relative;
 }
 
 .custom-table {
-  width: 95%;
+  width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
-  margin: 5px;
+  margin: 0;
   table-layout: fixed;
 }
 
-.custom-table thead th {
-  /* ✅ THAY ĐỔI 3 DÒNG NÀY */
+/* Sticky header chỉ áp dụng trong ManagementUser */
+.management-user-container .custom-table thead th {
+  /* ✅ THEAD DÍNH NGAY DƯỚI FILTER KHÔNG HỞ */
   position: sticky;
-  top: 111px; /* Dính bên dưới filter (filter cao 111px) */
-  z-index: 10;
+  top: 90px; /* Chỉ cần filter height (111px) + border (2px) */
+  z-index: 150; /* Cao hơn content nhưng thấp hơn filter */
 
   /* Style cũ */
   background-color: white;
@@ -231,10 +252,66 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-right: 2px solid rgba(255, 255, 255, 0.2);
+  /* Thêm box-shadow để tạo hiệu ứng nổi */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Style sticky cho Dashboard */
+.dashboard-container .custom-table thead th {
+  position: sticky;
+  top: 0px; /* Dính ngay ở trên cùng màn hình */
+  z-index: 100;
+  width: 100vh;
+  background-color: white;
+  white-space: normal;
+  word-break: break-word;
+  height: 60px;
+  color: #20b2aa;
+  border: #17a396 1px solid;
+  padding: 10px 5px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Fallback cho các container khác */
+.custom-table thead th {
+  background-color: white;
+  white-space: normal;
+  word-break: break-word;
+  height: 60px;
+  color: #20b2aa;
+  border: #17a396 1px solid;
+  padding: 10px 5px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  width: 100%;           /* Bắt buộc: Bảng phải chiếm hết chiều ngang */
+  table-layout: fixed;   /* Quan trọng: Chia đều không gian cho các cột */
+  border-collapse: collapse;
+}
+
+.management-user-container .custom-table thead th:last-child {
+  border-right: none;
+}
+.dashboard-container .custom-table thead th:last-child {
+  border-right: none;
+}
 .custom-table thead th:last-child {
   border-right: none;
+}
+.management-user-container .custom-table thead th:first-child {
+  border-left: none;
+}
+.dashboard-container .custom-table thead th:first-child {
+  border-left: none;
 }
 .custom-table thead th:first-child {
   border-left: none;

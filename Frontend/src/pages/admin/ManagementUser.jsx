@@ -161,10 +161,10 @@ export default function ManagementUser() {
     if (confirmed) {
       const response = await statusStaffApi(staffId, status);
       if (response.success) {
-        alert(`${status === 'BANNED' ? 'Xóa' : 'Kích hoạt lại'} nhân viên có id ${staffId} thành công `);
+        alert(`${status === 'BANNED' ? 'Nghỉ việc' : 'Kích hoạt lại'} nhân viên có id ${staffId} thành công `);
         setLoading(pre => !pre); 
       } else {
-        alert(`${status === 'BANNED' ? 'Xóa' : 'Kích hoạt lại'} nhân viên có id ${staffId} thất bại`);
+        alert(`${status === 'BANNED' ? 'Nghỉ việc' : 'Kích hoạt lại'} nhân viên có id ${staffId} thất bại`);
       }
     }
   };
@@ -301,10 +301,20 @@ export default function ManagementUser() {
                         <tr key={user.phoneNumber || index}>
                           <td>{user.name}</td>
                           <td>
-                            {user.roleName === 'STAFF' 
-                              ? `NHÂN VIÊN ${stationName ? `(${stationName})` : '(Chưa gán trạm)'}` 
-                              : user.roleName === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI XẾ'
-                            }
+                           {user.roleName === 'STAFF' ? (
+  <div>
+    NHÂN VIÊN
+    {stationName ? (
+      <div style={{ fontSize: '0.9em', color: '#666' }}>({stationName})</div>
+    ) : (
+      ' (Chưa gán trạm)'
+    )}
+  </div>
+) : user.roleName === 'ADMIN' ? (
+  'QUẢN TRỊ VIÊN'
+) : (
+  'TÀI XẾ'
+)}
                           </td>
                           <td>{user.phoneNumber}</td>
                           <td>{user.email}</td>
@@ -315,16 +325,17 @@ export default function ManagementUser() {
                             {user.roleName === 'STAFF' && user.status === 'ACTIVE' &&(
                               <div className="action-buttons">
                                 <button className="btn-delete" onClick={() => handleStatusStaff(user.userId, 'BANNED')}>
-                                  Xóa
+                                  Nghỉ việc
                                 </button> 
                                 
                                 <button 
                                   className="btn-transfer" 
                                   onClick={() => handleTransferStaff(staffRecord)} 
+                                  style={{width: '120px'}}
                                   disabled={isLoadingTransfer || !staffRecord} 
                                   title={!staffRecord ? "Không tìm thấy dữ liệu staff, không thể chuyển công tác" : "Chuyển công tác"}
                                 >
-                                  {isLoadingTransfer ? 'Đang tải...' : 'Công tác'}
+                                  {isLoadingTransfer ? 'Đang tải...' : 'Chuyển công tác'}
                                 </button> 
                               </div>
                             )}

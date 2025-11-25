@@ -7,7 +7,6 @@ import { useState } from 'react';
 
 export default function Header() {
     const role = localStorage.getItem('role') || null;
-    const user = localStorage.getItem('userDetails') ? JSON.parse(localStorage.getItem('userDetails')) : null;
     const [formProfile , setFormProfile] = useState(false);
 
     const closeProfile = () => {
@@ -24,7 +23,7 @@ export default function Header() {
         </div>
         <div className="header-right">
             <img src={icon_user} onClick={() => setFormProfile(true)}  alt="Icon User" />
-            <h1>Chào mừng {user?.name || role === 'ADMIN'? "quản trị viên" : "nhân viên"} trở lại hệ thống!</h1>             
+            <h1>Chào mừng {(role === 'STAFF' ? "nhân viên" : role === "ADMIN" ? "quản trị viên" : "người dùng")} trở lại hệ thống!</h1>             
         </div>
     </div>}
     </>

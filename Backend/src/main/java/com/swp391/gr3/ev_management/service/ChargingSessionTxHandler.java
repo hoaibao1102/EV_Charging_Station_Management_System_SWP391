@@ -76,8 +76,28 @@ public class ChargingSessionTxHandler {
 
         // ---- Lấy thông tin slot/window để áp dụng quy tắc tính phí ----
         // 6️⃣ Tính windowStart/windowEnd cho phiên sạc theo booking (dùng để xác định khung tính giờ)
-        LocalDateTime windowStart = resolveWindowStartForTx(booking); // 🆕 helper
-        LocalDateTime windowEnd   = resolveWindowEndForTx(booking);   // 🆕 helper
+        LocalDateTime rawWindowStart = resolveWindowStartForTx(booking);
+        LocalDateTime windowEnd      = resolveWindowEndForTx(booking);
+
+        // Xác định thời điểm tạo booking (tuỳ tên field của bạn)
+        LocalDateTime bookingCreatedAt = booking.getCreatedAt(); // hoặc booking.getCreatedTime()
+
+        // Mặc định dùng slot start
+        LocalDateTime effectiveWindowStart = rawWindowStart;
+
+        // Nếu user BOOK SAU giờ slot => dịch mốc tính phí lên thời điểm book
+        if (bookingCreatedAt != null && bookingCreatedAt.isAfter(rawWindowStart)) {
+            effectiveWindowStart = bookingCreatedAt;
+        }
+
+        // Không cho mốc tính phí nằm sau thời điểm bắt đầu sạc thực tế
+        // (tránh case book xong 30 phút sau mới cắm sạc, mà mình vẫn muốn time tính từ lúc bắt đầu sạc)
+        if (effectiveWindowStart.isAfter(cs.getStartTime())) {
+            effectiveWindowStart = cs.getStartTime();
+        }
+
+        // Dùng effectiveWindowStart thay cho windowStart cũ
+        LocalDateTime windowStart = effectiveWindowStart;
 
         // 7️⃣ Tính tổng thời lượng phiên sạc (phút) và tổng thời lượng khung booking (phút)
         long sessionMinutes = Math.max(0, ChronoUnit.MINUTES.between(cs.getStartTime(), endTime));
