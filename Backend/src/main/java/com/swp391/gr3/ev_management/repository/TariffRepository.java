@@ -91,6 +91,26 @@ public interface TariffRepository extends JpaRepository<Tariff,Long> {
     List<Tariff> findActiveByConnectorType(@Param("connectorTypeId") Long connectorTypeId,
                                            @Param("now") LocalDateTime now);
 
+    /**
+     * ✅ Tìm giá cước tính theo phút (pricePerMin) của biểu phí đang hoạt động
+     * cho một loại cổng sạc tại thời điểm cụ thể.
+     * 👉 Ý nghĩa:
+     * - Mỗi biểu phí có giá tính theo phút (pricePerMin) và thời gian hiệu lực.
+     * - Phương thức này tìm giá tính theo phút của biểu phí mà thời gian hiện tại
+     *   nằm trong khoảng thời gian hiệu lực đó.
+     * - Nếu có nhiều bản ghi hợp lệ, nó sẽ lấy bản có ngày bắt đầu mới nhất.
+     * ⚙️ Query SQL:
+     * SELECT TOP 1 price_per_min
+     * FROM tariffs
+     * WHERE connector_typeid = :connectorId
+     *   AND effective_from <= :now
+     *   AND effective_to >= :now
+     * ORDER BY effective_from DESC;
+     * 💡 Dùng khi bạn cần xác định giá tính theo phút hiện hành của một đầu sạc tại thời điểm tính toán.
+     * @param connectorId ID của loại đầu nối (ConnectorType)
+     * @param now thời điểm hiện tại
+     * @return Optional chứa giá tính theo phút nếu có
+     */
     @Query(value = """
     SELECT TOP 1 t.price_per_min
     FROM tariffs t           -- ✅ đúng tên bảng trong DB (snake_case, số nhiều)
@@ -104,4 +124,28 @@ public interface TariffRepository extends JpaRepository<Tariff,Long> {
             @Param("connectorId") Long connectorId,
             @Param("now") LocalDateTime now
     );
+
+    /**
+     * ✅ Lấy tất cả biểu phí (Tariff) theo loại cổng sạc (ConnectorType),
+     * sắp xếp theo ID biểu phí giảm dần (mới nhất trước).
+     *
+     * 👉 Ý nghĩa:
+     * - Dùng để hiển thị hoặc quản lý tất cả các biểu phí liên quan đến một loại cổng sạc cụ thể.
+     *
+     * ⚙️ JPQL Query:
+     * SELECT t
+     * FROM Tariff t
+     * WHERE t.connectorType.connectorTypeId = :typeId
+     * ORDER BY t.tariffId DESC;
+     *
+     * @param typeId ID của loại cổng sạc
+     * @return danh sách biểu phí theo loại cổng sạc
+     */
+    @Query("""
+        select t
+        from Tariff t
+        where t.connectorType.connectorTypeId = :typeId
+        order by t.tariffId desc
+    """)
+    List<Tariff> findTariffByConnectorType(@Param("typeId") Long typeId);
 }

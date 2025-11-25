@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.dto.request.*;
 import com.swp391.gr3.ev_management.dto.response.*;
 import com.swp391.gr3.ev_management.service.ChargingSessionService;
 import com.swp391.gr3.ev_management.service.DriverService;
+import com.swp391.gr3.ev_management.service.InvoiceService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,8 +24,9 @@ import java.util.List;
 @RequiredArgsConstructor // ✅ Lombok: tự động tạo constructor cho các field final (Dependency Injection)
 public class DriverController {
 
-    private final DriverService driverService; // ✅ Service xử lý nghiệp vụ liên quan đến tài xế
-    private final TokenService tokenService;   // ✅ Service dùng để lấy userId từ token đăng nhập
+    private final DriverService driverService;      // ✅ Service xử lý nghiệp vụ liên quan đến tài xế
+    private final TokenService tokenService;        // ✅ Service dùng để lấy userId từ token đăng nhập
+    private final InvoiceService invoiceService;    // ✅ Service xử lý nghiệp vụ liên quan đến hóa đơn
 
     // =========================================================================
     // ✅ 1. DRIVER CẬP NHẬT HỒ SƠ CỦA CHÍNH MÌNH
@@ -161,5 +163,25 @@ public class DriverController {
         Long userId = tokenService.extractUserIdFromRequest(request); // 🟢 Lấy userId driver
         List<ChargingSessionBriefResponse> result = driverService.getMyChargingSessions(userId); // 🟢 Lấy danh sách phiên sạc của driver
         return ResponseEntity.ok(result); // 🟢 Trả về danh sách các phiên sạc
+    }
+
+
+    // =========================================================================
+    // ✅ 10. DRIVER XEM CHI TIẾT HÓA ĐƠN
+    // =========================================================================
+    @GetMapping("/{invoiceId}") // 🔗 GET /api/driver/{invoiceId}
+    @PreAuthorize("hasRole('DRIVER')") // 🔒 Chỉ DRIVER mới được xem chi tiết hóa đơn của chính mình
+    @Operation(
+            summary = "Get invoice detail",
+            description = "Driver retrieves detailed information of a specific invoice by its ID"
+    )
+    public DriverInvoiceDetail getInvoiceDetail(
+            @PathVariable Long invoiceId,
+            HttpServletRequest request) {
+
+        // Lấy userId từ Access Token
+        Long userId = tokenService.extractUserIdFromRequest(request);
+
+        return invoiceService.getDetail(invoiceId, userId); // Trả về chi tiết hóa đơn
     }
 }

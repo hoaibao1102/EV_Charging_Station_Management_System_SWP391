@@ -28,4 +28,6 @@ public interface TariffService {
     Collection<Tariff> findActiveByConnectorType(Long connectorTypeId, LocalDateTime pricingTime);
 
     Optional<Double> findPricePerMinActive(Long connectorTypeId, LocalDateTime now);
+
+    Collection<Tariff> findTariffByConnectorType(Long connectorTypeId);
 }
