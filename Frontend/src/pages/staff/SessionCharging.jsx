@@ -242,6 +242,13 @@ export default function SessionCharging() {
         <h2>Quản lý phiên sạc</h2>
         <div>
           <button
+            style={{ marginRight: "10px" }}
+            className="btn-add-staff"
+            onClick={() => navigate(paths.instantCharging)}
+          >
+            ➕ Tạo phiên sạc
+          </button>
+          <button
             className="btn-add-staff"
             onClick={() =>
               navigate(paths.manageSessionChargingCreate, {

@@ -46,6 +46,7 @@ export const paths = {
   manageTransaction: "/staff/manage-transaction",
   reportAccidents: "/staff/report-accidents",
   incidents: "/staff/incidents",
+  instantCharging: "/staff/instant-charging",
 };
 
 export default paths;
