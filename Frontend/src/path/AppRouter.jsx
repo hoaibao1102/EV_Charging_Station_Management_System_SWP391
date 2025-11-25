@@ -55,6 +55,7 @@ import SessionCharging from "../pages/staff/SessionCharging.jsx";
 import SessionChargingCreate from "../pages/staff/SessionChargingCreate.jsx";
 import StaffDashboard from "../pages/staff/StaffDashboard.jsx";
 import Triplet from "../pages/staff/Triplet.jsx";
+import InstantCharging from "../pages/staff/InstantCharging.jsx";
 
 const AppRouter = () => {
   return (
@@ -158,6 +159,7 @@ const AppRouter = () => {
             />
             <Route path={paths.reportAccidents} element={<ReportAccidents />} />
             <Route path={paths.incidents} element={<Triplet />} />
+            <Route path={paths.instantCharging} element={<InstantCharging />} />
           </Route>
         </Route>
 

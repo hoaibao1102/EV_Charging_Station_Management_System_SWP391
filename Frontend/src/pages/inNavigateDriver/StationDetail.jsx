@@ -4,6 +4,7 @@ import "./StationDetail.css";
 import { stationAPI } from "../../api/stationApi.js";
 import { getMyVehiclesApi } from "../../api/driverApi.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
+import {getAllTariffs} from "../../api/tariffApi.js";
 
 const StationDetail = () => {
   const { id } = useParams();
@@ -17,6 +18,7 @@ const StationDetail = () => {
   const [connectorTypes, setConnectorTypes] = useState([]);
   const [expandedPoint, setExpandedPoint] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [price, setPrice] = useState(null);
 
   // ====== Fetch dữ liệu ======
   useEffect(() => {
@@ -98,9 +100,22 @@ const StationDetail = () => {
     fetchData();
   }, [id, isLoggedIn]);
 
-  // ====== Tìm thông tin connector theo connectorTypeId ======
+  // lấy ra giá tiền 
+  useEffect(() => {
+    const fetchPrice = async () => {  
+      try { 
+        const priceRes = await getAllTariffs();
+        setPrice(priceRes.data);
+        console.log("💰 Giá tải về:", priceRes.data);
+      } catch (error) {
+        console.error("❌ Lỗi khi tải giá:", error);
+      }
+    };
+    fetchPrice();
+  }, []);
+
+
   const getConnectorDetail = (connectorTypeId) => {
-    // Flexible lookup since API field names / formats can vary (id vs code vs displayName)
     if (!connectorTypes || connectorTypes.length === 0) return null;
 
     const searchRaw = connectorTypeId;
@@ -553,6 +568,16 @@ const StationDetail = () => {
                   <p>{status === "available" ? "Sẵn sàng" : status}</p>
                 </div>
                 <div className={`status-dot ${status?.toLowerCase()}`}></div>
+                <div className="price-info">
+                  {price ? (
+                    <>
+                      <span>💰 Giá theo kWh: {price.find(t => t.connectorTypeName === point.connectorType)?.pricePerKWh || "Đang cập nhật"} VND/kWh</span><br />
+                      <span>💰  Giá theo phút: {price.find(t => t.connectorTypeName === point.connectorType)?.pricePerMin || "Đang cập nhật"} VND/phút</span>
+                    </>
+                  ) : (
+                    <span>💰 Giá: Đang tải...</span>
+                  )}
+                </div>
               </div>
 
               <div className="point-meta">
