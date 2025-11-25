@@ -12,7 +12,7 @@ export default function Stations() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const itemsPerPage = 6;
 
   // ===== Lấy vị trí hiện tại của người dùng =====
   useEffect(() => {
@@ -227,7 +227,7 @@ export default function Stations() {
         {filteredStations.length > itemsPerPage && (
           <div className="pagination-container">
             <button className="page-btn" onClick={handlePrevPage}>
-              ◀
+              ❮
             </button>
             <div className="page-dots">
               {Array.from({ length: totalPages }, (_, i) => (
@@ -239,7 +239,7 @@ export default function Stations() {
               ))}
             </div>
             <button className="page-btn" onClick={handleNextPage}>
-              ▶
+              ❯
             </button>
           </div>
         )}
