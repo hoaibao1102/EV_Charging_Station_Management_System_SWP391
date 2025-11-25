@@ -643,7 +643,7 @@ const Register = () => {
             <button
               type="button"
               className="auth-social-btn google"
-              onClick={() => (window.location.href = "https://guru-spirits-verified-uniprotkb.trycloudflare.com/oauth2/authorization/google")}
+              onClick={() => (window.location.href = "http://localhost:8080/oauth2/authorization/google")}
             >
               <span className="auth-social-icon">G</span>
             </button>

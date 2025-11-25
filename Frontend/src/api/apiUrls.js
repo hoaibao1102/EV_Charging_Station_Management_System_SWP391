@@ -1,7 +1,7 @@
 import axios from "axios";
 import { clearAuthData } from "../utils/authUtils.js";
 
-const API_BASE_URL = "https://guru-spirits-verified-uniprotkb.trycloudflare.com";
+const API_BASE_URL = "http://localhost:8080";
 
 // Khởi tạo Axios Instance
 const apiClient = axios.create({
