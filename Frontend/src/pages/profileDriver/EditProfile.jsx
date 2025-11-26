@@ -30,6 +30,8 @@ export default function EditProfile() {
         try {
             const response = await updateProfileApi(form);
             if (response.success) {
+                // Update localStorage with new profile data
+                localStorage.setItem("userDetails", JSON.stringify(form));
                 toast.success("Cập nhật thông tin cá nhân thành công!"); 
                 navigate('/profile/information');
             } else {
