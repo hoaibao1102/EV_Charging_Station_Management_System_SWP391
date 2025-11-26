@@ -24,7 +24,7 @@ public class Notification {
     private Long notiId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", nullable = false)
+    @JoinColumn(name = "UserID", nullable = true)
     @JsonIgnoreProperties({"notifications"}) // 👈 tránh vòng lặp ngược
     private User user;
 

@@ -61,8 +61,11 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse createBooking(CreateBookingRequest request) {
         // 1️⃣ Lấy thông tin xe theo vehicleId từ request
         // Nếu không tồn tại UserVehicle tương ứng -> ném ErrorException
-        UserVehicle vehicle = userVehicleService.findById(request.getVehicleId())
-                .orElseThrow(() -> new ErrorException("Vehicle not found"));
+        UserVehicle vehicle = null;
+        if (request.getVehicleId() != null) {
+            vehicle = userVehicleService.findById(request.getVehicleId())
+                    .orElseThrow(() -> new ErrorException("Vehicle not found"));
+        }
 
         // 2️⃣ Lấy danh sách SlotAvailability dựa trên danh sách slotIds client gửi lên
         List<SlotAvailability> slots = slotAvailabilityService.findAllById(request.getSlotIds());
@@ -183,15 +186,27 @@ public class BookingServiceImpl implements BookingService {
 
         // Tạo Notification xác nhận booking cho user sở hữu xe
         Notification noti = new Notification();
-        // booking.getVehicle().getDriver().getUser(): lấy User từ Booking -> Vehicle -> Driver -> User
-        noti.setUser(booking.getVehicle().getDriver().getUser());
+
+        User user = null;
+        if (booking.getVehicle() != null &&
+                booking.getVehicle().getDriver() != null &&
+                booking.getVehicle().getDriver().getUser() != null) {
+
+            user = booking.getVehicle().getDriver().getUser();
+        }
+
+        if (user != null) {
+            noti.setUser(user);
+        }
+
         noti.setTitle("Xác nhận đặt chỗ #" + booking.getBookingId());
         noti.setContentNoti("Trạm: " + stationName + " | Khung giờ: " + timeRange
                 + " | Cổng: " + slot.getChargingPoint().getConnectorType().getDisplayName());
-        noti.setType(NotificationTypes.BOOKING_CONFIRMED); // loại thông báo: xác nhận booking
-        noti.setStatus(Notification.STATUS_UNREAD);         // trạng thái: chưa đọc
-        noti.setBooking(booking);                           // gắn booking liên quan
-        notificationsService.save(noti);                    // lưu thông báo
+        noti.setType(NotificationTypes.BOOKING_CONFIRMED);
+        noti.setStatus(Notification.STATUS_UNREAD);
+        noti.setBooking(booking);
+
+        notificationsService.save(noti);
 
         // Xóa log cũ của booking này (nếu tồn tại) để tránh duplicate khi confirm nhiều lần
         if (bookingSlotLogRepository.existsByBooking_BookingId(bookingId)) {

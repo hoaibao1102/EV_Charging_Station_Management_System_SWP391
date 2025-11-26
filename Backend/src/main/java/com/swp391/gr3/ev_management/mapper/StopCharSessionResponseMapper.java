@@ -37,11 +37,18 @@ public class StopCharSessionResponseMapper {
             Booking booking,
             String pointNumber
     ) {
+
+        // ===== SAFE GETTER FOR VEHICLE =====
+        String vehiclePlate =
+                (booking.getVehicle() != null)
+                        ? booking.getVehicle().getVehiclePlate()
+                        : "Unknown";
+
         return StopCharSessionResponse.builder()
                 .sessionId(cs.getSessionId())
                 .stationName(booking.getStation().getStationName())
                 .pointNumber(pointNumber)
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
+                .vehiclePlate(vehiclePlate)
                 .startTime(cs.getStartTime())
                 .endTime(cs.getEndTime())
                 .durationMinutes(cs.getDurationMinutes())

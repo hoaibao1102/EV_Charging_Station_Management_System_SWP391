@@ -33,14 +33,14 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     @Query("""
     select cs
     from ChargingSession cs
-    join fetch cs.booking b
-    join fetch b.vehicle v
-    join fetch v.driver d
-    join fetch d.user u
-    left join fetch b.bookingSlots bs
-    left join fetch bs.slot s
-    left join fetch s.chargingPoint cp
-    left join fetch cp.connectorType ct
+        left join fetch cs.booking b
+        left join fetch b.vehicle v
+        left join fetch v.driver d
+        left join fetch d.user u
+        left join fetch b.bookingSlots bs
+        left join fetch bs.slot s
+        left join fetch s.chargingPoint cp
+        left join fetch cp.connectorType ct
     where cs.sessionId = :sessionId
 """)
     Optional<ChargingSession> findByIdWithBookingVehicleDriverUser(Long sessionId);
@@ -48,13 +48,13 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     // ✅ Lấy 1 phiên sạc và "chủ sở hữu" (user) của nó (đi sâu qua booking→vehicle→driver→user)
     //    Phù hợp để kiểm tra quyền sở hữu, hiển thị lịch sử, v.v.
     @Query("""
-        select s from ChargingSession s
-          join fetch s.booking b
-          join fetch b.vehicle v
-          join fetch v.driver d
-          join fetch d.user u
-        where s.sessionId = :sid
-    """)
+    select s from ChargingSession s
+      left join fetch s.booking b
+      left join fetch b.vehicle v
+      left join fetch v.driver d
+      left join fetch d.user u
+    where s.sessionId = :sid
+""")
     Optional<ChargingSession> findWithOwnerById(@Param("sid") Long sessionId);
 
     // ✅ Lấy tất cả phiên sạc của một trạm (theo stationId) sắp xếp theo startTime giảm dần

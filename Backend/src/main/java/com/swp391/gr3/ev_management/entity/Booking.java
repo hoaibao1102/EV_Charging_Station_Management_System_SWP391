@@ -28,7 +28,7 @@ public class Booking {
     private ChargingStation station;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "VehicleID", nullable = false)
+    @JoinColumn(name = "VehicleID", nullable = true)
     private UserVehicle vehicle;
 
 

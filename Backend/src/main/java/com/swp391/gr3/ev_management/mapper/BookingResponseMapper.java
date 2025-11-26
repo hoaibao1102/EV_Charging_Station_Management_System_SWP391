@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.BookingSlot;
 import com.swp391.gr3.ev_management.entity.SlotAvailability;
+import com.swp391.gr3.ev_management.entity.UserVehicle;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -57,9 +58,17 @@ public class BookingResponseMapper {
     /** Response khi tạo booking (nhiều slot). */
     public BookingResponse forCreate(Booking booking, List<SlotAvailability> slots, double price) {
         var first = slots.get(0);
+
+        UserVehicle vehicle = booking.getVehicle();
+        String vehicleName = null;
+
+        if (vehicle != null && vehicle.getModel() != null) {
+            vehicleName = vehicle.getModel().getModel();
+        }
+
         return BookingResponse.builder()
                 .bookingId(booking.getBookingId())
-                .vehicleName(booking.getVehicle().getModel().getModel())
+                .vehicleName(vehicleName)
                 .stationName(first.getTemplate().getConfig().getStation().getStationName())
                 .slotName(buildSlotNameFromAvailabilities(slots))
                 .connectorType(first.getChargingPoint().getConnectorType().getDisplayName())
@@ -72,9 +81,16 @@ public class BookingResponseMapper {
 
     /** Response khi confirm (một slot đại diện). */
     public BookingResponse forConfirm(Booking booking, SlotAvailability slot, double price, String timeRange) {
+
+        String vehicleName = "N/A";
+        if (booking.getVehicle() != null &&
+                booking.getVehicle().getModel() != null) {
+            vehicleName = booking.getVehicle().getModel().getModel();
+        }
+
         return BookingResponse.builder()
                 .bookingId(booking.getBookingId())
-                .vehicleName(booking.getVehicle().getModel().getModel())
+                .vehicleName(vehicleName)
                 .stationName(slot.getTemplate().getConfig().getStation().getStationName())
                 .slotName("Slot " + slot.getSlotId())
                 .connectorType(slot.getChargingPoint().getConnectorType().getDisplayName())

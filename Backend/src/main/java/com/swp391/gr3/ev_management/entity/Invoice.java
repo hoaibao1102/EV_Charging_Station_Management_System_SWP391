@@ -48,7 +48,7 @@ public class Invoice {
 
     //
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DriverID", nullable = false)
+    @JoinColumn(name = "DriverID", nullable = true)
     private Driver driver;
 
     @OneToOne(fetch = FetchType.LAZY)

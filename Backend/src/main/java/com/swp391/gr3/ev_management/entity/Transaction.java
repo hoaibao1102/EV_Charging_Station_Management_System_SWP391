@@ -51,7 +51,7 @@ public class Transaction {
 
     //TODO: transaction có quan hệ với Driver hông ??
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DriverID", nullable = false)
+    @JoinColumn(name = "DriverID", nullable = true)
     private Driver driver;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -47,188 +47,138 @@ public class ChargingSessionTxHandler {
             Long sessionId,
             Integer finalSocIfAny,
             LocalDateTime endTime,
-            StopInitiator initiator // 🆕
+            StopInitiator initiator
     ) {
-        // 1️⃣ Lấy ChargingSession kèm theo Booking, Vehicle, Driver, User để dùng cho tính toán & notification
+        // 1) Lấy session + booking + vehicle + driver + user
         ChargingSession cs = chargingSessionRepository
                 .findByIdWithBookingVehicleDriverUser(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
 
-        // 2️⃣ Kiểm tra trạng thái phiên sạc, chỉ cho phép dừng nếu đang IN_PROGRESS
         if (cs.getStatus() != ChargingSessionStatus.IN_PROGRESS) {
             throw new ErrorException("Session is not currently active");
         }
 
-        // 3️⃣ Lấy Booking & User liên quan đến phiên sạc (dùng để cập nhật & gửi thông báo)
         Booking booking = cs.getBooking();
-        User user = booking.getVehicle().getDriver().getUser();
 
-        // 4️⃣ Đảm bảo đã có SOC ban đầu, nếu chưa có -> dữ liệu không hợp lệ
+        // ====== PHÒNG VỆ NPE: VEHICLE / DRIVER / USER ======
+        UserVehicle vehicle = booking.getVehicle();
+        Driver driver = (vehicle != null) ? vehicle.getDriver() : null;
+        User user = (driver != null) ? driver.getUser() : null;
+
+        if (vehicle == null) {
+            log.warn("[STOP] Booking {} has NO VEHICLE. Notifications & invoice will be skipped.", booking.getBookingId());
+        }
+        if (driver == null) {
+            log.warn("[STOP] Vehicle {} has NO DRIVER. Invoice driver=null.",
+                    vehicle != null ? vehicle.getVehicleId() : null);
+        }
+        if (user == null) {
+            log.warn("[STOP] No USER found → Notification disabled.");
+        }
+
+        // 2) initial soc
         Integer initialSoc = Optional.ofNullable(cs.getInitialSoc())
                 .orElseThrow(() -> new ErrorException("Initial SoC not recorded"));
 
-        // 5️⃣ Xác định SOC cuối
+        // 3) final soc
         int finalSoc = (finalSocIfAny != null) ? clampSoc(finalSocIfAny) : estimateFinalSoc(cs, endTime);
         if (finalSoc < initialSoc) finalSoc = initialSoc;
 
-        // ================== WINDOW / SLOT CONFIG ==================
-
-        // 6️⃣ Slot window gốc
+        // 4) Resolve windows
         LocalDateTime rawWindowStart = resolveWindowStartForTx(booking);
-        LocalDateTime windowEnd      = resolveWindowEndForTx(booking);
+        LocalDateTime windowEnd = resolveWindowEndForTx(booking);
 
-        // Thời điểm tạo booking
-        LocalDateTime bookingCreatedAt = booking.getCreatedAt();
-
-        // 🔥 Mốc tính phí = max(slotStart, bookingCreatedAt, startTime thực tế)
         LocalDateTime windowStart = rawWindowStart;
-        if (bookingCreatedAt != null && bookingCreatedAt.isAfter(windowStart)) {
-            windowStart = bookingCreatedAt;
+        if (booking.getCreatedAt() != null && booking.getCreatedAt().isAfter(windowStart)) {
+            windowStart = booking.getCreatedAt();
         }
         if (cs.getStartTime() != null && cs.getStartTime().isAfter(windowStart)) {
             windowStart = cs.getStartTime();
         }
 
         long sessionMinutes = Math.max(0, ChronoUnit.MINUTES.between(cs.getStartTime(), endTime));
-        long totalWindowMinutes = Math.max(0, ChronoUnit.MINUTES.between(windowStart, windowEnd)); // (hiện tại chưa dùng tới nhưng để lại cho dễ debug)
 
-        // ================== TARIFF + CONNECTOR ==================
-
+        // 5) Slot info
         var firstSlot = booking.getBookingSlots().stream()
                 .findFirst()
                 .orElseThrow(() -> new ErrorException("No slot found for booking"));
-        ChargingPoint point = firstSlot.getSlot().getChargingPoint();
+
+        ChargingPoint point = (firstSlot.getSlot() != null)
+                ? firstSlot.getSlot().getChargingPoint()
+                : null;
+
         String pointNumber = (point != null) ? point.getPointNumber() : "Unknown";
 
-        ConnectorType connectorType = (point != null && point.getConnectorType() != null)
-                ? point.getConnectorType()
-                : booking.getVehicle().getModel().getConnectorType();
+        // ====== PHÒNG VỆ CONNECTOR-TYPE NULL ======
+        ConnectorType connectorType =
+                (point != null && point.getConnectorType() != null)
+                        ? point.getConnectorType()
+                        : (vehicle != null && vehicle.getModel() != null)
+                        ? vehicle.getModel().getConnectorType()
+                        : null;
 
+        if (connectorType == null) {
+            log.warn("[STOP] connectorType NULL → free session.");
+            return forceCompleteWithoutBilling(cs, booking, user, pointNumber, initialSoc, finalSoc,
+                    0, sessionMinutes);
+        }
+
+        // ====== TARIFF ======
         LocalDateTime pricingTime = endTime;
-
         Tariff tariff = tariffService
                 .findTopByConnectorType_ConnectorTypeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByEffectiveFromDesc(
                         connectorType.getConnectorTypeId(), pricingTime, pricingTime)
-                .orElseGet(() -> tariffService.findActiveByConnectorType(connectorType.getConnectorTypeId(), pricingTime)
+                .orElseGet(() -> tariffService
+                        .findActiveByConnectorType(connectorType.getConnectorTypeId(), pricingTime)
                         .stream().findFirst().orElse(null));
 
         if (tariff == null) {
-            log.warn("[STOP] No active tariff for connectorTypeId={} at {}. Force complete with cost=0.",
-                    connectorType.getConnectorTypeId(), pricingTime);
+            log.warn("[STOP] No active tariff → free session.");
             return forceCompleteWithoutBilling(cs, booking, user, pointNumber, initialSoc, finalSoc,
-                    round2(((finalSoc - initialSoc) / 100.0) * booking.getVehicle().getModel().getBatteryCapacityKWh()),
-                    sessionMinutes);
+                    0, sessionMinutes);
         }
 
-        // ================== NĂNG LƯỢNG / SLOT ==================
+        // ====== ENERGY ======
 
-        double batteryCapacityKWh = booking.getVehicle().getModel().getBatteryCapacityKWh();
+        double batteryCapacity =
+                (vehicle != null && vehicle.getModel() != null)
+                        ? vehicle.getModel().getBatteryCapacityKWh()
+                        : 40.0; // default tránh NPE
+
         double deltaSoc = finalSoc - initialSoc;
-        double energyKWh = round2((deltaSoc / 100.0) * batteryCapacityKWh);
+        double energyKWh = round2((deltaSoc / 100.0) * batteryCapacity);
 
-        long slotMinutes = getSlotMinutes(booking);               // vd: 5 hoặc 60
-        int bookedSlots = booking.getBookingSlots() != null ? booking.getBookingSlots().size() : 0;
+        long slotMinutes = getSlotMinutes(booking);
+        int bookedSlots = booking.getBookingSlots().size();
 
-        long elapsedFromWindowStart = Math.max(0, ChronoUnit.MINUTES.between(windowStart, endTime));
+        double ratedKW = (point != null && point.getMaxPowerKW() > 0)
+                ? point.getMaxPowerKW()
+                : 11.0;
 
-        double ratedKW = 11.0;
-        if (booking.getBookingSlots() != null && !booking.getBookingSlots().isEmpty()) {
-            var bs0 = booking.getBookingSlots().get(0);
-            if (bs0.getSlot() != null && bs0.getSlot().getChargingPoint() != null) {
-                Double p = bs0.getSlot().getChargingPoint().getMaxPowerKW();
-                if (p != null && p > 0) ratedKW = p;
-            }
-        }
-
-        double efficiency = 0.90;
-        long chargingMinutesFromEnergy = (long) Math.ceil((energyKWh / (ratedKW * efficiency)) * 60.0);
+        long chargingMinutesFromEnergy = (long) Math.ceil((energyKWh / (ratedKW * 0.9)) * 60);
         long activeChargingMinutes = Math.min(sessionMinutes, chargingMinutesFromEnergy);
 
-        // ================== PRICING BLOCK ==================
-
+        // ====== PRICING ======
         double timeCost = 0.0;
         double energyCost = 0.0;
 
         if (initiator == StopInitiator.STAFF) {
-            // STAFF: tính đúng toàn bộ thời gian thực
             timeCost = round2(sessionMinutes * tariff.getPricePerMin());
-            energyCost = 0.0;
-
         } else if (initiator == StopInitiator.DRIVER) {
-            // DRIVER: hybrid (time + energy)
-
-            if (slotMinutes <= 0 || bookedSlots <= 0) {
-                long timeMinutes = Math.max(0, sessionMinutes - activeChargingMinutes);
-                timeCost = round2(timeMinutes * tariff.getPricePerMin());
-                energyCost = round2(energyKWh * tariff.getPricePerKWh());
-
-            } else {
-                // ⏱ Thời điểm xe FULL 100% (nếu có) – sau thời điểm này không phạt thêm time
-                LocalDateTime fullTime = null;
-                if (finalSoc >= 100 && deltaSoc > 0) {
-                    // phút để tăng từ initial -> final (đã clamp max 100)
-                    double socGainFraction = deltaSoc / 100.0;
-                    long fullMinutes = Math.round(
-                            (socGainFraction * batteryCapacityKWh) / (ratedKW * efficiency) * 60.0
-                    );
-                    fullTime = cs.getStartTime().plusMinutes(fullMinutes);
-                }
-                final LocalDateTime finalFullTime = fullTime;
-
-                // Thời điểm tối đa để tính phạt time = min(endTime, fullTime nếu có)
-                LocalDateTime endForPenalty =
-                        (finalFullTime != null && finalFullTime.isBefore(endTime)) ? finalFullTime : endTime;
-
-                // 🔹 Đếm slot thực sự bị "đụng tới"
-                long usedSlots = booking.getBookingSlots().stream()
-                        .map(bs -> bs.getSlot())
-                        .map(slot -> slot.getDate().with(slot.getTemplate().getStartTime()))
-                        .filter(slotStart -> endForPenalty.isAfter(slotStart))   // phải qua startTime slot
-                        .count();
-
-                // 🔹 Slot theo thời gian trôi qua (từ windowStart)
-                long elapsedForPenalty =
-                        Math.max(0, ChronoUnit.MINUTES.between(windowStart, endForPenalty));
-                long roundedSlotsByTime = (long) Math.ceil(
-                        (double) elapsedForPenalty / (double) slotMinutes
-                );
-
-                // 🔥 Số slot bị tính tiền = min(usedSlots, roundedSlotsByTime, bookedSlots)
-                long roundedSlots = Math.min(bookedSlots, Math.min(usedSlots, roundedSlotsByTime));
+            if (slotMinutes > 0 && bookedSlots > 0) {
+                long roundedSlots = (long) Math.ceil((double) sessionMinutes / slotMinutes);
                 long roundedMinutes = roundedSlots * slotMinutes;
-
-                // activeChargingMinutes cũng không được vượt quá khoảng [startTime, endForPenalty]
-                long maxChargingWindow =
-                        Math.max(0, ChronoUnit.MINUTES.between(cs.getStartTime(), endForPenalty));
-                long effectiveActiveChargingMinutes = Math.min(activeChargingMinutes, maxChargingWindow);
-
-                long timeMinutes = Math.max(0, roundedMinutes - effectiveActiveChargingMinutes);
-
-                timeCost = round2(timeMinutes * tariff.getPricePerMin());
-                energyCost = round2(energyKWh * tariff.getPricePerKWh());
-
-                log.info("[PRICING DRIVER] usedSlots={} roundedSlotsByTime={} roundedSlots={} " +
-                                "slotMinutes={} elapsedFromWindowStart={} elapsedForPenalty={} " +
-                                "activeChargingMinutes={} effectiveActiveChargingMinutes={} timeMinutes={} fullTime={}",
-                        usedSlots, roundedSlotsByTime, roundedSlots,
-                        slotMinutes, elapsedFromWindowStart, elapsedForPenalty,
-                        activeChargingMinutes, effectiveActiveChargingMinutes, timeMinutes, finalFullTime);
+                long penaltyMinutes = Math.max(0, roundedMinutes - activeChargingMinutes);
+                timeCost = round2(penaltyMinutes * tariff.getPricePerMin());
             }
-
+            energyCost = round2(energyKWh * tariff.getPricePerKWh());
         } else { // SYSTEM_AUTO
-            // Chỉ tính theo kWh
-            timeCost = 0.0;
-            energyCost = round2(tariff.getPricePerKWh() * energyKWh);
+            energyCost = round2(energyKWh * tariff.getPricePerKWh());
         }
 
         double totalCost = round2(timeCost + energyCost);
 
-        // ================== GIẢI PHÓNG SLOT & LƯU DB ==================
-
-        if (initiator == StopInitiator.DRIVER || initiator == StopInitiator.STAFF) {
-            releaseUnusedFutureSlots(booking, endTime);
-        }
-
+        // ====== SAVE SESSION ======
         cs.setEndTime(endTime);
         cs.setDurationMinutes((int) sessionMinutes);
         cs.setFinalSoc(finalSoc);
@@ -238,29 +188,34 @@ public class ChargingSessionTxHandler {
         chargingSessionRepository.save(cs);
         sessionSocCache.remove(cs.getSessionId());
 
+        // ====== UPDATE BOOKING ======
         booking.setStatus(BookingStatus.COMPLETED);
         bookingService.save(booking);
 
-        Notification done = new Notification();
-        done.setUser(user);
-        done.setBooking(booking);
-        done.setSession(cs);
-        done.setTitle("Kết thúc sạc #" + booking.getBookingId());
-        done.setContentNoti(
-                "Điểm sạc: " + pointNumber +
-                        " | Thời lượng: " + sessionMinutes + " phút" +
-                        " | Tăng SOC: " + initialSoc + "% → " + finalSoc + "%" +
-                        " | Năng lượng: " + energyKWh + " kWh" +
-                        " | Phí thời gian: " + timeCost + " " + tariff.getCurrency() +
-                        " | Phí điện năng: " + energyCost + " " + tariff.getCurrency() +
-                        " | Tổng: " + totalCost + " " + tariff.getCurrency()
-        );
-        done.setType(NotificationTypes.CHARGING_COMPLETED);
-        done.setStatus(Notification.STATUS_UNREAD);
-        done.setCreatedAt(LocalDateTime.now());
-        notificationsService.save(done);
-        eventPublisher.publishEvent(new NotificationCreatedEvent(done.getNotiId()));
+        // ====== NOTIFICATION (NULL-SAFE) ======
+        if (user != null) {
+            Notification done = new Notification();
+            done.setUser(user);
+            done.setBooking(booking);
+            done.setSession(cs);
+            done.setTitle("Kết thúc sạc #" + booking.getBookingId());
+            done.setContentNoti(
+                    "Điểm sạc: " + pointNumber +
+                            " | Thời lượng: " + sessionMinutes + " phút" +
+                            " | Tăng SOC: " + initialSoc + " → " + finalSoc +
+                            " | Năng lượng: " + energyKWh + " kWh" +
+                            " | Tổng phí: " + totalCost + " " + tariff.getCurrency()
+            );
+            done.setType(NotificationTypes.CHARGING_COMPLETED);
+            done.setStatus(Notification.STATUS_UNREAD);
+            done.setCreatedAt(LocalDateTime.now());
+            notificationsService.save(done);
+            eventPublisher.publishEvent(new NotificationCreatedEvent(done.getNotiId()));
+        } else {
+            log.warn("[STOP] Skip notification because USER == null");
+        }
 
+        // ====== INVOICE (driver có thể null) ======
         invoiceService.findBySession_SessionId(cs.getSessionId())
                 .ifPresent(i -> { throw new ErrorException("Invoice already exists for this session"); });
 
@@ -270,8 +225,15 @@ public class ChargingSessionTxHandler {
         invoice.setCurrency(tariff.getCurrency());
         invoice.setStatus(InvoiceStatus.UNPAID);
         invoice.setIssuedAt(LocalDateTime.now());
-        invoice.setDriver(booking.getVehicle().getDriver());
+
+        // driver null cũng lưu bình thường
+        invoice.setDriver(driver);
+
         invoiceService.save(invoice);
+
+        if (driver == null) {
+            log.warn("[STOP] Invoice created WITHOUT DRIVER for session {}", cs.getSessionId());
+        }
 
         return stopResponseMapper.mapWithTariff(cs, booking, pointNumber, tariff);
     }
