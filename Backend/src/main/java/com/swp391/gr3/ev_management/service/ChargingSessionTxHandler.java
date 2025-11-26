@@ -156,9 +156,11 @@ public class ChargingSessionTxHandler {
         double energyCost = 0.0;
 
         if (initiator == StopInitiator.STAFF) {
-            timeCost = round2(sessionMinutes * tariff.getPricePerMin());
+            // STAFF: tính phí theo năng lượng đã sạc
+            energyCost = round2(energyKWh * tariff.getPricePerKWh());
 
         } else if (initiator == StopInitiator.DRIVER) {
+            // DRIVER: vừa bị phạt thời gian chiếm chỗ, vừa tính theo kWh
             if (slotMinutes > 0 && bookedSlots > 0) {
                 long roundedSlots = (long) Math.ceil((double) sessionMinutes / slotMinutes);
                 long roundedMinutes = roundedSlots * slotMinutes;
@@ -168,6 +170,7 @@ public class ChargingSessionTxHandler {
             energyCost = round2(energyKWh * tariff.getPricePerKWh());
 
         } else { // SYSTEM_AUTO
+            // SYSTEM_AUTO: chỉ tính theo năng lượng
             energyCost = round2(energyKWh * tariff.getPricePerKWh());
         }
 
