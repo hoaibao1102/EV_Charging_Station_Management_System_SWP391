@@ -33,7 +33,7 @@ export default function SessionCharging() {
         if (sessions.length !== 0) setSessions([]);
         return;
       }
-      const data = res.data ?? res;
+      const data = res.data || res;
       const arr = Array.isArray(data) ? data : [data];
       // shallow compare lengths and JSON as fallback to avoid unnecessary re-renders
       const prev = sessions;
@@ -50,58 +50,41 @@ export default function SessionCharging() {
     }
   };
 
-  // init: find stationId (localStorage or API) and load sessions once
+  // init: ALWAYS get stationId from API to ensure correct station for current staff
   useEffect(() => {
     let mounted = true;
     const init = async () => {
       try {
-        const stored = localStorage.getItem("stationId");
-        if (stored) {
-          setStationId(stored);
-          try {
-            setLoading(true);
-            const r = await stationAPI.getChargingSessionsByStation(stored);
-            const d = r?.data ?? r;
-            const arr = Array.isArray(d) ? d : [d];
-            console.log("Loaded sessions for station from localStorage:", arr);
-            setSessions(arr);
-          } catch {
-            /* ignore init fetch errors */
-          } finally {
-            setLoading(false);
-          }
-          return;
-        }
-
+        setLoading(true);
+        // ✅ ALWAYS fetch current staff's station (không dùng localStorage)
         const res = await stationAPI.getStationStaffMe();
-        const staff = res?.data?.data ?? res?.data ?? res;
+        const staff = res?.data?.data || res?.data || res;
         const staffObj = Array.isArray(staff) ? staff[0] : staff;
-        const resolved =
-          staffObj?.stationId ??
-          staffObj?.station?.id ??
-          staffObj?.station_id ??
-          staffObj?.id ??
-          undefined;
+        const resolved = staffObj?.stationId || undefined;
+
         if (resolved && mounted) {
+          // ✅ Cập nhật localStorage với stationId MỚI của staff hiện tại
           localStorage.setItem("stationId", String(resolved));
           setStationId(String(resolved));
+
+          // ✅ Load sessions của trạm
           try {
-            setLoading(true);
-            const r2 = await stationAPI.getChargingSessionsByStation(
+            const r = await stationAPI.getChargingSessionsByStation(
               String(resolved)
             );
-            const d2 = r2?.data ?? r2;
-            const arr2 = Array.isArray(d2) ? d2 : [d2];
-            console.log("Loaded sessions for station:", arr2);
-            setSessions(arr2);
-          } catch {
-            /* ignore init fetch errors */
-          } finally {
-            setLoading(false);
+            const d = r?.data || r;
+            const arr = Array.isArray(d) ? d : [d];
+            setSessions(arr);
+          } catch (err) {
+            console.error("Error loading initial sessions:", err);
+            setSessions([]);
           }
         }
-      } catch {
-        console.warn("Could not init stationStaff in SessionCharging");
+      } catch (error) {
+        console.error("Could not init stationStaff in SessionCharging:", error);
+        toast.error("Không thể tải thông tin trạm sạc!");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -117,7 +100,7 @@ export default function SessionCharging() {
   }, []);
 
   const isOngoingStatus = (s) => {
-    const st = String(s?.status ?? "").toUpperCase();
+    const st = String(s?.status || "").toUpperCase();
     return (
       st === "IN_PROGRESS" ||
       st === "CHARGING" ||
@@ -132,7 +115,8 @@ export default function SessionCharging() {
   // polling: when there is any ongoing session, poll every POLL_MS to refresh the list
   // depend only on stationId and number of ongoing sessions to avoid effect churn
   useEffect(() => {
-    const sid = stationId ?? localStorage.getItem("stationId");
+    const sid = stationId;
+    console.log("SessionCharging: managing polling for stationId=", sid);
     if (!sid) return;
 
     const ongoingCount = ongoing.length;
@@ -222,11 +206,12 @@ export default function SessionCharging() {
           console.debug("Failed to remove live SOC:", err);
         }
 
-        // Reload sessions after stopping
-        const sid = stationId ?? localStorage.getItem("stationId");
-        if (sid) {
-          await loadSessionsForStation(sid);
-        }
+        // ✅ Navigate to Payment page with session data from API response
+        const sessionResult = response.data ?? response;
+        console.log("Staff stop response:", sessionResult);
+
+        // Navigate to payment to show final bill
+        navigate(paths.payment, { state: { sessionResult } });
       } else {
         toast.error(response.message || "Dừng phiên sạc thất bại!");
       }
@@ -234,6 +219,33 @@ export default function SessionCharging() {
       console.error("Error stopping session:", error);
       toast.error("Có lỗi xảy ra khi dừng phiên sạc!");
     }
+  };
+
+  // Handle click on completed session to view payment details
+  const handleCompletedSessionClick = (session) => {
+    // Navigate to Payment page with the completed session data
+    // Extract pointNumber from chargingPoint if available
+    const pointNumber =
+      session.pointNumber ||
+      session.chargingPoint?.pointNumber ||
+      session.chargingPoint?.chargingPointId ||
+      "-";
+
+    // Calculate pricePerKWh if not available
+    const pricePerKWh =
+      session.pricePerKWh ||
+      (session.cost && session.energyKWh && session.energyKWh > 0
+        ? session.cost / session.energyKWh
+        : null);
+
+    const sessionResult = {
+      ...session,
+      pointNumber,
+      pricePerKWh,
+    };
+
+    console.log("Viewing completed session:", sessionResult);
+    navigate(paths.payment, { state: { sessionResult } });
   };
 
   return (
@@ -326,28 +338,15 @@ export default function SessionCharging() {
                 </thead>
                 <tbody>
                   {ongoing.map((s, idx) => {
-                    const sessionId =
-                      s?.sessionId ??
-                      s?.sessionid ??
-                      s?.session_id ??
-                      s?.id ??
-                      `${idx}`;
-                    const bookingId =
-                      s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
-                    const cost = s?.cost ?? 0;
-                    const startTime = formatDate(s?.startTime ?? s?.start_time);
-                    const durationMinutes =
-                      s?.durationMinutes ??
-                      s?.duration_minutes ??
-                      s?.duration ??
-                      0;
-                    const energyKWh =
-                      s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
-                    const initialSoc =
-                      s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
-                    const finalSoc =
-                      s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
-                    const status = s?.status ?? "";
+                    const sessionId = s?.sessionId || `${idx}`;
+                    const bookingId = s?.bookingId || null;
+                    const cost = s?.cost || 0;
+                    const startTime = formatDate(s?.startTime);
+                    const durationMinutes = s?.durationMinutes || 0;
+                    const energyKWh = s?.energyKWh || 0;
+                    const initialSoc = s?.initialSoc || "-";
+                    const finalSoc = s?.finalSoc || "-";
+                    const status = s?.status || "";
                     const statusKey = String(status)
                       .toLowerCase()
                       .replace(/\s+/g, "_");
@@ -363,13 +362,13 @@ export default function SessionCharging() {
                       >
                         <td>{sessionId}</td>
                         <td>
-                          {Number(cost).toLocaleString()} {s?.currency ?? ""}
+                          {Number(cost).toLocaleString()} {s?.currency || ""}
                         </td>
                         <td>{startTime}</td>
                         <td>{durationMinutes}</td>
                         <td>{energyKWh}</td>
                         <td>{initialSoc}</td>
-                        <td>{finalSoc ?? "-"}</td>
+                        <td>{finalSoc}</td>
                         <td>{statusKey}</td>
                         <td>{bookingId}</td>
                         <td>
@@ -416,40 +415,31 @@ export default function SessionCharging() {
                 </thead>
                 <tbody>
                   {completed.map((s, idx) => {
-                    const sessionId =
-                      s?.sessionId ??
-                      s?.sessionid ??
-                      s?.session_id ??
-                      s?.id ??
-                      `${idx}`;
-                    const bookingId =
-                      s?.bookingId ?? s?.bookingid ?? s?.booking_id ?? null;
-                    const cost = s?.cost ?? 0;
-                    const startTime = formatDate(s?.startTime ?? s?.start_time);
-                    const endTime = formatDate(s?.endTime ?? s?.end_time);
-                    const durationMinutes =
-                      s?.durationMinutes ??
-                      s?.duration_minutes ??
-                      s?.duration ??
-                      0;
-                    const energyKWh =
-                      s?.energyKWh ?? s?.energykwh ?? s?.energy ?? 0;
-                    const initialSoc =
-                      s?.initialSoc ?? s?.initial_soc ?? s?.initial ?? "-";
-                    const finalSoc =
-                      s?.finalSoc ?? s?.final_soc ?? s?.final ?? "-";
-                    const status = s?.status ?? "";
+                    const sessionId = s?.sessionId || `${idx}`;
+                    const bookingId = s?.bookingId || null;
+                    const cost = s?.cost || 0;
+                    const startTime = formatDate(s?.startTime);
+                    const endTime = formatDate(s?.endTime);
+                    const durationMinutes = s?.durationMinutes || 0;
+                    const energyKWh = s?.energyKWh || 0;
+                    const initialSoc = s?.initialSoc || "-";
+                    const finalSoc = s?.finalSoc || "-";
+                    const status = s?.status || "";
                     const statusKey = String(status)
                       .toLowerCase()
                       .replace(/\s+/g, "_");
                     return (
-                      <tr key={sessionId}>
+                      <tr
+                        key={sessionId}
+                        onClick={() => handleCompletedSessionClick(s)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <td>{sessionId}</td>
                         <td>
-                          {Number(cost).toLocaleString()} {s?.currency ?? ""}
+                          {Number(cost).toLocaleString()} {s?.currency || ""}
                         </td>
                         <td>{startTime}</td>
-                        <td>{endTime ?? "-"}</td>
+                        <td>{endTime}</td>
                         <td>{durationMinutes}</td>
                         <td>{energyKWh}</td>
                         <td>{initialSoc}</td>

@@ -9,18 +9,11 @@ import "./Booking.css";
 
 // ===== Utility: chuẩn hóa 1 record slot từ API =====
 function normalizeSlotRecord(record, pointId, templateBase, templateMap) {
-  // API trả về: {templateid, slotid, status, date, pointid}
-  // Cần map slotid sang StartTime/EndTime (mỗi slot = 1 giờ)
-  // Hỗ trợ nhiều kiểu tên trường: slotId, slotid, SlotID, slot_id
-  const rawSlotId =
-    record?.slotid ?? record?.slotId ?? record?.SlotID ?? record?.slot_id;
+  // API trả về: {slotId, templateId, status, date, pointId}
+  const rawSlotId = record?.slotId;
 
-  // Template ID (nếu cần dùng làm phần id duy nhất)
-  const templateId =
-    record?.templateid ??
-    record?.templateId ??
-    record?.TemplateID ??
-    record?.template_id;
+  // Template ID
+  const templateId = record?.templateId;
 
   // Lấy template object từ map (nếu có)
   const template =
@@ -63,13 +56,16 @@ function normalizeSlotRecord(record, pointId, templateBase, templateMap) {
 
   // Nếu template có startTime/endTime thì ưu tiên dùng chúng (ISO string -> 'HH:MM')
   try {
-    if (template && (template.startTime || template.start)) {
-      const s = template.startTime ?? template.start;
-      const e = template.endTime ?? template.end;
+    if (template && template.startTime && template.endTime) {
       const sStr =
-        typeof s === "string" && s.length >= 16 ? s.slice(11, 16) : null;
+        typeof template.startTime === "string" &&
+        template.startTime.length >= 16
+          ? template.startTime.slice(11, 16)
+          : null;
       const eStr =
-        typeof e === "string" && e.length >= 16 ? e.slice(11, 16) : null;
+        typeof template.endTime === "string" && template.endTime.length >= 16
+          ? template.endTime.slice(11, 16)
+          : null;
       if (sStr && eStr) {
         timeRange = { start: sStr, end: eStr };
       }
@@ -80,12 +76,12 @@ function normalizeSlotRecord(record, pointId, templateBase, templateMap) {
 
   return {
     id: `${templateId || 1}-${slotNumber}`,
-    PointID: record?.pointid ?? record?.pointId ?? record?.PointID ?? pointId,
+    PointID: record?.pointId || pointId,
     SlotID: slotNumber,
     StartTime: timeRange.start,
     EndTime: timeRange.end,
-    Status: record?.status ?? record?.Status ?? "available",
-    Date: record?.date ?? record?.Date,
+    Status: record?.status || "available",
+    Date: record?.date,
     raw: record,
   };
 }
@@ -191,10 +187,7 @@ export default function Booking() {
     }
 
     // Build payload for booking API
-    const vehicleId =
-      bookingData?.vehicle?.vehicleId ??
-      bookingData?.vehicle?.vehicleID ??
-      bookingData?.vehicle?.id;
+    const vehicleId = bookingData?.vehicle?.vehicleId;
     if (!vehicleId) {
       toast.error("Không tìm thấy vehicleId để tạo booking", {
         position: "top-center",
@@ -202,21 +195,10 @@ export default function Booking() {
       return;
     }
 
-    // Prefer raw slot DB id if available (slotId / slotid / SlotID / slot_id). Fallback to normalized id or SlotID
+    // Get slotId from raw record
     const slotIds = selectedSlots
-      .map((s) => {
-        const r = s.raw ?? {};
-        return (
-          r?.slotId ??
-          r?.slotid ??
-          r?.SlotID ??
-          r?.slot_id ??
-          // If template-based id used as fallback, try numeric part of normalized id
-          (typeof s.id === "string" && Number(s.id.split("-")[0])) ??
-          s.SlotID
-        );
-      })
-      .map((v) => (v == null ? null : Number(v)))
+      .map((s) => s.raw?.slotId || s.SlotID)
+      .map((v) => Number(v))
       .filter((v) => Number.isFinite(v));
 
     if (slotIds.length === 0) {
@@ -243,7 +225,7 @@ export default function Booking() {
 
         if (!res || res.success === false) {
           console.error("❌ createBooking failed:", res);
-          const msg = res?.message ?? res;
+          const msg = res?.message || res;
           const text = typeof msg === "string" ? msg : JSON.stringify(msg);
           toast.error(text || "Đặt chỗ thất bại. Vui lòng thử lại.", {
             position: "top-center",
@@ -253,18 +235,11 @@ export default function Booking() {
 
         // Success
         toast.success("Đặt chỗ thành công!", { position: "top-center" });
-        const bookingObj = res.data ?? res;
-        const bookingId =
-          bookingObj?.bookingId ??
-          bookingObj?.bookingID ??
-          bookingObj?.id ??
-          bookingObj?.booking_id;
+        const bookingObj = res.data || res;
+        const bookingId = bookingObj?.bookingId;
 
         // ✅ Lưu maxPowerKW vào sessionStorage để ChargingSession dùng
-        const maxPowerKW =
-          bookingData?.chargingPoint?.maxPowerKW ??
-          bookingData?.connector?.defaultMaxPowerKW ??
-          11.0;
+        const maxPowerKW = bookingData?.chargingPoint?.maxPowerKW || 11.0;
 
         if (bookingId) {
           try {
@@ -325,20 +300,13 @@ export default function Booking() {
       const rows = Array.isArray(response?.data) ? response.data : [];
 
       const matchedRows = rows.filter((r) => {
-        const rowPointId = r?.pointid ?? r?.pointId ?? r?.PointID ?? r?.pointID;
-        return String(rowPointId) === String(pointId);
+        return String(r?.pointId) === String(pointId);
       });
 
       const templateIds = Array.from(
         new Set(
           matchedRows
-            .map(
-              (r) =>
-                r?.templateid ??
-                r?.templateId ??
-                r?.TemplateID ??
-                r?.template_id
-            )
+            .map((r) => r?.templateId)
             .filter((v) => v != null)
             .map((v) => String(v))
         )
@@ -362,11 +330,8 @@ export default function Booking() {
       }
 
       const numericTemplateIds = matchedRows
-        .map(
-          (r) =>
-            r?.templateid ?? r?.templateId ?? r?.TemplateID ?? r?.template_id
-        )
-        .map((v) => (v == null ? NaN : Number(v)))
+        .map((r) => r?.templateId)
+        .map((v) => Number(v))
         .filter((v) => Number.isFinite(v));
       const templateBase =
         numericTemplateIds.length > 0
