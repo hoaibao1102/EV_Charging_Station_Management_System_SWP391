@@ -32,4 +32,6 @@ public interface PaymentMethodService {
     Optional<PaymentMethod> findByMethodTypeAndProvider(@NotNull(message = "Payment method cannot be null") PaymentType paymentMethod, PaymentProvider paymentProvider);
 
     PaymentMethod save(PaymentMethod paymentMethod);
+
+    Optional<PaymentMethod> findByProvider(PaymentProvider evm);
 }

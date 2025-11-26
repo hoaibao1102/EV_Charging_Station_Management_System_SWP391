@@ -60,4 +60,6 @@ public interface PaymentMethodRepository extends JpaRepository<PaymentMethod,Lon
     boolean existsByMethodTypeAndProviderAndAccountNo(
             PaymentType methodType, PaymentProvider provider, String accountNo
     );
+
+    Optional<PaymentMethod> findByProvider(PaymentProvider evm);
 }

@@ -69,4 +69,6 @@ public interface ChargingPointRepository extends JpaRepository<ChargingPoint,Lon
     List<ChargingPoint> findByStation_StationIdAndConnectorType_ConnectorTypeId(
             Long station_stationId, Long connectorType_connectorTypeId
     );
+
+    Optional<ChargingPoint> findFirstByStation_StationId(Long stationId);
 }

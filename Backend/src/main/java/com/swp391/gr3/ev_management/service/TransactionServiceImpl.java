@@ -1,8 +1,11 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.entity.Transaction;
+import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
+import com.swp391.gr3.ev_management.repository.PaymentMethodRepository;
 import com.swp391.gr3.ev_management.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ public class TransactionServiceImpl implements TransactionService{
 
     // Repository thao tác DB cho bảng Transaction
     private final TransactionRepository transactionRepository;
+    private final PaymentMethodService paymentMethodService;
 
     /**
      * Lưu transaction mới vào database.
@@ -72,6 +76,11 @@ public class TransactionServiceImpl implements TransactionService{
     @Override
     public List<TransactionBriefResponse> findBriefByUserId(Long userId) {
         return transactionRepository.findBriefByUserId(userId);
+    }
+
+    @Override
+    public Optional<PaymentMethod> findByProvider(PaymentProvider evm) {
+        return paymentMethodService.findByProvider(evm);
     }
 
 }
