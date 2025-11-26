@@ -16,8 +16,8 @@ public class StopCharSessionResponseMapper {
             Tariff tariff
     ) {
         return base(cs, booking, pointNumber)
-                .pricePerKWh(tariff.getPricePerKWh())
-                .currency(tariff.getCurrency())
+                .pricePerKWh(tariff != null ? tariff.getPricePerKWh() : 0.0)
+                .currency(tariff != null ? tariff.getCurrency() : null)
                 .build();
     }
 
@@ -38,16 +38,22 @@ public class StopCharSessionResponseMapper {
             String pointNumber
     ) {
 
-        // ===== SAFE GETTER FOR VEHICLE =====
         String vehiclePlate =
-                (booking.getVehicle() != null)
+                (booking.getVehicle() != null && booking.getVehicle().getVehiclePlate() != null)
                         ? booking.getVehicle().getVehiclePlate()
                         : "Unknown";
 
+        String stationName =
+                (booking.getStation() != null && booking.getStation().getStationName() != null)
+                        ? booking.getStation().getStationName()
+                        : "Unknown";
+
+        String safePointNumber = (pointNumber != null) ? pointNumber : "Unknown";
+
         return StopCharSessionResponse.builder()
                 .sessionId(cs.getSessionId())
-                .stationName(booking.getStation().getStationName())
-                .pointNumber(pointNumber)
+                .stationName(stationName)
+                .pointNumber(safePointNumber)
                 .vehiclePlate(vehiclePlate)
                 .startTime(cs.getStartTime())
                 .endTime(cs.getEndTime())

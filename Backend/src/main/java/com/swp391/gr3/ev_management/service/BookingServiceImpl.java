@@ -2,9 +2,11 @@ package com.swp391.gr3.ev_management.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.request.LightBookingInfo;
@@ -29,9 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -262,29 +262,30 @@ public class BookingServiceImpl implements BookingService {
     /** 1) Build payload QR: gom dữ liệu Booking thành DTO -> JSON -> Base64 (URL-safe) */
     @Override
     public String buildQrPayload(Long bookingId) {
-        // Lấy booking theo id từ DB, nếu không có -> ném IllegalArgumentException
+        // Lấy booking theo id từ DB
         Booking b = bookingsRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found: " + bookingId));
+                .orElseThrow(() -> new ErrorException("Booking not found: " + bookingId));
 
-        // Tạo DTO BookingRequest (phiên bản rút gọn) để nhúng vào QR
+        // Null-safe cho station & vehicle
+        ChargingStation station = b.getStation();
+        UserVehicle vehicle = b.getVehicle();
+
         BookingRequest dto = new BookingRequest();
         dto.setBookingId(b.getBookingId());
-        dto.setStationId(b.getStation().getStationId()); // Lưu ID station, tránh nhúng nguyên object
-        dto.setVehicleId(b.getVehicle().getVehicleId());
+        dto.setStationId(station != null ? station.getStationId() : null);
+        // Cho phép vehicleId null (walk-in booking, hoặc chưa gán xe)
+        dto.setVehicleId(vehicle != null ? vehicle.getVehicleId() : null);
         dto.setBookingTime(b.getBookingTime());
         dto.setScheduledStartTime(b.getScheduledStartTime());
         dto.setScheduledEndTime(b.getScheduledEndTime());
-        dto.setStatus(String.valueOf(b.getStatus())); // chuyển trạng thái BookingStatus -> String
+        dto.setStatus(b.getStatus() != null ? b.getStatus().name() : null);
 
-        // Serialize DTO -> JSON -> mã hóa Base64 URL-safe (không padding)
-        // Lý do dùng Base64 URL-safe: tránh các ký tự đặc biệt khó encode vào QR/URL
         try {
-            String json = mapper.writeValueAsString(dto); // chuyển dto thành JSON
+            String json = mapper.writeValueAsString(dto);
             return Base64.getUrlEncoder()
-                    .withoutPadding() // bỏ padding '=' cho chuỗi gọn hơn
-                    .encodeToString(json.getBytes(StandardCharsets.UTF_8)); // mã hóa bytes UTF-8 -> Base64 URL-safe
+                    .withoutPadding()
+                    .encodeToString(json.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            // Nếu serialize thất bại -> ném ErrorException để xử lý phía trên
             throw new ErrorException("Failed to serialize QR payload");
         }
     }
@@ -292,17 +293,27 @@ public class BookingServiceImpl implements BookingService {
     /** 2) Sinh ảnh QR (PNG) từ chuỗi payload đã mã hóa */
     @Override
     public byte[] generateQrPng(String payload, int size) {
-        try {
-            // Tạo ma trận QR (BitMatrix) từ chuỗi payload, kích thước size x size
-            QRCodeWriter writer = new QRCodeWriter();
-            BitMatrix matrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size);
+        if (payload == null || payload.isBlank()) {
+            throw new ErrorException("QR payload is empty");
+        }
+        if (size <= 0) {
+            size = 320; // fallback size
+        }
 
-            // Dùng ByteArrayOutputStream để ghi ảnh QR dạng PNG vào mảng byte
+        try {
+            QRCodeWriter writer = new QRCodeWriter();
+
+            Map<EncodeHintType, Object> hints = new HashMap<>();
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+            hints.put(EncodeHintType.MARGIN, 1); // viền mỏng
+            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M); // cân bằng
+
+            BitMatrix matrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size, hints);
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
-            return baos.toByteArray(); // trả về byte[] của file PNG
+            return baos.toByteArray();
         } catch (Exception e) {
-            // Nếu có lỗi trong quá trình tạo QR -> ném ErrorException
             throw new ErrorException("Failed to generate QR image");
         }
     }
