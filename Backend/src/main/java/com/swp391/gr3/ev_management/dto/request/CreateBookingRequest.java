@@ -18,5 +18,4 @@ public class CreateBookingRequest {
     @NotEmpty(message = "Danh sách slot không được để trống")
     private List<Long> slotIds;
 
-    private LocalDateTime bookingTime;
 }

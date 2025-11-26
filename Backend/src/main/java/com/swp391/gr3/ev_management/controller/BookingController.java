@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.List;
 @RequestMapping("/api/bookings") // Prefix chung cho tất cả endpoint của controller này
 @RequiredArgsConstructor // Lombok: tự sinh constructor cho field final (dependency injection)
 @Tag(name = "Bookings", description = "APIs for managing bookings") // Swagger: mô tả nhóm API "Bookings"
+@Slf4j
 public class BookingController {
 
     private final BookingService bookingService; // Inject BookingService để xử lý nghiệp vụ đặt chỗ (booking)
@@ -76,6 +78,7 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             // ❌ Nếu có lỗi (ví dụ: station full, thời gian trùng, dữ liệu sai, ...), trả về HTTP 400
+            log.error("Create booking error", e); // thêm dòng này
             return ResponseEntity.badRequest().build();
         }
     }

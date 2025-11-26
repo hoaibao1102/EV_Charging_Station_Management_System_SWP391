@@ -211,7 +211,6 @@ export default function Booking() {
     const payload = {
       vehicleId: Number(vehicleId),
       slotIds: slotIds,
-      bookingTime: new Date().toISOString(),
     };
 
     console.log("📅 Booking payload:", payload);

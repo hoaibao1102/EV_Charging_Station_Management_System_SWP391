@@ -31,7 +31,7 @@ public interface TariffRepository extends JpaRepository<Tariff,Long> {
      * @param connectorType entity ConnectorType (cổng sạc)
      * @return Optional chứa biểu phí nếu có
      */
-    Optional<Tariff> findByConnectorType(ConnectorType connectorType);
+    List<Tariff> findByConnectorType(ConnectorType connectorType);
 
 
     /**
