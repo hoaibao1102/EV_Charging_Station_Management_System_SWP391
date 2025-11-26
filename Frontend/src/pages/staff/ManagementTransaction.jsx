@@ -82,6 +82,7 @@ export default function ManagementTransaction() {
 
     txList.forEach((tx) => {
       // Chỉ tính các giao dịch COMPLETED
+        console.log(tx);
       if (tx.status === "COMPLETED") {
         // Backend có thể trả về paymentMethodName hoặc description chứa thông tin
         // Giả định: nếu description chứa "VNPay" hoặc "VNPAY" → VNPay, còn lại → Cash

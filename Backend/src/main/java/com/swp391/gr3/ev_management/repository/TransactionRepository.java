@@ -148,7 +148,7 @@ where st.stationId = :stationId
     // ✅ Lấy giao dịch theo stationId và status
     @Query("""
 select new com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse(
-    t.transactionId, t.amount, t.currency, t.description, 
+    t.transactionId, t.amount, t.currency, t.description,
     t.status, t.createdAt,
     i.invoiceId, s.sessionId, b.bookingId,
     st.stationId, st.stationName,
@@ -180,4 +180,97 @@ where st.stationId = :stationId
     // ✅ Tính tổng doanh thu theo stationId và status
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t join t.invoice i join i.session s join s.booking b where b.station.stationId = :stationId and t.status = :status")
     Double sumAmountByStationIdAndStatus(@Param("stationId") Long stationId, @Param("status") TransactionStatus status);
+
+    // Đếm total transaction theo userId
+    @Query("""
+    SELECT COUNT(t)
+    FROM Transaction t
+    JOIN t.invoice i
+    JOIN i.session s
+    JOIN s.booking b
+    JOIN b.vehicle v
+    JOIN v.driver d
+    JOIN d.user u
+    WHERE u.userId = :userId
+""")
+    Long countByUserId(@Param("userId") Long userId);
+
+    // Đếm theo userId + status
+    @Query("""
+    SELECT COUNT(t)
+    FROM Transaction t
+    JOIN t.invoice i
+    JOIN i.session s
+    JOIN s.booking b
+    JOIN b.vehicle v
+    JOIN v.driver d
+    JOIN d.user u
+    WHERE u.userId = :userId
+      AND t.status = :status
+""")
+    Long countByUserIdAndStatus(@Param("userId") Long userId,
+                                @Param("status") TransactionStatus status);
+
+    // Tổng amount theo userId + status
+    @Query("""
+    SELECT COALESCE(SUM(t.amount), 0)
+    FROM Transaction t
+    JOIN t.invoice i
+    JOIN i.session s
+    JOIN s.booking b
+    JOIN b.vehicle v
+    JOIN v.driver d
+    JOIN d.user u
+    WHERE u.userId = :userId
+      AND t.status = :status
+""")
+    Double sumAmountByUserIdAndStatus(@Param("userId") Long userId,
+                                      @Param("status") TransactionStatus status);
+
+    // ✅ Lấy giao dịch theo userId (có phân trang)
+    @Query("""
+select new com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse(
+    t.transactionId, t.amount, t.currency, t.description,
+    t.status, t.createdAt,
+    i.invoiceId, s.sessionId, b.bookingId,
+    st.stationId, st.stationName,
+    v.vehicleId, v.vehiclePlate
+)
+from Transaction t
+join t.invoice i
+join i.session s
+join s.booking b
+join b.vehicle v
+join b.station st
+join v.driver d
+join d.user u
+where u.userId = :userId
+""")
+    Page<TransactionBriefResponse> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    // ✅ Lấy giao dịch theo userId + status (COMPLETED/PENDING/FAILED)
+    @Query("""
+select new com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse(
+    t.transactionId, t.amount, t.currency, t.description,
+    t.status, t.createdAt,
+    i.invoiceId, s.sessionId, b.bookingId,
+    st.stationId, st.stationName,
+    v.vehicleId, v.vehiclePlate
+)
+from Transaction t
+join t.invoice i
+join i.session s
+join s.booking b
+join b.vehicle v
+join b.station st
+join v.driver d
+join d.user u
+where u.userId = :userId
+  and t.status = :status
+""")
+    Page<TransactionBriefResponse> findByUserIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") TransactionStatus status,
+            Pageable pageable
+    );
 }

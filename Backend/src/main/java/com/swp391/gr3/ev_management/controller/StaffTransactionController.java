@@ -38,56 +38,88 @@ public class StaffTransactionController {
     private TokenService tokenService;
 
     // ✅ Lấy danh sách giao dịch của trạm (có phân trang, filter, sort)
-    @PreAuthorize("hasRole('STAFF')")
-    @GetMapping
-    @Operation(summary = "Get station transactions", description = "Staff retrieves all transactions of their assigned station")
-    public ResponseEntity<Page<TransactionBriefResponse>> getStationTransactions(
-            HttpServletRequest request,
-            @RequestParam(required = false) TransactionStatus status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String sortDir
-    ) {
-        // 🔑 Lấy userId từ token
-        Long userId = tokenService.extractUserIdFromRequest(request);
-
-        // 🏢 Lấy stationId của staff
-        Long stationId = stationStaffService.getStationIdByUserId(userId);
-
-        // 📄 Tạo Pageable
-        Pageable pageable;
-        if (sortBy != null && sortDir != null) {
-            Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-            pageable = PageRequest.of(page, size, sort);
-        } else {
-            pageable = PageRequest.of(page, size);
-        }
-
-        // 🔍 Lấy giao dịch
-        Page<TransactionBriefResponse> transactions;
-        if (status != null) {
-            transactions = staffTransactionService.getStationTransactionsByStatus(stationId, status, pageable);
-        } else {
-            transactions = staffTransactionService.getStationTransactions(stationId, pageable);
-        }
-        return ResponseEntity.ok(transactions);
-    }
+//    @PreAuthorize("hasRole('STAFF')")
+//    @GetMapping
+//    @Operation(summary = "Get station transactions", description = "Staff retrieves all transactions of their assigned station")
+//    public ResponseEntity<Page<TransactionBriefResponse>> getStationTransactions(
+//            HttpServletRequest request,
+//            @RequestParam(required = false) TransactionStatus status,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(required = false) String sortBy,
+//            @RequestParam(required = false) String sortDir
+//    ) {
+//        // 🔑 Lấy userId từ token
+//        Long userId = tokenService.extractUserIdFromRequest(request);
+//
+//        // 🏢 Lấy stationId của staff
+//        Long stationId = stationStaffService.getStationIdByUserId(userId);
+//
+//        // 📄 Tạo Pageable
+//        Pageable pageable;
+//        if (sortBy != null && sortDir != null) {
+//            Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+//            pageable = PageRequest.of(page, size, sort);
+//        } else {
+//            pageable = PageRequest.of(page, size);
+//        }
+//
+//        // 🔍 Lấy giao dịch
+//        Page<TransactionBriefResponse> transactions;
+//        if (status != null) {
+//            transactions = staffTransactionService.getStationTransactionsByStatus(stationId, status, pageable);
+//        } else {
+//            transactions = staffTransactionService.getStationTransactions(stationId, pageable);
+//        }
+//        return ResponseEntity.ok(transactions);
+//    }
 
     // ✅ Lấy thống kê giao dịch của trạm
+//    @PreAuthorize("hasRole('STAFF')")
+//    @GetMapping("/stats")
+//    @Operation(summary = "Get station transaction statistics", description = "Staff retrieves transaction statistics of their assigned station")
+//    public ResponseEntity<StaffTransactionStatsResponse> getStationStats(HttpServletRequest request) {
+//        // 🔑 Lấy userId từ token
+//        Long userId = tokenService.extractUserIdFromRequest(request);
+//
+//        // 🏢 Lấy stationId của staff
+//        Long stationId = stationStaffService.getStationIdByUserId(userId);
+//
+//        // 📊 Lấy thống kê
+//        StaffTransactionStatsResponse stats = staffTransactionService.getStationTransactionStats(stationId);
+//
+//        return ResponseEntity.ok(stats);
+//    }
+
     @PreAuthorize("hasRole('STAFF')")
     @GetMapping("/stats")
-    @Operation(summary = "Get station transaction statistics", description = "Staff retrieves transaction statistics of their assigned station")
+    @Operation(summary = "Get station transaction statistics",
+            description = "Staff retrieves transaction statistics of their assigned station")
     public ResponseEntity<StaffTransactionStatsResponse> getStationStats(HttpServletRequest request) {
-        // 🔑 Lấy userId từ token
         Long userId = tokenService.extractUserIdFromRequest(request);
 
-        // 🏢 Lấy stationId của staff
+        // TODO: đảm bảo method này hoạt động đúng
         Long stationId = stationStaffService.getStationIdByUserId(userId);
 
-        // 📊 Lấy thống kê
         StaffTransactionStatsResponse stats = staffTransactionService.getStationTransactionStats(stationId);
-
         return ResponseEntity.ok(stats);
+    }
+
+    @PreAuthorize("hasRole('STAFF')")
+    @GetMapping
+    public ResponseEntity<Page<TransactionBriefResponse>> getStaffTransactions(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) TransactionStatus status
+    ) {
+        Long userId = tokenService.extractUserIdFromRequest(request);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<TransactionBriefResponse> result =
+                staffTransactionService.getStaffTransactions(userId, status, pageable);
+
+        return ResponseEntity.ok(result);
     }
 }
