@@ -127,6 +127,32 @@ export default function SessionChargingCreate() {
     try {
       const response = await stationAPI.startChargingSession(payload);
       if (!response.success) throw new Error(response.message);
+
+      // ✅ Lưu pointNumber từ response vào sessionStorage
+      try {
+        const sessionData = response.data || response;
+        const sessionId = sessionData?.sessionId;
+        const pointNumber = sessionData?.pointNumber;
+
+        if (sessionId && pointNumber) {
+          sessionStorage.setItem(
+            `session_${sessionId}_pointNumber`,
+            pointNumber
+          );
+          console.log(
+            `✅ Saved pointNumber=${pointNumber} for session #${sessionId}`
+          );
+
+          // Lưu cả full session data nếu cần
+          sessionStorage.setItem(
+            `session_${sessionId}_data`,
+            JSON.stringify(sessionData)
+          );
+        }
+      } catch (err) {
+        console.debug("Failed to cache session data:", err);
+      }
+
       toast.success("Phiên sạc đã được khởi động thành công!");
       // navigate to session list / status page for staff
       try {

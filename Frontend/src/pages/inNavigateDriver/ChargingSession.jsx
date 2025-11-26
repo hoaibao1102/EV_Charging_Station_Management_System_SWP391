@@ -48,7 +48,19 @@ const POWER_POLLING_INTERVAL = 10000; // 10 seconds
 
 // ========== HELPER FUNCTIONS ==========
 
-// 📐 Tính toán SOC và energy theo công thức chuẩn Backend
+// 📐 Helper: Backend's round2 function (rounds to 2 decimal places)
+const round2 = (value) => {
+  return Math.round(value * 100.0) / 100.0;
+};
+
+// 📐 Tính toán SOC và energy theo công thức CHÍNH XÁC của Backend
+// Backend logic (ChargingSessionTxHandler.java line 159):
+//   double deltaSoc = finalSoc - initialSoc;
+//   double energyKWh = round2((deltaSoc / 100.0) * batteryCapacity);
+//
+// Frontend simulation approach:
+//   1. Estimate SOC increase from time + power + efficiency
+//   2. Calculate energy from deltaSoc (matching Backend)
 const calculateChargingMetrics = ({
   startTime,
   initialSoc,
@@ -62,24 +74,27 @@ const calculateChargingMetrics = ({
   const durationMinutes = durationMs / (1000 * 60);
   const hours = durationMinutes / 60;
 
-  // Energy delivered (kWh) = hours × power × efficiency
-  const estEnergy = hours * powerKW * efficiency;
+  // Step 1: Estimate energy delivered using time-based physics
+  // This is for SOC estimation only (not final energy value)
+  const estimatedEnergyDelivered = hours * powerKW * efficiency;
 
-  // Convert to SOC percentage
-  let rawFinalSOC = initialSoc + (estEnergy / capacity) * 100.0;
-  let finalSOC = Math.round(rawFinalSOC);
+  // Step 2: Convert to SOC increase (for simulation display)
+  const estimatedSocIncrease = (estimatedEnergyDelivered / capacity) * 100.0;
+  let rawFinalSOC = initialSoc + estimatedSocIncrease;
 
   // Minimum 1% increase if charging for any duration
-  if (durationMinutes > 0 && finalSOC === initialSoc) {
-    finalSOC = initialSoc + 1;
+  if (durationMinutes > 0 && Math.floor(rawFinalSOC) === initialSoc) {
+    rawFinalSOC = initialSoc + 1;
   }
 
-  // Clamp to [initialSoc, 100]
+  // Clamp to [initialSoc, 100] and round to integer (Backend uses integer SOC)
+  let finalSOC = Math.round(rawFinalSOC);
   finalSOC = Math.min(100, Math.max(initialSoc, finalSOC));
 
-  // Calculate actual energy from final SOC
-  const actualDeltaSOC = finalSOC - initialSoc;
-  const energyKWh = +(capacity * (actualDeltaSOC / 100)).toFixed(2);
+  // Step 3: Calculate energy EXACTLY like Backend
+  // Backend: energyKWh = round2((deltaSoc / 100.0) * batteryCapacity)
+  const deltaSoc = finalSOC - initialSoc;
+  const energyKWh = round2((deltaSoc / 100.0) * capacity);
 
   return {
     finalSOC,
@@ -722,9 +737,12 @@ export default function ChargingSession() {
               );
 
               // ✅ FIX: Tính pricePerKWh từ cost/energyKWh (vì ViewCharSessionResponse không có field này)
+              // Sử dụng round2 để đồng nhất với Backend (Math.round(v * 100) / 100)
               const pricePerKWh =
                 completedSession.energyKWh > 0
-                  ? completedSession.cost / completedSession.energyKWh
+                  ? Math.round(
+                      (completedSession.cost / completedSession.energyKWh) * 100
+                    ) / 100
                   : 0;
 
               return {
@@ -813,53 +831,12 @@ export default function ChargingSession() {
         if (finalSOC >= 100) {
           console.log("🔋 Battery reached 100% - auto-stopping session");
 
-          // ✅ Gửi finalSoc = 100 (chuẩn Backend: số nguyên)
+          // ✅ Gửi null để Backend tự tính chính xác (đồng nhất với manual stop)
           stationAPI
-            .stopChargingSession(prev.sessionId, 100)
+            .stopChargingSession(prev.sessionId, null)
             .then((response) => {
               console.log(
-                `✅ Session #${prev.sessionId} auto-stopped at 100% SOC`
-              );
-              const sessionResult = response.data ?? response;
-              // ✅ Sử dụng helper function để sync data
-              setCurrentSession((current) =>
-                current
-                  ? syncSessionFromBackend(sessionResult, current)
-                  : current
-              );
-              // Polling sẽ detect COMPLETED và update UI với dữ liệu chính xác từ Backend
-            })
-            .catch((err) => {
-              console.error("❌ Failed to stop session at 100%:", err);
-            });
-
-          clearInterval(virtualChargeInterval);
-          clearSimState(prev.sessionId);
-          // Polling sẽ detect COMPLETED status từ backend và auto-redirect
-          return prev;
-        }
-
-        // ✅ Log để debug
-        if (Math.floor(durationMinutes) % 5 === 0 && durationMinutes > 0) {
-          console.log(
-            `📊 Charging stats: duration=${durationMinutes.toFixed(
-              1
-            )}min, power=${
-              currentPower || 11.0
-            }kW, energy=${energyKWh}kWh, SOC=${finalSOC}%`
-          );
-        }
-
-        // Auto-complete when reaching 100%
-        if (finalSOC >= 100) {
-          console.log("🔋 Battery reached 100% - auto-stopping session");
-
-          // ✅ Gửi finalSoc = 100 (chuẩn Backend: số nguyên)
-          stationAPI
-            .stopChargingSession(prev.sessionId, 100)
-            .then((response) => {
-              console.log(
-                `✅ Session #${prev.sessionId} auto-stopped at 100% SOC`
+                `✅ Session #${prev.sessionId} auto-stopped - Backend calculated final values`
               );
               const sessionResult = response.data ?? response;
               // ✅ Sử dụng helper function để sync data
@@ -979,16 +956,12 @@ export default function ChargingSession() {
       if (now >= endTime) {
         console.log("⏰ Booking time expired - auto-stopping session");
 
-        // ✅ Gửi finalSoc là số nguyên đã làm tròn (chuẩn Backend)
-        const finalSocValue = Math.round(
-          currentSession.virtualSoc || currentSession.initialSoc
-        );
-
+        // ✅ Gửi null để Backend tự tính chính xác (đồng nhất với manual stop)
         stationAPI
-          .stopChargingSession(currentSession.sessionId, finalSocValue)
+          .stopChargingSession(currentSession.sessionId, null)
           .then((response) => {
             console.log(
-              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry`
+              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry - Backend calculated final values`
             );
             const sessionResult = response.data ?? response;
             // ✅ Sử dụng helper function
@@ -1025,15 +998,15 @@ export default function ChargingSession() {
         prev ? { ...prev, status: "STOPPING" } : prev
       );
 
-      // ✅ Gửi finalSoc là số nguyên đã làm tròn (chuẩn Backend - nhất quán với auto-stop)
-      const finalSocToSend = Math.round(
-        currentSession.virtualSoc ??
-          currentSession.finalSoc ??
-          currentSession.initialSoc
-      );
+      // ✅ KHÔNG gửi virtualSoc - để Backend tự tính chính xác từ startTime
+      // Backend sẽ tính: duration = endTime - startTime
+      //                  energy = (duration × power × efficiency) / capacity × 100
+      //                  finalSoc = initialSoc + (energy / capacity × 100)
+      // Điều này đảm bảo năng lượng giống CHÍNH XÁC như khi hiển thị
+      const finalSocToSend = null; // Let Backend calculate from actual time
 
       console.log(
-        `🛑 Driver stopping session #${currentSession.sessionId} with finalSoc=${finalSocToSend}%`
+        `🛑 Driver stopping session #${currentSession.sessionId} - Backend will calculate finalSoc from actual duration`
       );
 
       const response = await stationAPI.stopChargingSession(

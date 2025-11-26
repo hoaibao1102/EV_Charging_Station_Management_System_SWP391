@@ -178,10 +178,6 @@ export default function Payment() {
 
   return (
     <div className="payment-container">
-      <button className="btn-back" onClick={() => navigate(-1)}>
-        Quay lại
-      </button>
-
       <h1
         className="payment-header"
         style={{
@@ -295,7 +291,7 @@ export default function Payment() {
           <div className="info-row">
             <span className="info-label">Năng lượng đã sạc:</span>
             <span className="info-value highlight-green">
-              {session.energyKWh ?? 0} kWh
+              {(session.energyKWh ?? 0).toFixed(2)} kWh
             </span>
           </div>
           {session.initialSoc != null && (
@@ -323,7 +319,10 @@ export default function Payment() {
                 className="info-value"
                 style={{ fontWeight: "600", color: "#667eea" }}
               >
-                {session.pricePerKWh.toLocaleString("vi-VN")}{" "}
+                {session.pricePerKWh.toLocaleString("vi-VN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
                 {session.currency ?? "VND"}/kWh
               </span>
             </div>
