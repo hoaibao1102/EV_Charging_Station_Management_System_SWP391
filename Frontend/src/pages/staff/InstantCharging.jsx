@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { FaChevronLeft, FaPlug, FaBolt, FaClock, FaCheckCircle, FaExclamationCircle, FaArrowRight, FaTimesCircle } from 'react-icons/fa';
+import { FaChevronLeft, FaPlug, FaBolt, FaClock, FaCheckCircle, FaExclamationCircle, FaArrowRight, FaTimesCircle, FaSpinner } from 'react-icons/fa';
+import { useNavigate } from "react-router-dom"; // ✅ Mới
+import { toast } from "react-toastify"; // ✅ Mới
+import paths from "../../path/paths.jsx"; // ✅ Mới (để chuyển hướng)
+
 import { 
     getConnectorTypes, 
     getChargingPointsByStationId, 
     getStationStaffMe, 
     getAvaila, 
-    getTemplate 
+    getTemplate,
+    // ✅ THÊM CÁC API CẦN THIẾT
+    createBooking,
+    confirmBooking,
+    startChargingSession
 } from "../../api/stationApi";
 import {getAllTariffs} from "../../api/tariffApi.js";
 
@@ -49,9 +57,12 @@ function normalizeSlotRecord(record, pointId, templateMap) {
 // MAIN COMPONENT
 // =============================================================================
 export default function InstantCharging() {
+    const navigate = useNavigate(); // ✅ Hook điều hướng
+
     // --- State Quản lý Luồng ---
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false); // ✅ State loading khi bấm nút sạc
 
     // --- State Dữ liệu ---
     const [connectorTypes, setConnectorTypes] = useState([]); 
@@ -239,15 +250,71 @@ export default function InstantCharging() {
         }
     };
 
-    const handleConfirmCharging = (point) => {
+    // =========================================================================
+    // ✅ NEW LOGIC: GỘP 3 BƯỚC (CREATE -> CONFIRM -> START)
+    // =========================================================================
+    const handleConfirmCharging = async (point) => {
         const selected = selections[point.pointId] || [];
         if (selected.length === 0) return;
 
+        // Chuẩn bị dữ liệu
+        const slotIds = selected.map(s => Number(s.slotId)); // Đảm bảo là số
         const startTime = selected[0].startTime;
         const endTime = selected[selected.length - 1].endTime;
-        
-        // Payload có thể cần mảng slotIds: selected.map(s => s.slotId)
-        alert(`🚀 BẮT ĐẦU SẠC!\n\nTrụ: ${point.pointNumber}\nThời gian: ${startTime} - ${endTime} (${selected.length} slots)\n\nHệ thống đang kết nối...`);
+
+        // Payload tạo booking với vehicleId = null
+        const bookingPayload = {
+            vehicleId: null, // ✅ NULL như yêu cầu
+            slotIds: slotIds,
+            bookingTime: new Date().toISOString(),
+            description: `Khách vãng lai - Trụ ${point?.pointNumber}`
+        };
+
+        if(!window.confirm(`Xác nhận kích hoạt sạc tại Trụ ${point?.pointNumber}?\nThời gian: ${startTime} - ${endTime}`)) {
+            return;
+        }
+
+        setSubmitting(true); // Bật loading UI
+
+        try {
+            // 🚀 BƯỚC 1: TẠO BOOKING
+            const createRes = await createBooking(bookingPayload);
+            if (!createRes?.success) {
+                throw new Error(createRes?.message || "Tạo booking thất bại");
+            }
+            // Lấy ID booking vừa tạo (check cả data object hoặc trả về trực tiếp)
+            const newBookingId = createRes.data?.bookingId || createRes.data?.bookingID || createRes.data?.id;
+
+            if (!newBookingId) throw new Error("Không lấy được Booking ID từ server");
+
+            // 🚀 BƯỚC 2: TỰ ĐỘNG XÁC NHẬN (CONFIRM)
+            const confirmRes = await confirmBooking(newBookingId);
+            // Lưu ý: confirmBooking có thể trả về blob (ảnh QR) hoặc success json. 
+            // Nếu backend trả về lỗi, nó thường throw hoặc success=false.
+            if (confirmRes?.success === false) {
+                 throw new Error(confirmRes?.message || "Xác nhận booking thất bại");
+            }
+
+            // 🚀 BƯỚC 3: KÍCH HOẠT PHIÊN SẠC (START SESSION)
+            const startPayload = { bookingId: String(newBookingId) };
+            const startRes = await startChargingSession(startPayload);
+            
+            if (!startRes?.success) {
+                throw new Error(startRes?.message || "Không thể kích hoạt điện vào xe");
+            }
+
+            // ✅ HOÀN TẤT
+            toast.success("🚀 Đã kích hoạt phiên sạc thành công!");
+            
+            // Chuyển hướng về trang quản lý phiên sạc
+            navigate(paths.manageSessionCharging); 
+
+        } catch (error) {
+            console.error("❌ Instant Charging Error:", error);
+            toast.error(error.message || "Có lỗi xảy ra trong quá trình kích hoạt");
+        } finally {
+            setSubmitting(false); // Tắt loading UI
+        }
     };
 
     // -------------------------------------------------------------------------
@@ -478,19 +545,29 @@ export default function InstantCharging() {
                                                                 
                                                                 <button 
                                                                     onClick={() => handleConfirmCharging(point)}
+                                                                    disabled={submitting} // ✅ Disable khi đang submit
                                                                     style={{
-                                                                        background: 'linear-gradient(135deg, #00BFA6 0%, #00897B 100%)',
+                                                                        background: submitting ? '#ccc' : 'linear-gradient(135deg, #00BFA6 0%, #00897B 100%)',
                                                                         color: 'white', border: 'none',
                                                                         borderRadius: '8px', padding: '10px 25px',
                                                                         fontSize: '15px', fontWeight: 'bold',
-                                                                        cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,191,166,0.3)',
+                                                                        cursor: submitting ? 'not-allowed' : 'pointer', 
+                                                                        boxShadow: submitting ? 'none' : '0 4px 6px rgba(0,191,166,0.3)',
                                                                         display: 'flex', alignItems: 'center', gap: '8px',
-                                                                        transition: 'transform 0.1s'
+                                                                        transition: 'all 0.2s',
+                                                                        opacity: submitting ? 0.8 : 1
                                                                     }}
-                                                                    onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-                                                                    onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                                    onMouseDown={e => !submitting && (e.currentTarget.style.transform = 'scale(0.98)')}
+                                                                    onMouseUp={e => !submitting && (e.currentTarget.style.transform = 'scale(1)')}
                                                                 >
-                                                                    Bắt đầu sạc <FaArrowRight />
+                                                                    {submitting ? (
+                                                                        <>
+                                                                            <div className="spinner-small" style={{width: 15, height: 15, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite'}}></div>
+                                                                            Đang xử lý...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>Bắt đầu sạc <FaArrowRight /></>
+                                                                    )}
                                                                 </button>
                                                             </div>
                                                         )}
@@ -510,6 +587,9 @@ export default function InstantCharging() {
                     )}
                 </div>
             )}
+            <style>{`
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            `}</style>
         </div>
     );
 }
