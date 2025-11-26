@@ -7,6 +7,7 @@ import com.swp391.gr3.ev_management.entity.ChargingPoint;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface ChargingPointService {
 
@@ -29,4 +30,6 @@ public interface ChargingPointService {
     ChargingPointResponse updateChargingPoint(Long pointId, CreateChargingPointRequest request);
 
     void deleteChargingPoint(Long pointId);
+
+    Optional<ChargingPoint> findFirstByStation_StationId(Long stationId);
 }

@@ -29,4 +29,8 @@ public interface InvoiceService {
     DriverInvoiceDetail getDetail(Long invoiceId, Long userId);
 
     List<UnpaidInvoiceResponse> getUnpaidInvoices(Long userId);
+
+    DriverInvoiceDetail getInvoiceDetail(Long invoiceId);
+
+    DriverInvoiceDetail payInvoice(Long invoiceId);
 }

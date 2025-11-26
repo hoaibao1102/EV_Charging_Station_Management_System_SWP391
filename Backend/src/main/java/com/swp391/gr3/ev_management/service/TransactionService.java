@@ -1,7 +1,9 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.dto.response.TransactionBriefResponse;
+import com.swp391.gr3.ev_management.entity.PaymentMethod;
 import com.swp391.gr3.ev_management.entity.Transaction;
+import com.swp391.gr3.ev_management.enums.PaymentProvider;
 import com.swp391.gr3.ev_management.enums.TransactionStatus;
 import org.springframework.stereotype.Service;
 
@@ -26,4 +28,6 @@ public interface TransactionService {
     List<Transaction> findTop5ByStatusOrderByCreatedAtDesc(TransactionStatus completed);
 
     List<TransactionBriefResponse> findBriefByUserId(Long userId);
+
+    Optional<PaymentMethod> findByProvider(PaymentProvider evm);
 }

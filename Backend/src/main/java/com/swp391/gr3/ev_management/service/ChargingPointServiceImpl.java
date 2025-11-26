@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service // Đánh dấu lớp này là một Spring Service xử lý nghiệp vụ cho ChargingPoint
@@ -252,5 +253,10 @@ public class ChargingPointServiceImpl implements ChargingPointService {
                 .orElseThrow(() -> new ErrorException("Charging point not found"));
         // 2) Xoá
         chargingPointRepository.delete(point);
+    }
+
+    @Override
+    public Optional<ChargingPoint> findFirstByStation_StationId(Long stationId) {
+        return chargingPointRepository.findFirstByStation_StationId(stationId);
     }
 }

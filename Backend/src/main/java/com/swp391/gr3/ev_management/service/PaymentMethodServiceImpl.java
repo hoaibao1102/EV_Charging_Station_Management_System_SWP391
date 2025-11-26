@@ -127,4 +127,9 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     public PaymentMethod save(PaymentMethod paymentMethod) {
         return paymentMethodRepository.save(paymentMethod);
     }
+
+    @Override
+    public Optional<PaymentMethod> findByProvider(PaymentProvider evm) {
+        return paymentMethodRepository.findByProvider(evm);
+    }
 }

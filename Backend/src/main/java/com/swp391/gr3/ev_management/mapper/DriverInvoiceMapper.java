@@ -38,8 +38,12 @@ public class DriverInvoiceMapper {
                 .bookingId(booking.getBookingId())
                 .stationId(booking.getStation().getStationId())
                 .stationName(booking.getStation().getStationName())
-                .pointNumber(cp.getPointNumber())
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
+                .pointNumber(cp != null ? cp.getPointNumber() : null)   // 🔥 null-safe
+                .vehiclePlate(
+                        booking.getVehicle() != null
+                                ? booking.getVehicle().getVehiclePlate()
+                                : "Unknown"
+                )
                 .pricePerKWh(pricePerKwh)
                 .build();
     }
