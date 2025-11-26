@@ -4,6 +4,7 @@ import com.swp391.gr3.ev_management.dto.request.BookingRequest;
 import com.swp391.gr3.ev_management.dto.request.CreateBookingRequest;
 import com.swp391.gr3.ev_management.dto.response.BookingResponse;
 import com.swp391.gr3.ev_management.dto.response.ConfirmedBookingView;
+import com.swp391.gr3.ev_management.dto.response.ErrorResponse;
 import com.swp391.gr3.ev_management.service.BookingService;
 import com.swp391.gr3.ev_management.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,24 +30,25 @@ public class BookingController {
     private final TokenService tokenService;
 
     // ====================== CONFIRM BOOKING (XÁC NHẬN ĐẶT CHỖ) ====================== //
-    @PutMapping(value = "/{bookingId}/confirm", produces = MediaType.IMAGE_PNG_VALUE)
-    @Operation(summary = "Confirm a booking and generate QR code", description = "Endpoint to confirm a booking and generate its QR code")
-    public ResponseEntity<byte[]> confirmBooking(@PathVariable Long bookingId) {
+    @PutMapping("/{bookingId}/confirm")
+    @Operation(summary = "Confirm a booking and generate QR code",
+            description = "Endpoint to confirm a booking and generate its QR code")
+    public ResponseEntity<?> confirmBooking(@PathVariable Long bookingId) {
         try {
-            // ✅ 1. Xác nhận booking trong hệ thống (cập nhật trạng thái "CONFIRMED" chẳng hạn)
             bookingService.confirmBooking(bookingId);
 
-            // ✅ 2. Xây dựng chuỗi dữ liệu (payload) cho QR code (ví dụ: chứa bookingId, user, station, ...)
             String payload = bookingService.buildQrPayload(bookingId);
+            byte[] qrImage = bookingService.generateQrPng(payload, 320);
 
-            // ✅ 3. Sinh ảnh QR code PNG từ payload
-            byte[] qrImage = bookingService.generateQrPng(payload, 320); // 320px là kích thước ảnh
-
-            // ✅ 4. Trả về hình ảnh QR code (dạng byte[]) với HTTP 200
-            return ResponseEntity.ok(qrImage);
+            return ResponseEntity
+                    .ok()
+                    .contentType(MediaType.IMAGE_PNG)
+                    .body(qrImage);                  // ✅ success: image/png
         } catch (RuntimeException e) {
-            // ❌ Nếu có lỗi (VD: booking không tồn tại, trạng thái không hợp lệ, ...), trả về HTTP 400
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity
+                    .badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new ErrorResponse(e.getMessage()));   // ✅ error: application/json
         }
     }
 

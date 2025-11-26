@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 public class CreateBookingRequest {
 
-    @NotNull(message = "ID xe không được để trống")
+//    @NotNull(message = "ID xe không được để trống")
     @Positive(message = "ID xe phải là số dương")
     private Long vehicleId;
 

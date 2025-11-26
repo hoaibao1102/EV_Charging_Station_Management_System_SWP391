@@ -24,7 +24,7 @@ public class ChargingSession {
     private Long sessionId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BookingID", unique = true, nullable = false)
+    @JoinColumn(name = "BookingID", unique = true, nullable = true)
     private Booking booking;
 
     @Column(name = "StartTime")

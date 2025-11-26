@@ -69,22 +69,17 @@ public class PaymentService {
                                         Long paymentMethodId,
                                         String clientIp) throws Exception {
 
-        // 1️⃣ Lấy driver từ userId (chỉ user đã có driver profile mới thanh toán được)
-        Driver driver = driverService.findByUser_UserId(userId)
-                .orElseThrow(() -> new ErrorException("Driver not found for current user"));
+        // 1️⃣ Lấy driver theo userId (KHÔNG BẮT BUỘC NỮA)
+        Driver driver = driverService.findByUser_UserId(userId).orElse(null);
 
-        // 2️⃣ Lấy phiên sạc theo sessionId (dùng để tham chiếu invoice, station...)
-        ChargingSession session = chargingSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ErrorException("Session not found"));
+        // 2️⃣ Invoice lấy theo session → invoice có thể không có driver
+        Invoice invoice = invoiceService.findBySession_SessionId(sessionId)
+                .orElseThrow(() -> new ErrorException(
+                        "No invoice found for session " + sessionId + ". Stop session must create an UNPAID invoice first."));
 
         // 3️⃣ Lấy phương thức thanh toán theo paymentMethodId
         PaymentMethod method = paymentMethodService.findById(paymentMethodId)
                 .orElseThrow(() -> new ErrorException("Payment method not found"));
-
-        // 4️⃣ Lấy Invoice đã được tạo khi stop session (phải ở trạng thái UNPAID)
-        Invoice invoice = invoiceService.findBySession_SessionId(sessionId)
-                .orElseThrow(() -> new ErrorException(
-                        "No invoice found for session " + sessionId + ". Stop session must create an UNPAID invoice first."));
 
         // 5️⃣ Ràng buộc: chỉ cho phép thanh toán khi Invoice đang ở trạng thái UNPAID
         if (invoice.getStatus() != InvoiceStatus.UNPAID) {
@@ -100,12 +95,12 @@ public class PaymentService {
                 .amount(amount)
                 .currency(currency)
                 .description("Thanh toán hóa đơn #" + invoice.getInvoiceId() + " qua VNPay")
-                .status(TransactionStatus.PENDING) // trạng thái ban đầu: chờ VNPay callback
-                .driver(driver)
+                .status(TransactionStatus.PENDING)
+                .driver(driver) // driver có thể null
                 .invoice(invoice)
                 .paymentMethod(method)
                 .build();
-        tx = transactionService.save(tx); // lưu Transaction xuống DB
+        tx = transactionService.save(tx);
 
         // 8️⃣ Chuẩn bị các tham số bắt buộc của VNPay
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -359,8 +354,7 @@ public class PaymentService {
         // 1️⃣ Resolve các entity cần thiết
 
         // 1.1) Lấy driver theo userId
-        Driver driver = driverService.findByUser_UserId(userId)
-                .orElseThrow(() -> new ErrorException("Driver not found for current user"));
+        Driver driver = driverService.findByUser_UserId(userId).orElse(null);
 
         // 1.2) Lấy session
         ChargingSession session = chargingSessionRepository.findById(sessionId)
@@ -389,7 +383,7 @@ public class PaymentService {
                 .currency(currency)
                 .description("Thanh toán hóa đơn #" + invoice.getInvoiceId() + " qua EVM")
                 .status(TransactionStatus.COMPLETED)
-                .driver(driver)
+                .driver(driver) // driver có thể null
                 .invoice(invoice)
                 .paymentMethod(method)
                 .build();
@@ -401,7 +395,7 @@ public class PaymentService {
         invoiceService.save(invoice);
 
         // 5️⃣ Gửi notification giống logic thanh toán VNPay thành công
-        var user = driver.getUser();
+//        var user = driver.getUser();
         var booking = (session != null) ? session.getBooking() : null;
         var station = (booking != null) ? booking.getStation() : null;
 
@@ -413,8 +407,11 @@ public class PaymentService {
                 ? " | Thời gian sạc: " + session.getStartTime()
                 : "");
 
+        Driver invDriver = invoice.getDriver();
+        User users = (invDriver != null) ? invDriver.getUser() : null;
+
         Notification noti = new Notification();
-        noti.setUser(user);
+        noti.setUser(users);
         noti.setTitle(title);
         noti.setContentNoti(content);
         noti.setType(NotificationTypes.PAYMENT_SUCCESS);
@@ -424,7 +421,9 @@ public class PaymentService {
         noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
         notificationsService.save(noti);
 
-        eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+        if (users != null) {
+            eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+        }
 
         return "Payment successful (EVM)";
     }

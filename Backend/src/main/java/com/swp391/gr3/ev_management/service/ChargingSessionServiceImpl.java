@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.swp391.gr3.ev_management.entity.UserVehicle;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
@@ -60,106 +61,97 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
     @Transactional // Bắt đầu phiên sạc cần đảm bảo tính toàn vẹn (tạo session, đổi trạng thái booking, create noti, schedule...)
     public StartCharSessionResponse startChargingSession(StartCharSessionRequest request) {
         // 1) Tìm Booking theo bookingId trong request và đảm bảo booking đang ở trạng thái CONFIRMED
-        //    - Nếu không tìm thấy hoặc không phải CONFIRMED -> ném ErrorException
         Booking booking = bookingService
                 .findByBookingIdAndStatus(request.getBookingId(), BookingStatus.CONFIRMED)
                 .orElseThrow(() -> new ErrorException("Booking not found or not confirmed"));
 
-        // 2) Kiểm tra phòng vệ: nếu booking này đã có ChargingSession rồi thì không cho tạo thêm
-        //    - Mỗi booking chỉ được gắn với duy nhất 1 session
+        // 2) Phòng vệ: nếu booking này đã có ChargingSession rồi thì không cho tạo thêm
         chargingSessionRepository.findByBooking_BookingId(booking.getBookingId())
                 .ifPresent(s -> { throw new IllegalStateException("Session already exists for this booking"); });
 
-        // 3) Lấy thời điểm hiện tại theo múi giờ VN (TENANT_ZONE)
+        // 3) Thời gian hiện tại (VN)
         LocalDateTime now = LocalDateTime.now(TENANT_ZONE);
 
-        // 4) Xác định khung giờ cho phép bắt đầu/kết thúc sạc
-        //    - windowStart: thời điểm bắt đầu hợp lệ tối thiểu (booking slot start)
-        //    - windowEnd: thời điểm kết thúc hợp lệ tối đa (booking slot end)
-        //    - Hai hàm resolveWindowStart/resolveWindowEnd ưu tiên dùng scheduledStartTime/EndTime,
-        //      nếu không có thì lấy min/max theo các slot trong booking
+        // 4) Khung giờ cho phép start/end
         LocalDateTime windowStart = resolveWindowStart(booking);
         LocalDateTime windowEnd   = resolveWindowEnd(booking);
 
-        // 5) Ràng buộc: chỉ được bắt đầu phiên sạc nếu "now" nằm trong [windowStart, windowEnd]
-        //    - Nếu now < windowStart -> user đến sớm hơn giờ đặt -> không cho start
+        // 5) Chỉ cho start khi now nằm trong [windowStart, windowEnd]
         if (now.isBefore(windowStart)) {
             throw new ErrorException("Chưa đến giờ đặt. Chỉ được bắt đầu từ: " + windowStart);
         }
-        //    - Nếu now > windowEnd -> đã hết giờ đặt -> không cho start
         if (now.isAfter(windowEnd)) {
             throw new ErrorException("Đã quá giờ đặt (đến: " + windowEnd + "). Không thể bắt đầu.");
         }
 
-        // 6) Giả lập SOC ban đầu (State of Charge - phần trăm pin)
-        //    - Dùng ThreadLocalRandom để random giá trị từ 5% đến 24% (upper bound exclusive)
-        //    - Thực tế sẽ nhận từ thiết bị sạc hoặc từ xe (qua giao thức OCPP/canbus...)
+        // 6) Random SOC ban đầu
         int initialSoc = ThreadLocalRandom.current().nextInt(5, 25);
 
-        // 7) Tạo bản ghi ChargingSession mới và populate dữ liệu cơ bản
+        // 7) Tạo ChargingSession
         ChargingSession session = new ChargingSession();
-        session.setBooking(booking);                                // gắn booking cha
-        session.setStartTime(now);                                  // thời điểm bắt đầu phiên sạc (thực tế)
-        session.setStatus(ChargingSessionStatus.IN_PROGRESS);       // trạng thái: đang sạc (IN_PROGRESS)
-        session.setInitialSoc(initialSoc);                          // SOC ban đầu
-        chargingSessionRepository.save(session);                    // lưu session xuống DB để có sessionId
+        session.setBooking(booking);
+        session.setStartTime(now);
+        session.setStatus(ChargingSessionStatus.IN_PROGRESS);
+        session.setInitialSoc(initialSoc);
+        chargingSessionRepository.save(session);
 
-        // 8) Cache SOC ban đầu vào SessionSocCache
-        //    - Mỗi lần hệ thống cập nhật SOC mới có thể ghi đè lên cache này
-        //    - Dùng cho việc chốt SOC cuối cùng khi stop session
+        // 8) Cache SOC
         sessionSocCache.put(session.getSessionId(), initialSoc);
 
-        // 9) Cập nhật trạng thái Booking về BOOKED (đang được sử dụng trong một phiên sạc)
-        //    - Trạng thái này thể hiện booking đã được tiêu thụ, đang dùng slot để sạc
+        // 9) Cập nhật trạng thái Booking
         booking.setStatus(BookingStatus.BOOKED);
-        bookingService.save(booking); // gọi service để persist thay đổi booking
+        bookingService.save(booking);
 
-        // 🔟 Tính thời điểm trigger auto-stop cho phiên sạc
-        //    - Chuyển windowEnd (LocalDateTime) sang Instant theo TENANT_ZONE rồi sang Date để dùng cho TaskScheduler
+        // 10) Đặt lịch auto-stop
         Instant triggerInstant = windowEnd.atZone(TENANT_ZONE).toInstant();
         Date triggerAt = Date.from(triggerInstant);
-        Long sid = session.getSessionId(); // lưu sessionId ra biến riêng để dùng trong lambda
+        Long sid = session.getSessionId();
 
-        // Log thông tin để debug: sessionId, bookingId, thời điểm triggerAt và now (cùng múi giờ VN)
         log.info("[SCHEDULE STOP] sessionId={} bookingId={} triggerAt(VN)={} now(VN)={}",
                 sid, booking.getBookingId(), triggerAt, Date.from(now.atZone(TENANT_ZONE).toInstant()));
 
-        // Đặt lịch auto-stop phiên sạc đúng thời điểm windowEnd (theo giờ VN)
-        // Khi tới thời điểm triggerAt, TaskScheduler sẽ chạy đoạn lambda bên trong
         taskScheduler.schedule(() -> {
             try {
-                // Gọi txHandler.autoStopIfStillRunningTx trong 1 transaction riêng
-                // Mục đích: nếu auto-stop lỗi sẽ không ảnh hưởng tới transaction của startChargingSession
-                txHandler.autoStopIfStillRunningTx(sid, windowEnd); // chạy trong TX riêng
+                txHandler.autoStopIfStillRunningTx(sid, windowEnd);
             } catch (Exception ex) {
-                // Bắt mọi exception để tránh job bị chết mà không log
                 log.error("[SCHEDULE STOP] Uncaught error for sessionId={} windowEnd(VN)={}: {}",
                         sid, windowEnd, ex.getMessage(), ex);
             }
         }, triggerAt);
 
-        // 1️⃣1) Tạo Notification cho user khi phiên sạc bắt đầu
-        Notification noti = new Notification();
-        noti.setUser(booking.getVehicle().getDriver().getUser()); // user của driver sở hữu xe
-        noti.setBooking(booking);                                 // gắn booking liên quan
-        noti.setSession(session);                                 // gắn session vừa tạo
-        noti.setTitle("Bắt đầu sạc #" + booking.getBookingId()); // tiêu đề thông báo
-        noti.setContentNoti("Pin hiện tại: " + initialSoc + "%"); // nội dung: hiển thị SOC ban đầu
-        noti.setType(NotificationTypes.CHARGING_STARTED);         // loại thông báo: phiên sạc bắt đầu
-        noti.setStatus(Notification.STATUS_UNREAD);               // trạng thái: chưa đọc
-        noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));        // thời gian tạo noti theo VN
-        notificationsService.save(noti);                          // lưu Noti vào DB
+        // 11) Tạo Notification cho user khi phiên sạc bắt đầu (nếu tìm được user từ vehicle)
+        UserVehicle vehicle = booking.getVehicle();
+        Notification noti = null;
+        if (vehicle != null &&
+                vehicle.getDriver() != null &&
+                vehicle.getDriver().getUser() != null) {
 
-        // Publish event để các listener khác xử lý (gửi email, gửi push notification, websocket...)
-        eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+            noti = new Notification();
+            noti.setUser(vehicle.getDriver().getUser());
+            noti.setBooking(booking);
+            noti.setSession(session);
+            noti.setTitle("Bắt đầu sạc #" + booking.getBookingId());
+            noti.setContentNoti("Pin hiện tại: " + initialSoc + "%");
+            noti.setType(NotificationTypes.CHARGING_STARTED);
+            noti.setStatus(Notification.STATUS_UNREAD);
+            noti.setCreatedAt(LocalDateTime.now(TENANT_ZONE));
+            notificationsService.save(noti);
 
-        // 1️⃣2) Build DTO StartCharSessionResponse trả về cho client
-        //      - Chứa thông tin cơ bản: sessionId, bookingId, tên trạm, biển số xe, thời gian start, trạng thái, SOC ban đầu
+            // Publish event chỉ khi có noti
+            eventPublisher.publishEvent(new NotificationCreatedEvent(noti.getNotiId()));
+        }
+
+        // 12) Build response trả về cho client
+        String vehiclePlate = null;
+        if (vehicle != null) {
+            vehiclePlate = vehicle.getVehiclePlate();
+        }
+
         return StartCharSessionResponse.builder()
                 .sessionId(session.getSessionId())
                 .bookingId(booking.getBookingId())
                 .stationName(booking.getStation().getStationName())
-                .vehiclePlate(booking.getVehicle().getVehiclePlate())
+                .vehiclePlate(vehiclePlate)        // có thể null nếu booking không gắn vehicle
                 .startTime(session.getStartTime())
                 .status(session.getStatus())
                 .initialSoc(initialSoc)
@@ -243,11 +235,11 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
                 .orElseThrow(() -> new ErrorException("Session not found"));
 
         // 2) Lấy userId của chủ sở hữu xe
-        Long ownerUserId = session.getBooking()
-                .getVehicle()
-                .getDriver()
-                .getUser()
-                .getUserId();
+//        Long ownerUserId = session.getBooking()
+//                .getVehicle()
+//                .getDriver()
+//                .getUser()
+//                .getUserId();
 
         // 4) Lấy SOC cuối cùng từ cache
         Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
