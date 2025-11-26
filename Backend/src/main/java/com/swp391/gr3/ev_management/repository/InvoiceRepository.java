@@ -203,4 +203,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice,Long> {
     order by i.issuedAt desc
     """)
     List<UnpaidInvoiceResponse> findUnpaidByUserId(@Param("userId") Long userId);
+
+    @Query("""
+    select distinct i
+    from Invoice i
+      left join fetch i.session s
+      left join fetch s.booking b
+      left join fetch b.vehicle v
+      left join fetch b.station st
+      left join fetch b.bookingSlots bs
+      left join fetch bs.slot sl
+      left join fetch sl.chargingPoint cp
+      left join fetch cp.connectorType ct
+    where st.stationId = :stationId
+""")
+    List<Invoice> findInvoiceDetailsByStation(@Param("stationId") Long stationId);
 }

@@ -33,4 +33,6 @@ public interface InvoiceService {
     DriverInvoiceDetail getInvoiceDetail(Long invoiceId);
 
     DriverInvoiceDetail payInvoice(Long invoiceId);
+
+    List<DriverInvoiceDetail> getInvoiceDetailsByStation(Long stationId);
 }

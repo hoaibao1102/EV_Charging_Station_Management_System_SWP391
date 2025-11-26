@@ -22,6 +22,7 @@ public class InvoiceController {
      * 1) Lấy chi tiết hóa đơn
      * ================================
      */
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @GetMapping("/{invoiceId}")
     public DriverInvoiceDetail getInvoiceDetail(@PathVariable Long invoiceId) {
         return invoiceService.getInvoiceDetail(invoiceId);
@@ -32,8 +33,15 @@ public class InvoiceController {
      * 2) Lấy danh sách hóa đơn chưa thanh toán của tài xế
      * ================================
      */
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     @PostMapping("/pay/{invoiceId}")
     public DriverInvoiceDetail payInvoice(@PathVariable Long invoiceId) {
         return invoiceService.payInvoice(invoiceId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    @GetMapping("/station/{stationId}/details")
+    public List<DriverInvoiceDetail> getInvoiceDetailsByStation(@PathVariable Long stationId) {
+        return invoiceService.getInvoiceDetailsByStation(stationId);
     }
 }
