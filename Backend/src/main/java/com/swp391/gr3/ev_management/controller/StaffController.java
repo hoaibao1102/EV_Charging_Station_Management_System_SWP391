@@ -104,11 +104,11 @@ public class StaffController {
     @PostMapping("/staff-stop-session") // 🔗 POST /api/charging-sessions/driver-stop
     @Operation(summary = "Staff stops the charging session", description = "Staff stops the charging session using session ID and user ID")
     public ResponseEntity<StopCharSessionResponse> staffStopSession(
-            @RequestBody StopSessionForStaffRequest body // ✅ Chứa sessionId và userId
+            @RequestBody StopSessionForStaffRequest body // ✅ Chứa sessionId và finalSoc
     ) {
-        // 🟢 Gọi service để dừng phiên sạc thuộc về chính userId này
+        // 🟢 Gọi service để dừng phiên sạc, truyền finalSoc nếu có
         StopCharSessionResponse res =
-                chargingSessionService.staffStopSession(body.getSessionId());
+                chargingSessionService.staffStopSession(body.getSessionId(), body.getFinalSoc());
 
         // 🟢 Trả về 200 OK + thông tin sau khi dừng
         return ResponseEntity.ok(res);

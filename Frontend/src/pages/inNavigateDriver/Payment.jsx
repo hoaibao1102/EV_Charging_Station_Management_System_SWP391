@@ -7,7 +7,21 @@ import "./Payment.css";
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
-  const sessionResult = location?.state?.sessionResult;
+  let sessionResult = location?.state?.sessionResult;
+
+  // ✅ Nếu thiếu pointNumber, lấy từ sessionStorage (staff đã lưu)
+  if (sessionResult && !sessionResult.pointNumber && sessionResult.sessionId) {
+    try {
+      const cachedPointNumber = sessionStorage.getItem(
+        `session_${sessionResult.sessionId}_pointNumber`
+      );
+      if (cachedPointNumber) {
+        sessionResult = { ...sessionResult, pointNumber: cachedPointNumber };
+      }
+    } catch (err) {
+      console.debug("Failed to read pointNumber from cache:", err);
+    }
+  }
 
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -30,7 +44,16 @@ export default function Payment() {
         const data = response.data;
 
         // Handle both direct array response or response with data property
-        const methods = Array.isArray(data) ? data : data.data || [];
+        let methods = Array.isArray(data) ? data : data.data || [];
+
+        // ✅ Nếu tổng tiền < 10,000 VND, loại bỏ VNPAY/EWALLET
+        const totalCost = sessionResult?.cost || 0;
+        if (totalCost < 10000) {
+          methods = methods.filter(
+            (m) => m.provider !== "VNPAY" && m.methodType !== "EWALLET"
+          );
+        }
+
         setPaymentMethods(methods);
       } catch (err) {
         console.error("❌ Lỗi khi tải phương thức thanh toán:", err);
@@ -42,7 +65,7 @@ export default function Payment() {
       }
     };
     fetchMethods();
-  }, []);
+  }, [sessionResult]);
 
   const handlePayment = async () => {
     // Check if payment method is selected

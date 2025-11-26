@@ -115,9 +115,11 @@ export default function NotificationBell() {
       duration: /Thời lượng:\s*([^|]+)/,
       soc: /Tăng SOC:\s*([^|]+)/,
       energy: /Năng lượng:\s*([^|]+)/,
+      // ✅ Cập nhật pattern để khớp với "Tổng phí:" từ Backend
+      total: /Tổng phí:\s*([^|]+)/,
+      // Giữ lại pattern cũ cho backward compatibility
       timeFee: /Phí thời gian:\s*([^|]+)/,
       energyFee: /Phí điện năng:\s*([^|]+)/,
-      total: /Tổng:\s*(.+)/,
     };
 
     const parsed = {};
@@ -565,6 +567,7 @@ export default function NotificationBell() {
                           gap: "8px",
                         }}
                       >
+                        {/* ✅ Chỉ hiển thị timeFee và energyFee nếu có (backward compatibility) */}
                         {parsed.timeFee && (
                           <div
                             style={{
@@ -613,15 +616,18 @@ export default function NotificationBell() {
                             </span>
                           </div>
                         )}
+                        {/* ✅ Hiển thị total (luôn có từ Backend) */}
                         {parsed.total && (
                           <>
-                            <div
-                              style={{
-                                height: "1px",
-                                background: "#dee2e6",
-                                margin: "4px 0",
-                              }}
-                            ></div>
+                            {(parsed.timeFee || parsed.energyFee) && (
+                              <div
+                                style={{
+                                  height: "1px",
+                                  background: "#dee2e6",
+                                  margin: "4px 0",
+                                }}
+                              ></div>
+                            )}
                             <div
                               style={{
                                 display: "flex",
@@ -645,7 +651,7 @@ export default function NotificationBell() {
                                   fontSize: "16px",
                                 }}
                               >
-                                {formatMoney(parsed.total)}{" "}
+                                {formatMoney(parsed.total)}
                               </span>
                             </div>
                           </>
