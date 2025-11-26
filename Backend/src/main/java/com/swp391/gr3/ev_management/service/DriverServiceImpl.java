@@ -282,9 +282,9 @@ public class DriverServiceImpl implements DriverService {
     // - trim + upper-case + bỏ khoảng trắng, dấu '.' và '-'
     private String normalizePlate(String plate) {
         if (plate == null) return null;
-        String trimmed = plate.trim().toUpperCase();
-        // Giữ lại chữ & số, bỏ các ký tự phân cách (space, chấm, gạch)
-        return trimmed.replaceAll("[ .-]", "");
+        // Upper case, trim, và chỉ giữ lại Chữ (A-Z) và Số (0-9)
+        // Loại bỏ hết dấu chấm, gạch ngang, khoảng trắng
+        return plate.trim().toUpperCase().replaceAll("[^A-Z0-9]", "");
     }
 
     /**
@@ -296,40 +296,34 @@ public class DriverServiceImpl implements DriverService {
     private String formatVietnamPlate(String plate) {
         if (plate == null || plate.isEmpty()) return plate;
 
-        // 1️⃣ Normalize trước (bỏ dấu, khoảng trắng, upper-case)
+        // 1️⃣ Normalize trước
         String normalized = normalizePlate(plate);
 
-        // 2️⃣ Áp dụng heuristic: độ dài từ 8 tới 10, dạng 2 số + 1-2 chữ + 4-5 số
-        if (normalized.length() >= 8 && normalized.length() <= 10) {
-            String prefix = normalized.substring(0, 2); // 2 số đầu (mã tỉnh)
-            String letters = "";                        // 1-2 chữ tiếp theo (series)
-            String numbers;                             // phần chữ số còn lại
-
-            int i = 2;
-            // Lấy 1-2 ký tự chữ cái sau prefix
-            while (i < normalized.length() && Character.isLetter(normalized.charAt(i))) {
-                letters += normalized.charAt(i);
-                i++;
-            }
-            // Phần còn lại là số
-            numbers = normalized.substring(i);
-
-            // 3️⃣ Nếu còn đủ số phía sau (>=4), tiến hành tách thành BBB.CC
-            if (numbers.length() >= 4) {
-                String part1 = numbers.substring(0, 3); // 3 số đầu
-                String part2 = numbers.substring(3);    // phần còn lại
-
-                // Nếu part2 > 2 số -> cắt lấy 2 số đầu
-                if (part2.length() > 2) {
-                    part2 = part2.substring(0, 2);
-                }
-                // Tạo chuỗi dạng 86B-381.05
-                return prefix + letters + "-" + part1 + "." + part2;
-            }
+        // ⚠️ AN TOÀN: Nếu chuỗi quá ngắn (dưới 5 ký tự),
+        // không thể áp dụng format 5 số -> trả về nguyên gốc để tránh lỗi Crash.
+        // (Mặc dù ở addVehicle đã validate, nhưng hàm helper nên tự bảo vệ mình)
+        if (normalized.length() < 5) {
+            return normalized;
         }
 
-        // 4️⃣ Nếu không match được format -> trả về normalized (dù không có dấu gạch, chấm nhưng thống nhất)
-        return normalized;
+        // 2️⃣ Xử lý format
+        try {
+            // Lấy 5 ký tự cuối (giả định là số)
+            String numbers = normalized.substring(normalized.length() - 5);
+
+            // Lấy phần đầu (Mã tỉnh + Series)
+            String prefix = normalized.substring(0, normalized.length() - 5);
+
+            // Tách 5 số thành dạng 381.05
+            String numPart1 = numbers.substring(0, 3);
+            String numPart2 = numbers.substring(3);
+
+            return prefix + "-" + numPart1 + "." + numPart2;
+
+        } catch (Exception e) {
+            // Fallback: nếu có bất kỳ lỗi cắt chuỗi nào, trả về chuỗi gốc
+            return normalized;
+        }
     }
 
     /**

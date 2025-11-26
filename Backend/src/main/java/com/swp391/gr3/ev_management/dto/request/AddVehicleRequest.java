@@ -22,8 +22,8 @@ public class AddVehicleRequest {
 
     @NotBlank(message = "Biển số xe không được để trống")
     @Pattern(
-            regexp = "^\\d{2}[A-Za-z]{1,2}\\d{4,5}$",
-            message = "Biển số xe phải đúng cấu trúc biển số VN: 2 chữ số (tỉnh) + 1-2 chữ cái + 4-5 chữ số (VD: 86B381052, 30G12345, 51AB12345)"
+            regexp = "^\\d{2}[A-Za-z]{1,2}\\d{5}$",
+            message = "Biển số xe phải đúng cấu trúc biển số VN: 2 chữ số (tỉnh) + 1-2 chữ cái + 5 chữ số (VD: 86B381052, 30G12345, 51AB12345)"
     )
     private String licensePlate;
 

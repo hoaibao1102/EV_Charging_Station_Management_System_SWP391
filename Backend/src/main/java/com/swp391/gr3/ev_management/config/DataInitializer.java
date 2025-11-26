@@ -15,6 +15,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @Profile("!test")
@@ -264,16 +266,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ================== SLOT AVAILABILITY ==================
-    private void initSlotAvailability() {
+    private void seedStation(ChargingStation station) {
         try {
-            var stationOpt = chargingStationRepository.findByStationName("VinFast SmartCharge - Quận 1");
-            if (stationOpt.isEmpty()) {
-                log.warn("Base station not found; skip slot availability seeding");
-                return;
-            }
-            var station = stationOpt.get();
-
-            // Ensure a SlotConfig exists for station
+            // 1. Ensure SlotConfig exists
             var existingConfig = slotConfigRepository.findByStation_StationId(station.getStationId());
             if (existingConfig == null) {
                 var cfg = SlotConfig.builder()
@@ -303,14 +298,12 @@ public class DataInitializer implements CommandLineRunner {
                 var oldTemplates = slotTemplateRepository
                         .findByConfig_ConfigIdAndStartTimeBetween(config.getConfigId(), baseStart, baseEnd);
                 if (!oldTemplates.isEmpty()) {
-                    // Nếu muốn Hibernate tự xóa availability còn sót: cần có mapping
-                    // @OneToMany(mappedBy="template", cascade=ALL, orphanRemoval=true) trong SlotTemplate
                     slotTemplateRepository.deleteAll(oldTemplates);
                     slotTemplateRepository.flush();
                 }
 
-                // 3) TẠO LẠI 24 TEMPLATE
-                var templates = new java.util.ArrayList<SlotTemplate>(24);
+                // C) TẠO LẠI 24 TEMPLATE
+                var templates = new ArrayList<SlotTemplate>(24);
                 for (int i = 0; i < 24; i++) {
                     var st = SlotTemplate.builder()
                             .config(config)
@@ -320,47 +313,69 @@ public class DataInitializer implements CommandLineRunner {
                             .build();
                     templates.add(slotTemplateRepository.save(st));
                 }
-                log.info("Created {} SlotTemplates for config {}", templates.size(), config.getConfigId());
+                log.info("Created {} SlotTemplates for station {}", templates.size(), station.getStationName());
 
-                // 4) CHỌN CONNECTOR (optional) → LẤY POINTS
-                var connector = connectorTypeRepository.findByCode("TYPE2");
-                if (connector == null) connector = connectorTypeRepository.findByCode("CCS2");
-
-                java.util.List<ChargingPoint> points;
-                if (connector != null) {
-                    points = chargingPointRepository.findByStation_StationIdAndConnectorType_ConnectorTypeId(
-                            station.getStationId(), connector.getConnectorTypeId()
-                    );
-                } else {
-                    points = chargingPointRepository.findByStation_StationId(station.getStationId());
-                }
+                // D) LẤY TẤT CẢ CHARGING POINTS CỦA TRẠM (Không lọc theo Type nữa)
+                List<ChargingPoint> points = chargingPointRepository.findByStation_StationId(station.getStationId());
 
                 if (points.isEmpty()) {
-                    log.warn("No charging points found for station {} (connector filter: {})",
-                            station.getStationName(), connector != null ? connector.getCode() : "NONE");
+                    log.warn("No charging points found for station {} - Skipping availability seeding", station.getStationName());
+                    return;
+                }
+                if (points.isEmpty()) {
+                    log.warn("No charging points found for station {} - Skipping availability seeding", station.getStationName());
                     return;
                 }
 
-                // 5) SEED AVAILABILITY (đã reset trong ngày nên không cần existsBy...)
-                var toSave = new java.util.ArrayList<SlotAvailability>(templates.size() * points.size());
+                // E) SEED AVAILABILITY
+                var toSave = new ArrayList<SlotAvailability>(templates.size() * points.size());
                 for (var t : templates) {
                     for (var p : points) {
                         toSave.add(SlotAvailability.builder()
                                 .template(t)
                                 .chargingPoint(p)
                                 .status(SlotStatus.AVAILABLE)
-                                .date(targetDate)    // hoặc t.getStartTime().toLocalDate().atStartOfDay()
+                                .date(targetDate)
                                 .build());
                     }
                 }
                 slotAvailabilityRepository.saveAll(toSave);
-                log.info("Seeded {} slot availability rows for {} templates on date {}",
-                        toSave.size(), templates.size(), targetDate.toLocalDate());
+                log.info("Seeded {} slot availability rows for station {}", toSave.size(), station.getStationName());
             });
 
         } catch (Exception e) {
-            log.warn("Failed to seed slot availability: {}", e.getMessage(), e);
+            log.error("Failed to seed data for station: " + station.getStationName(), e);
         }
+    }
+    private void initSlotAvailability() {
+        // Danh sách tên các trạm cần seed data
+        List<String> stationNames = List.of(
+                "VinFast SmartCharge - Quận 1",
+                "EVN Station - Thủ Đức City",
+                "VinFast Station - Landmark 81",
+                "EVN Station - Quận 7",
+                "VinFast Station - Aeon Mall Tân Phú",
+                "EVN Station - Quận 3",
+                "VinFast SmartCharge - Quận 10",
+                "EVN Station - Bình Tân",
+                "VinFast Station - GigaMall Thủ Đức",
+                "EVN Station - Quận 5"
+        );
+
+        log.info("Starting batch seed slot availability...");
+
+        for (String name : stationNames) {
+            var stationOpt = chargingStationRepository.findByStationName(name);
+
+            if (stationOpt.isPresent()) {
+                // Gọi hàm helper đã tách ở bước 1
+                seedStation(stationOpt.get());
+            } else {
+                log.warn("Station not found: {}", name);
+            }
+        }
+
+        log.info("Finished batch seed slot availability.");
     }
 
     // ================== CONNECTOR TYPES ==================
@@ -519,23 +534,46 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ================== DEFAULT STAFF (do Admin tạo) ==================
-    public void initStaffs() {
-        createStaffIfNotExists(
-                "0900000001",
-                "staff1@example.com",
-                "123123",
-                "Default Staff",
-                "F",
-                LocalDate.of(1998, 1, 1),
-                "HCM, Vietnam",
-                "OPERATOR"
-        );
+    private void initStaffs() {
+        log.info("Starting staff seeding...");
+
+        // Staff 1 -> VinFast SmartCharge - Quận 1
+        createStaffIfNotExists("0900000011", "dinhhuy09349@gmail.com", "123123",
+                "Dinh huy Staff", "F", LocalDate.of(1998, 1, 1), "HCM, Vietnam",
+                "OPERATOR", "VinFast SmartCharge - Quận 1");
+
+        // Staff 2 -> EVN Station - Thủ Đức City
+        createStaffIfNotExists("0900000002", "staff2@example.com", "123123",
+                "Station Staff 2", "M", LocalDate.of(1997, 2, 2), "HCM, Vietnam",
+                "OPERATOR", "EVN Station - Thủ Đức City");
+
+        // Staff 3 -> VinFast Station - Landmark 81
+        createStaffIfNotExists("0900000003", "staff3@example.com", "123123",
+                "Station Staff 3", "F", LocalDate.of(1999, 3, 3), "HCM, Vietnam",
+                "SUPPORT", "VinFast Station - Landmark 81");
+
+        // Staff 4 -> EVN Station - Quận 7
+        createStaffIfNotExists("0900000004", "staff4@example.com", "123123",
+                "Station Staff 4", "M", LocalDate.of(1996, 4, 4), "HCM, Vietnam",
+                "OPERATOR", "EVN Station - Quận 7");
+
+        // Staff 5 -> VinFast Station - Aeon Mall Tân Phú
+        createStaffIfNotExists("0900000005", "staff5@example.com", "123123",
+                "Station Staff 5", "F", LocalDate.of(2000, 5, 5), "HCM, Vietnam",
+                "SUPPORT", "VinFast Station - Aeon Mall Tân Phú");
+
+        // Staff 6 -> EVN Station - Quận 3
+        createStaffIfNotExists("0900000006", "staff6@example.com", "123123",
+                "Station Staff 6", "F", LocalDate.of(1995, 6, 6), "HCM, Vietnam",
+                "OPERATOR", "EVN Station - Quận 3");
+
+        log.info("Finished staff seeding.");
     }
 
     @Transactional
     public void createStaffIfNotExists(String phoneNumber, String email, String rawPassword,
-                                          String name, String gender, LocalDate dateOfBirth, String address,
-                                          String roleAtStation) {
+                                       String name, String gender, LocalDate dateOfBirth, String address,
+                                       String roleAtStation, String targetStationName) { // <--- Thêm tham số này
         try {
             boolean phoneExists = phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber);
             boolean emailExists = email != null && userRepository.existsByEmail(email);
@@ -555,7 +593,9 @@ public class DataInitializer implements CommandLineRunner {
                 staffUser.setPhoneNumber(phoneNumber);
                 staffUser.setEmail(email);
                 staffUser.setName(name != null ? name : "Staff");
-                staffUser.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "Staff@123"));
+                // Lưu ý: Mình set cứng pass là Staff@123 để bạn dễ login test,
+                // vì passwordHash trong SQL bạn gửi không thể decrypt ngược lại thành raw password được.
+                staffUser.setPasswordHash(passwordEncoder.encode(rawPassword != null ? rawPassword : "123123"));
                 staffUser.setGender(gender);
                 staffUser.setDateOfBirth(dateOfBirth);
                 staffUser.setAddress(address);
@@ -573,14 +613,11 @@ public class DataInitializer implements CommandLineRunner {
                         .roleAtStation(roleAtStation)
                         .build();
                 staff = staffsRepository.save(staff);
-                log.info("Mapped USER {} to STAFFS table (status={}, roleAtStation={})",
-                        staffUser.getUserId(), StaffStatus.ACTIVE, roleAtStation);
-            } else {
-                log.info("Staffs mapping already exists for userId={}", staffUser.getUserId());
+                log.info("Mapped USER {} to STAFFS table", staffUser.getUserId());
             }
 
-            // ✅ Thêm: Gán luôn station cho staff này
-            var stationOpt = chargingStationRepository.findByStationName("VinFast SmartCharge - Quận 1");
+            // ✅ Gán station dựa trên tham số truyền vào
+            var stationOpt = chargingStationRepository.findByStationName(targetStationName); // <--- Dùng tham số
             if (stationOpt.isPresent()) {
                 var station = stationOpt.get();
                 final Staffs currentStaff = staff;
@@ -597,23 +634,15 @@ public class DataInitializer implements CommandLineRunner {
                             .unassignedAt(null)
                             .build();
 
-//                    // set 2 chiều (tùy thích, để bộ nhớ đồng bộ)
-//                    station.getStationStaffs().add(link);
-//                    currentStaff.getStationStaffs().add(link);
-
-                    // ✅ Lưu TRỰC TIẾP vào bảng station_staff
                     stationStaffRepository.save(link);
-
-                    log.info("Linked staff {} to default station '{}'", staffUser.getName(), station.getStationName());
-                } else {
-                    log.info("Staff {} already assigned to station '{}'", staffUser.getName(), station.getStationName());
+                    log.info("Linked staff {} to station '{}'", staffUser.getName(), station.getStationName());
                 }
             } else {
-                log.warn("Default station not found, skipping station assignment for staff {}", staffUser.getName());
+                log.warn("Station '{}' not found, skipping assignment for staff {}", targetStationName, staffUser.getName());
             }
 
         } catch (Exception e) {
-            log.error("Failed to create default staff (phone={}, email={}): {}", phoneNumber, email, e.getMessage(), e);
+            log.error("Failed to create staff {}: {}", phoneNumber, e.getMessage());
         }
     }
 
@@ -649,6 +678,11 @@ public class DataInitializer implements CommandLineRunner {
         createDriverIfNotExists(
                 "0987456321", "leekianhong938@gmail.com", "123123",
                 "Test Ban Driver 3", "F", LocalDate.of(2001, 5, 29),
+                "Hanoi, Vietnam", DriverStatus.ACTIVE
+        );
+        createDriverIfNotExists(
+                "0919298296", "doanhuy0852@gmail.com", "123123",
+                "HuyDoan", "F", LocalDate.of(2001, 5, 29),
                 "Hanoi, Vietnam", DriverStatus.ACTIVE
         );
     }
