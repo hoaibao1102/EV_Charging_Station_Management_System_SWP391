@@ -147,8 +147,24 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
             vehiclePlate = vehicle.getVehiclePlate();
         }
 
+        // ==== GET POINT NUMBER FOR THIS BOOKING ====
+        String pointNumber = "Unknown";
+
+        var firstSlot = booking.getBookingSlots().stream()
+                .findFirst()
+                .orElse(null);
+
+        if (firstSlot != null &&
+                firstSlot.getSlot() != null &&
+                firstSlot.getSlot().getChargingPoint() != null &&
+                firstSlot.getSlot().getChargingPoint().getPointNumber() != null) {
+
+            pointNumber = firstSlot.getSlot().getChargingPoint().getPointNumber();
+        }
+
         return StartCharSessionResponse.builder()
                 .sessionId(session.getSessionId())
+                .pointNumber(pointNumber)
                 .bookingId(booking.getBookingId())
                 .stationName(booking.getStation().getStationName())
                 .vehiclePlate(vehiclePlate)        // có thể null nếu booking không gắn vehicle
