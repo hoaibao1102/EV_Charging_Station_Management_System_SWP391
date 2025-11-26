@@ -16,6 +16,14 @@
   gap: 16px;
 }
 
+.session-item {
+  border-radius: 20px;
+  margin: 10px;
+  background-color: #e9ecef;
+  width: 600px;
+  padding: 16px;
+}
+
 .loading-spinner {
   width: 50px;
   height: 50px;
@@ -207,6 +215,7 @@
   margin: 0 0 16px 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
@@ -217,6 +226,49 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+}
+
+/* ==================== SYSTEM STATS (ĐÃ SỬA) ==================== */
+.system-stats {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+}
+
+.system-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.system-stat-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.system-stat-item .stat-label {
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+}
+
+.system-stat-item .stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  font-family: monospace;
+}
+
+.system-stat-item:last-child .stat-label {
+  font-weight: 600;
+  color: #00897b;
+}
+
+.system-stat-item:last-child .stat-value {
+  color: #00897b;
+  font-size: 18px;
 }
 
 /* ==================== POINTS STATUS ==================== */
@@ -232,6 +284,15 @@
   gap: 12px;
   padding: 12px;
   background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.system-stat-item.label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #20b2aa;
   border-radius: 8px;
 }
 
@@ -325,15 +386,39 @@
   text-align: center;
 }
 
-/* ==================== STATIONS LIST ==================== */
-.stations-list {
+/* ==================== LISTS (SESSIONS, BOOKINGS, ACTIVITIES) ==================== */
+
+/* Cấu hình chung cho các danh sách */
+.sessions-list,
+.stations-list,
+.bookings-list,
+.activities-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-height: 500px;
-  overflow-y: auto;
+  gap: 12px;
+  overflow-y: auto; /* Cho phép cuộn dọc */
+  padding-right: 4px; /* Chừa chỗ cho thanh cuộn */
 }
 
+/* QUAN TRỌNG: Cấu hình hiển thị 3 item cho sessions 
+   Mỗi item ~100px (bao gồm padding + margin), nên 340px là đủ cho 3 item 
+*/
+.sessions-list,
+.sessions-history {
+  max-height: 436px;
+}
+
+/* Giữ chiều cao cũ cho các list khác hoặc tùy chỉnh nếu muốn */
+.stations-list,
+.activities-list {
+  max-height: 500px;
+}
+
+.bookings-list {
+  max-height: 400px;
+}
+
+/* --- Style cho items --- */
 .station-item {
   padding: 16px;
   background: #f8f9fa;
@@ -427,15 +512,6 @@
   background: #f44336;
 }
 
-/* ==================== BOOKINGS LIST ==================== */
-.bookings-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
 .booking-item {
   padding: 16px;
   background: #f8f9fa;
@@ -476,15 +552,6 @@
 .booking-driver {
   font-weight: 600;
   color: #333;
-}
-
-/* ==================== ACTIVITIES LIST ==================== */
-.activities-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 500px;
-  overflow-y: auto;
 }
 
 .activity-item {
@@ -538,12 +605,14 @@
 }
 
 /* ==================== SCROLLBAR STYLING ==================== */
+.sessions-list::-webkit-scrollbar,
 .stations-list::-webkit-scrollbar,
 .bookings-list::-webkit-scrollbar,
 .activities-list::-webkit-scrollbar {
   width: 6px;
 }
 
+.sessions-list::-webkit-scrollbar-track,
 .stations-list::-webkit-scrollbar-track,
 .bookings-list::-webkit-scrollbar-track,
 .activities-list::-webkit-scrollbar-track {
@@ -551,6 +620,7 @@
   border-radius: 10px;
 }
 
+.sessions-list::-webkit-scrollbar-thumb,
 .stations-list::-webkit-scrollbar-thumb,
 .bookings-list::-webkit-scrollbar-thumb,
 .activities-list::-webkit-scrollbar-thumb {
@@ -558,6 +628,7 @@
   border-radius: 10px;
 }
 
+.sessions-list::-webkit-scrollbar-thumb:hover,
 .stations-list::-webkit-scrollbar-thumb:hover,
 .bookings-list::-webkit-scrollbar-thumb:hover,
 .activities-list::-webkit-scrollbar-thumb:hover {

@@ -347,6 +347,7 @@ export default function SessionCharging() {
                 <thead>
                   <tr>
                     <th>MÃ PHIÊN</th>
+                    <th>ĐIỂM SẠC</th>
                     <th>CHI PHÍ</th>
                     <th>THỜI GIAN BẮT ĐẦU</th>
                     <th>THỜI LƯỢNG (PHÚT)</th>
@@ -372,17 +373,28 @@ export default function SessionCharging() {
                     const statusKey = String(status)
                       .toLowerCase()
                       .replace(/\s+/g, "_");
+
+                    // ✅ Lấy pointNumber từ API hoặc sessionStorage
+                    let pointNumber =
+                      s?.pointNumber || s?.chargingPoint?.pointNumber || null;
+                    if (!pointNumber && sessionId) {
+                      try {
+                        const cached = sessionStorage.getItem(
+                          `session_${sessionId}_pointNumber`
+                        );
+                        if (cached) pointNumber = cached;
+                      } catch (err) {
+                        console.debug(
+                          "Failed to read cached pointNumber:",
+                          err
+                        );
+                      }
+                    }
+
                     return (
-                      <tr
-                        key={sessionId}
-                        onClick={() =>
-                          navigate(paths.manageSessionChargingCreate, {
-                            state: { openCamera: true, bookingId },
-                          })
-                        }
-                        style={{ cursor: "pointer" }}
-                      >
+                      <tr>
                         <td>{sessionId}</td>
+                        <td>{pointNumber || "-"}</td>
                         <td>
                           {Number(cost).toLocaleString()} {s?.currency || ""}
                         </td>
@@ -424,6 +436,7 @@ export default function SessionCharging() {
                 <thead>
                   <tr>
                     <th>MÃ PHIÊN</th>
+                    <th>ĐIỂM SẠC</th>
                     <th>CHI PHÍ</th>
                     <th>THỜI GIAN BẮT ĐẦU</th>
                     <th>THỜI GIAN KẾT THÚC</th>
@@ -450,13 +463,40 @@ export default function SessionCharging() {
                     const statusKey = String(status)
                       .toLowerCase()
                       .replace(/\s+/g, "_");
+
+                    // ✅ Lấy pointNumber từ API, sessionStorage cache, hoặc completed_session cache
+                    let pointNumber =
+                      s?.pointNumber || s?.chargingPoint?.pointNumber || null;
+                    if (!pointNumber && sessionId) {
+                      try {
+                        // Try dedicated cache first
+                        let cached = sessionStorage.getItem(
+                          `session_${sessionId}_pointNumber`
+                        );
+                        if (cached) {
+                          pointNumber = cached;
+                        } else {
+                          // Try full session cache
+                          const fullCache = sessionStorage.getItem(
+                            `completed_session_${sessionId}`
+                          );
+                          if (fullCache) {
+                            const parsed = JSON.parse(fullCache);
+                            pointNumber = parsed?.pointNumber || null;
+                          }
+                        }
+                      } catch (err) {
+                        console.debug(
+                          "Failed to read cached pointNumber:",
+                          err
+                        );
+                      }
+                    }
+
                     return (
-                      <tr
-                        key={sessionId}
-                        onClick={() => handleCompletedSessionClick(s)}
-                        style={{ cursor: "pointer" }}
-                      >
+                      <tr>
                         <td>{sessionId}</td>
+                        <td>{pointNumber || "-"}</td>
                         <td>
                           {Number(cost).toLocaleString()} {s?.currency || ""}
                         </td>

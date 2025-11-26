@@ -332,31 +332,57 @@ export default function Booking() {
       const todayStr = `${year}-${month}-${day}`;
 
       const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
+
+      const currentMinute = now.getMinutes(); // ✅ Mới: Lấy thêm phút
 
       console.log("📅 Today:", todayStr);
       console.log("⏰ Current time:", `${currentHour}:${currentMinute}`);
 
-      const validSlots = normalized.filter((slot) => {
-        // 1. Chỉ lấy slot của hôm nay
-        if (slot.Date !== todayStr) return false;
+      // Filter slots: chỉ hiển thị slot của ngày hôm nay và chưa kết thúc
+      const filteredSlots = normalized.filter((slot) => {
+        // 1. Filter theo ngày: chỉ lấy slot của ngày hôm nay
+        const slotDate = slot.Date;
+        if (!slotDate) return false;
 
-        // 2. Chỉ lấy slot có thời gian bắt đầu >= giờ hiện tại
-        const [slotHour, slotMin] = slot.StartTime.split(":").map(Number);
-        if (slotHour < currentHour) return false;
-        if (slotHour === currentHour && slotMin < currentMinute) return false;
+        // Extract YYYY-MM-DD từ slot.Date
+        let slotDateStr = String(slotDate);
+        if (slotDateStr.includes("T")) {
+          slotDateStr = slotDateStr.split("T")[0];
+        } else if (slotDateStr.includes(" ")) {
+          slotDateStr = slotDateStr.split(" ")[0];
+        }
 
-        // 3. Chỉ lấy slot AVAILABLE
-        return String(slot.Status).toLowerCase() === "available";
+        // Nếu không phải ngày hôm nay thì loại bỏ
+        if (slotDateStr !== todayStr) {
+          return false;
+        }
+
+        // 2. ✅ LOGIC MỚI: Filter theo giờ KẾT THÚC (EndTime)
+        const slotEndTimeStr = slot.EndTime;
+        if (!slotEndTimeStr || slotEndTimeStr === "N/A") {
+          return true;
+        }
+
+        // Parse giờ kết thúc của slot
+        const [endH, endM] = slotEndTimeStr.split(":").map(Number);
+
+        // Hiển thị nếu slot CHƯA kết thúc (EndTime > CurrentTime)
+        // Ví dụ: 19:15, Slot kết thúc lúc 20:00 -> 20 > 19 -> OK
+        return (
+          endH > currentHour || (endH === currentHour && endM > currentMinute)
+        );
       });
 
       // Sắp xếp theo thời gian bắt đầu
-      validSlots.sort((a, b) => a.StartTime.localeCompare(b.StartTime));
+      filteredSlots.sort((a, b) => a.StartTime.localeCompare(b.StartTime));
 
-      console.log("✅ Total valid slots (today + future + available):", validSlots.length);
-      console.log("✅ Sample valid slot:", validSlots[0]);
+      console.log(
+        "✅ Total valid slots (today + future + available):",
+        filteredSlots.length
+      );
+      console.log("✅ Sample valid slot:", filteredSlots[0]);
 
-      setAvailableSlots(validSlots);
+      setAvailableSlots(filteredSlots);
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách slot:", error);
       toast.error("Không thể lấy danh sách slot sạc!", {
@@ -558,7 +584,12 @@ export default function Booking() {
                 const isAvailable =
                   String(slot.Status ?? "").toLowerCase() === "available";
 
-                // ✅ Không cần check isPast vì đã filter ở fetchAvailableSlots
+                // Kiểm tra nếu slot đã qua giờ hiện tại
+                const now = new Date(); // Lấy giờ hiện tại
+                // ✅ LOGIC MỚI: Check theo EndTime thay vì StartTime để không disable slot hiện tại
+                const slotEndTime = new Date(`${slot.Date}T${slot.EndTime}:00`);
+                const isPast = slotEndTime <= now;
+
                 const canSelect =
                   selectedSlots.length === 0 ||
                   isSlotAdjacent(slot.SlotID, selectedSlots);
