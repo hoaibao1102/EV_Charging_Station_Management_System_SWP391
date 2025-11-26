@@ -23,7 +23,7 @@ export default function Header() {
         </div>
         <div className="header-right">
             <img src={icon_user} onClick={() => setFormProfile(true)}  alt="Icon User" />
-            <h1>Chào mừng {(role === 'STAFF' ? "nhân viên" : role === "ADMIN" ? "quản trị viên" : "người dùng")} trở lại hệ thống!</h1>             
+            <h1>Chào mừng {role === 'ADMIN' ? "quản trị viên" : role === 'STAFF' ? "nhân viên" : "người dùng"} trở lại hệ thống!</h1>             
         </div>
     </div>}
     </>

@@ -286,7 +286,7 @@ export default function Booking() {
     []
   );
 
-  // ===== Lấy danh sách slot theo PointID và chuẩn hóa =====
+  // ===== Lấy danh sách slot theo PointID và chuẩn hóa (theo logic InstantCharging) =====
   const fetchAvailableSlots = async () => {
     if (!pointId) {
       return;
@@ -296,108 +296,67 @@ export default function Booking() {
       setLoading(true);
 
       const response = await stationAPI.getAvaila(pointId);
-      const rows = Array.isArray(response?.data) ? response.data : [];
+      const rawSlots = Array.isArray(response?.data) ? response.data : [];
 
-      const matchedRows = rows.filter((r) => {
-        return String(r?.pointId) === String(pointId);
-      });
-
-      const templateIds = Array.from(
-        new Set(
-          matchedRows
-            .map((r) => r?.templateId)
-            .filter((v) => v != null)
-            .map((v) => String(v))
-        )
-      );
-
+      // Lấy unique template IDs
+      const uniqueTemplateIds = [...new Set(rawSlots.map((s) => s.templateId))];
       const templateMap = {};
-      if (templateIds.length > 0) {
-        try {
-          const promises = templateIds.map((tid) =>
-            stationAPI.getTemplate(tid).then((res) => ({ tid, res }))
-          );
-          const results = await Promise.all(promises);
-          results.forEach(({ tid, res }) => {
-            if (res && res.data) {
+
+      // Fetch templates song song
+      await Promise.all(
+        uniqueTemplateIds.map(async (tid) => {
+          try {
+            const res = await stationAPI.getTemplate(tid);
+            if (res?.data) {
               templateMap[String(tid)] = res.data;
             }
-          });
-        } catch (err) {
-          console.warn("⚠️ Error fetching templates:", err);
-        }
-      }
+          } catch (err) {
+            console.warn(`⚠️ Failed to fetch template ${tid}:`, err);
+          }
+        })
+      );
 
-      const numericTemplateIds = matchedRows
-        .map((r) => r?.templateId)
-        .map((v) => Number(v))
-        .filter((v) => Number.isFinite(v));
-      const templateBase =
-        numericTemplateIds.length > 0
-          ? Math.min(...numericTemplateIds)
-          : undefined;
-
-      const normalized = matchedRows.map((r) => {
-        const result = normalizeSlotRecord(
-          r,
-          pointId,
-          templateBase,
-          templateMap
-        );
-        return result;
-      });
+      // Normalize slots
+      const normalized = rawSlots.map((record) =>
+        normalizeSlotRecord(record, pointId, undefined, templateMap)
+      );
 
       console.log("📊 Total normalized slots:", normalized.length);
       console.log("📊 Sample normalized slot:", normalized[0]);
 
-      // Lấy ngày hôm nay (YYYY-MM-DD) - sử dụng local date để tránh lỗi timezone
+      // ✅ Filter logic: Lấy slot tương lai của HÔM NAY (giống InstantCharging)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
-      const today = `${year}-${month}-${day}`;
+      const todayStr = `${year}-${month}-${day}`;
+
       const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
 
-      console.log("📅 Today:", today);
-      console.log("⏰ Current hour:", currentHour);
+      console.log("📅 Today:", todayStr);
+      console.log("⏰ Current time:", `${currentHour}:${currentMinute}`);
 
-      // Filter slots: chỉ hiển thị slot của ngày hôm nay và giờ >= giờ hiện tại
-      const filteredSlots = normalized.filter((slot) => {
-        // 1. Filter theo ngày: chỉ lấy slot của ngày hôm nay
-        const slotDate = slot.Date;
-        if (!slotDate) return false;
+      const validSlots = normalized.filter((slot) => {
+        // 1. Chỉ lấy slot của hôm nay
+        if (slot.Date !== todayStr) return false;
 
-        // Extract YYYY-MM-DD từ slot.Date - hỗ trợ cả format có 'T' và có space
-        let slotDateStr = String(slotDate);
-        if (slotDateStr.includes("T")) {
-          slotDateStr = slotDateStr.split("T")[0];
-        } else if (slotDateStr.includes(" ")) {
-          slotDateStr = slotDateStr.split(" ")[0];
-        }
+        // 2. Chỉ lấy slot có thời gian bắt đầu >= giờ hiện tại
+        const [slotHour, slotMin] = slot.StartTime.split(":").map(Number);
+        if (slotHour < currentHour) return false;
+        if (slotHour === currentHour && slotMin < currentMinute) return false;
 
-        // Nếu không phải ngày hôm nay thì loại bỏ
-        if (slotDateStr !== today) {
-          return false;
-        }
-
-        // 2. Filter theo giờ: chỉ hiển thị slot có giờ bắt đầu >= giờ hiện tại
-        const slotStartTimeStr = slot.StartTime;
-
-        // Nếu slot không có StartTime hợp lệ, GIỮ LẠI (nếu đã qua filter ngày)
-        if (!slotStartTimeStr || slotStartTimeStr === "N/A") {
-          return true;
-        }
-
-        // Parse giờ bắt đầu của slot
-        const slotHour = parseInt(slotStartTimeStr.split(":")[0], 10);
-
-        // Chỉ hiển thị slot có giờ bắt đầu >= giờ hiện tại
-        return slotHour >= currentHour;
+        // 3. Chỉ lấy slot AVAILABLE
+        return String(slot.Status).toLowerCase() === "available";
       });
 
-      console.log("✅ Total filtered slots:", filteredSlots.length);
-      console.log("✅ Sample filtered slot:", filteredSlots[0]);
-      setAvailableSlots(filteredSlots);
+      // Sắp xếp theo thời gian bắt đầu
+      validSlots.sort((a, b) => a.StartTime.localeCompare(b.StartTime));
+
+      console.log("✅ Total valid slots (today + future + available):", validSlots.length);
+      console.log("✅ Sample valid slot:", validSlots[0]);
+
+      setAvailableSlots(validSlots);
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách slot:", error);
       toast.error("Không thể lấy danh sách slot sạc!", {
@@ -599,20 +558,13 @@ export default function Booking() {
                 const isAvailable =
                   String(slot.Status ?? "").toLowerCase() === "available";
 
-                // Kiểm tra nếu slot đã qua giờ hiện tại
-                const now = new Date(); // Lấy giờ hiện tại
-                const slotStartTime = new Date(
-                  `${slot.Date}T${slot.StartTime}:00`
-                ); // Thêm giây để đảm bảo định dạng
-                const isPast = slotStartTime <= now;
-
+                // ✅ Không cần check isPast vì đã filter ở fetchAvailableSlots
                 const canSelect =
-                  !isPast &&
-                  (selectedSlots.length === 0 ||
-                    isSlotAdjacent(slot.SlotID, selectedSlots));
+                  selectedSlots.length === 0 ||
+                  isSlotAdjacent(slot.SlotID, selectedSlots);
+
                 // Disabled if not available or other selection rules
                 const isDisabled =
-                  isPast ||
                   !isAvailable ||
                   (!isSelected && selectedSlots.length >= MAX_SLOTS) ||
                   (!isSelected && selectedSlots.length > 0 && !canSelect);
@@ -640,10 +592,8 @@ export default function Booking() {
                     </p>
                     <p className="slot-status">
                       <strong>Trạng thái:</strong>{" "}
-                      <span className={isPast ? "past" : "available"}>
-                        {isPast
-                          ? "Đã qua giờ"
-                          : String(slot.Status).toLowerCase() === "available"
+                      <span className="available">
+                        {String(slot.Status).toLowerCase() === "available"
                           ? "Còn trống"
                           : slot.Status}
                       </span>

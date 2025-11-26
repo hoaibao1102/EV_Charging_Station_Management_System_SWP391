@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Nav from 'react-bootstrap/Nav';
+import Table from 'react-bootstrap/Table';
 import apiClient from "../../api/apiUrls.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
 import paths from "../../path/paths.jsx";
-import "./TransactionHistory.css";
+import Header from '../../components/admin/Header.jsx';
+import "../admin/ManagementUser.css";
 
 export default function TransactionHistory() {
   const navigate = useNavigate();
@@ -15,6 +18,7 @@ export default function TransactionHistory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("DATE_DESC");
+  const [activeTab, setActiveTab] = useState("ALL");
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -37,6 +41,8 @@ export default function TransactionHistory() {
       setLoading(true);
       const response = await apiClient.get("/api/driver/transactions");
 
+      // Sort by createdAt (newest first)
+      console.log("Raw transaction data:", response.data);
       const sortedData = (response.data || []).sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
@@ -76,6 +82,7 @@ export default function TransactionHistory() {
         return "#9e9e9e";
     }
   };
+
 
   const getStatusText = (status) => {
     switch (status) {
@@ -331,17 +338,6 @@ export default function TransactionHistory() {
     return `${amount.toLocaleString("vi-VN")} ${currency}`;
   };
 
-  if (loading) {
-    return (
-      <div className="transaction-history-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Đang tải lịch sử giao dịch...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="transaction-history-container">
       {/* Header */}
@@ -384,32 +380,98 @@ export default function TransactionHistory() {
         </div>
       </div>
 
-      {/* Total Amount Card */}
-      <div className="total-amount-card">
-        <div className="total-amount-icon">💰</div>
-        <div className="total-amount-info">
-          <div className="total-amount-label">Tổng tiền đã thanh toán</div>
-          <div className="total-amount-value">
-            {formatCurrency(stats.totalAmount)}
-          </div>
-        </div>
-      </div>
+      <ul className="statistics-section">
+        <li className="stat-card">
+          Tổng giao dịch
+          <strong>{stats.total}</strong>
+        </li>
+        <li className="stat-card">
+          Hoàn tất
+          <strong>{stats.completed}</strong>
+        </li>
+        <li className="stat-card">
+          Chờ duyệt
+          <strong>{stats.pending}</strong>
+        </li>
+        <li className="stat-card">
+          Thất bại
+          <strong>{stats.failed}</strong>
+        </li>
+        <li className="stat-card">
+          Tổng tiền
+          <strong>{formatCurrency(stats.totalAmount)}</strong>
+        </li>
+      </ul>
 
-      {/* Search & Filter Bar */}
-      <div className="search-filter-bar">
-        <div className="search-box">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Tìm kiếm theo mã GD, trạm, biển số..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button className="search-clear" onClick={() => setSearchTerm("")}>
-              ✕
-            </button>
+      <div className="table-section">
+        <div className="table-scroll-container">
+          
+          <div className="filter-section">
+            <Nav justify variant="tabs" activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+              <Nav.Item>
+                <Nav.Link eventKey="ALL">Tất cả</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="COMPLETED">Hoàn tất</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="PENDING">Chờ duyệt</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="FAILED">Thất bại</Nav.Link>
+              </Nav.Item>
+            </Nav>
+            
+            <div style={{ marginTop: '15px' }}>
+              <input 
+                type="text"
+                className="search-input"
+                placeholder="🔍 Tìm kiếm theo mã GD, trạm, biển số..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '30px' }}>
+              Đang tải...
+            </div>
+          ) : (
+            <Table className="custom-table">
+              <thead>
+                <tr>
+                  <th>MÃ GIAO DỊCH</th>
+                  <th>THỜI GIAN</th>
+                  <th>SỐ TIỀN</th>
+                  <th>TRẠNG THÁI</th>
+                  <th>TRẠM SẠC</th>
+                  <th>BIỂN SỐ XE</th>
+                  <th>MÔ TẢ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayItems.length > 0 ? (
+                  displayItems.map((transaction) => (
+                    <tr key={transaction.transactionId}>
+                      <td>#{transaction.transactionId}</td>
+                      <td>{formatDateTime(transaction.createdAt)}</td>
+                      <td>{formatCurrency(transaction.amount, transaction.currency)}</td>
+                      <td>{getStatusText(transaction.status)}</td>
+                      <td>{transaction.stationName || "-"}</td>
+                      <td>{transaction.vehiclePlate || "-"}</td>
+                      <td>{transaction.description || "-"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px' }}>
+                      Không tìm thấy giao dịch phù hợp với yêu cầu.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
           )}
         </div>
       </div>
