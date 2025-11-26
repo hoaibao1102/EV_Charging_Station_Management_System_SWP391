@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.dto.response;
 
 import com.swp391.gr3.ev_management.enums.UserVehicleStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +20,5 @@ public class VehicleResponse {
     private String brand;
     private String connectorTypeName;
     private UserVehicleStatus vehicleStatus;
+    private Double batteryCapacityKWh; // ✅ Thêm dung lượng pin
 }

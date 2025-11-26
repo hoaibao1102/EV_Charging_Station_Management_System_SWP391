@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Nav from 'react-bootstrap/Nav';
-import Table from 'react-bootstrap/Table';
+import Nav from "react-bootstrap/Nav";
+import Table from "react-bootstrap/Table";
 import apiClient from "../../api/apiUrls.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
 import paths from "../../path/paths.jsx";
-import Header from '../../components/admin/Header.jsx';
+import Header from "../../components/admin/Header.jsx";
 import "../admin/ManagementUser.css";
+import "./TransactionHistory.css";
 
 export default function TransactionHistory() {
   const navigate = useNavigate();
@@ -18,7 +19,6 @@ export default function TransactionHistory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("DATE_DESC");
-  const [activeTab, setActiveTab] = useState("ALL");
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -82,7 +82,6 @@ export default function TransactionHistory() {
         return "#9e9e9e";
     }
   };
-
 
   const getStatusText = (status) => {
     switch (status) {
@@ -279,11 +278,15 @@ export default function TransactionHistory() {
         type: "INVOICE",
         id: inv.invoiceId,
         createdAt: inv.issuedAt,
+        status: "UNPAID", // Add status for consistency
       }));
   } else {
-    // Show transactions
+    // Show transactions (filter by status)
     displayItems = transactions
-      .filter((t) => filter === "ALL" || t.status === filter)
+      .filter((t) => {
+        if (filter === "ALL") return true;
+        return t.status === filter;
+      })
       .filter(filterByDate)
       .filter(
         (t) =>
@@ -380,100 +383,15 @@ export default function TransactionHistory() {
         </div>
       </div>
 
-      <ul className="statistics-section">
-        <li className="stat-card">
-          Tổng giao dịch
-          <strong>{stats.total}</strong>
-        </li>
-        <li className="stat-card">
-          Hoàn tất
-          <strong>{stats.completed}</strong>
-        </li>
-        <li className="stat-card">
-          Chờ duyệt
-          <strong>{stats.pending}</strong>
-        </li>
-        <li className="stat-card">
-          Thất bại
-          <strong>{stats.failed}</strong>
-        </li>
-        <li className="stat-card">
-          Tổng tiền
-          <strong>{formatCurrency(stats.totalAmount)}</strong>
-        </li>
-      </ul>
-
-      <div className="table-section">
-        <div className="table-scroll-container">
-          
-          <div className="filter-section">
-            <Nav justify variant="tabs" activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
-              <Nav.Item>
-                <Nav.Link eventKey="ALL">Tất cả</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="COMPLETED">Hoàn tất</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="PENDING">Chờ duyệt</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="FAILED">Thất bại</Nav.Link>
-              </Nav.Item>
-            </Nav>
-            
-            <div style={{ marginTop: '15px' }}>
-              <input 
-                type="text"
-                className="search-input"
-                placeholder="🔍 Tìm kiếm theo mã GD, trạm, biển số..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '30px' }}>
-              Đang tải...
-            </div>
-          ) : (
-            <Table className="custom-table">
-              <thead>
-                <tr>
-                  <th>MÃ GIAO DỊCH</th>
-                  <th>THỜI GIAN</th>
-                  <th>SỐ TIỀN</th>
-                  <th>TRẠNG THÁI</th>
-                  <th>TRẠM SẠC</th>
-                  <th>BIỂN SỐ XE</th>
-                  <th>MÔ TẢ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayItems.length > 0 ? (
-                  displayItems.map((transaction) => (
-                    <tr key={transaction.transactionId}>
-                      <td>#{transaction.transactionId}</td>
-                      <td>{formatDateTime(transaction.createdAt)}</td>
-                      <td>{formatCurrency(transaction.amount, transaction.currency)}</td>
-                      <td>{getStatusText(transaction.status)}</td>
-                      <td>{transaction.stationName || "-"}</td>
-                      <td>{transaction.vehiclePlate || "-"}</td>
-                      <td>{transaction.description || "-"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px' }}>
-                      Không tìm thấy giao dịch phù hợp với yêu cầu.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          )}
-        </div>
+      {/* Search Bar */}
+      <div className="search-section">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="🔍 Tìm kiếm theo mã GD, trạm, biển số..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       {/* Date Filter & Sort */}
@@ -508,7 +426,7 @@ export default function TransactionHistory() {
 
       {/* Filter Tabs */}
       <div className="filter-tabs">
-        {["ALL", "COMPLETED", "UNPAID", "FAILED"].map((status) => (
+        {["ALL", "COMPLETED", "PENDING", "UNPAID", "FAILED"].map((status) => (
           <button
             key={status}
             className={`filter-tab ${filter === status ? "active" : ""}`}
@@ -519,6 +437,8 @@ export default function TransactionHistory() {
                 ? "Tất cả"
                 : status === "COMPLETED"
                 ? "Hoàn tất"
+                : status === "PENDING"
+                ? "Chờ duyệt"
                 : status === "UNPAID"
                 ? "Chưa thanh toán"
                 : "Thất bại"}

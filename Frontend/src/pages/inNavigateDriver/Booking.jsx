@@ -416,6 +416,17 @@ export default function Booking() {
       return;
     }
 
+    // Lưu batteryCapacityKWh vào sessionStorage
+    if (bookingData.vehicle?.batteryCapacityKWh != null) {
+      sessionStorage.setItem(
+        "batteryCapacityKWh",
+        bookingData.vehicle.batteryCapacityKWh
+      );
+      console.log(
+        `✅ Saved batteryCapacityKWh=${bookingData.vehicle.batteryCapacityKWh} to sessionStorage`
+      );
+    }
+
     fetchAvailableSlots();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, bookingData, pointId]);
