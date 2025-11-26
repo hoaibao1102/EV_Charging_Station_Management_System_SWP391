@@ -188,14 +188,14 @@ public class VehicleModelServiceImpl implements VehicleModelService {
 
         // 4) Rule nghiệp vụ:
         //    Không cho set sang INACTIVE nếu đang có xe sử dụng model này
-        if (status == VehicleModelStatus.INACTIVE) {
-            long usage = userVehicleService.countByModel_ModelId(id);
-            if (usage > 0) {
-                throw new ConflictException(
-                        "Cannot set status to INACTIVE. Model is used by " + usage + " vehicle(s)"
-                );
-            }
-        }
+//        if (status == VehicleModelStatus.INACTIVE) {
+//            long usage = userVehicleService.countByModel_ModelId(id);
+//            if (usage > 0) {
+//                throw new ConflictException(
+//                        "Cannot set status to INACTIVE. Model is used by " + usage + " vehicle(s)"
+//                );
+//            }
+//        }
 
         // 5) Lưu lại status cũ để log
         VehicleModelStatus oldStatus = vm.getStatus();
