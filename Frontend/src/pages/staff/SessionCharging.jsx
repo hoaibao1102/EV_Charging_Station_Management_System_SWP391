@@ -348,7 +348,6 @@ export default function SessionCharging() {
                   <tr>
                     <th>MÃ PHIÊN</th>
                     <th>ĐIỂM SẠC</th>
-                    <th>CHI PHÍ</th>
                     <th>THỜI GIAN BẮT ĐẦU</th>
                     <th>THỜI LƯỢNG (PHÚT)</th>
                     <th>NĂNG LƯỢNG (KWH)</th>
@@ -395,9 +394,6 @@ export default function SessionCharging() {
                       <tr>
                         <td>{sessionId}</td>
                         <td>{pointNumber || "-"}</td>
-                        <td>
-                          {Number(cost).toLocaleString()} {s?.currency || ""}
-                        </td>
                         <td>{startTime}</td>
                         <td>{durationMinutes}</td>
                         <td>{energyKWh}</td>

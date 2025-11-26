@@ -100,62 +100,28 @@ export default function ManagementTransaction() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      console.log("📡 [ManagementTransaction] Fetching transactions with filter:", filter);
+      console.log("📡 Fetching transactions with filter:", filter);
       
       const response = await getStationTransactionsApi({
         status: filter,
       });
 
-      console.log("✅ [ManagementTransaction] Full response object:", response);
-      console.log("✅ [ManagementTransaction] response.success:", response.success);
-      console.log("✅ [ManagementTransaction] response.data:", response.data);
-      console.log("✅ [ManagementTransaction] response.data type:", typeof response.data);
+      console.log("✅ Transactions response:", response);
+      console.log("✅ Response.data:", response.data);
       
-      // ✅ Check if API call was successful
-      if (!response.success) {
-        console.error("❌ [ManagementTransaction] API returned success=false:", response.message);
-        toast.error(response.message || "Không thể tải danh sách giao dịch");
-        setTransactions([]);
-        return;
-      }
-      
-      // ✅ Backend trả về Spring Page object: {content: [], totalElements, totalPages, ...}
-      let txList = [];
-      if (response.data && Array.isArray(response.data.content)) {
-        txList = response.data.content;
-        console.log("✅ [ManagementTransaction] Extracted from Page.content:", txList);
-        console.log("✅ [ManagementTransaction] Total elements in DB:", response.data.totalElements);
-        console.log("✅ [ManagementTransaction] Total pages:", response.data.totalPages);
-      } else if (Array.isArray(response.data)) {
-        txList = response.data;
-        console.log("✅ [ManagementTransaction] Direct array:", txList);
-      } else {
-        console.warn("⚠️ [ManagementTransaction] Unexpected response.data structure:", response.data);
-        txList = [];
-      }
-      
-      console.log("✅ [ManagementTransaction] Final txList:", txList);
-      console.log("✅ [ManagementTransaction] Total transactions in current page:", txList.length);
-      
-      if (txList.length === 0) {
-        console.warn("⚠️ [ManagementTransaction] No transactions found");
-        console.warn("⚠️ [ManagementTransaction] Possible causes:");
-        console.warn("   1. Staff not assigned to any station with transactions");
-        console.warn("   2. Database has no transactions for this station");
-        console.warn("   3. Staff status is not ACTIVE");
-        console.warn("   4. Backend query filter issue");
-      }
+      const txList = response.data.content || response.data || response || [];
+      console.log("✅ Parsed txList:", txList);
+      console.log("✅ Total transactions:", txList.length);
       
       setTransactions(txList);
 
       // ✅ Tính toán thống kê theo payment method (Cash vs VNPay)
       calculatePaymentStats(txList);
     } catch (error) {
-      console.error("❌ [ManagementTransaction] Exception:", error);
-      console.error("❌ [ManagementTransaction] Error response:", error.response);
-      console.error("❌ [ManagementTransaction] Error message:", error.message);
+      console.error("❌ Lỗi khi tải giao dịch:", error);
+      console.error("❌ Error response:", error.response);
+      console.error("❌ Error message:", error.message);
       toast.error("Không thể tải danh sách giao dịch");
-      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -499,7 +465,7 @@ export default function ManagementTransaction() {
         <Modal.Header closeButton>
           <Modal.Title>📄 Danh sách Hóa đơn Station chưa thanh toán</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+        <Modal.Body style={{ maxHeight: "95vh", overflowY: "auto", maxWidth: "100%" }}>
           {loadingInvoices ? (
             <div style={{ textAlign: "center", padding: "30px" }}>
               Đang tải hóa đơn...
@@ -594,7 +560,7 @@ export default function ManagementTransaction() {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowInvoiceModal(false)}>
+          <Button style={{color:"white", backgroundColor:"#20b2aa" , width:"120px"}} variant="secondary" onClick={() => setShowInvoiceModal(false)}>
             Đóng
           </Button>
         </Modal.Footer>
