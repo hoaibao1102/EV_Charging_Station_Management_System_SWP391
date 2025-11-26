@@ -10,7 +10,9 @@ import "./Profile.css";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { name, email, phoneNumber, gender } = localStorage.getItem("userDetails")
+  const { name, email, phoneNumber, gender } = localStorage.getItem(
+    "userDetails"
+  )
     ? JSON.parse(localStorage.getItem("userDetails"))
     : {};
   const { logout, loading } = useLogout();

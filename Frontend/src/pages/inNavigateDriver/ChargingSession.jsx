@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import paths from "../../path/paths.jsx";
 import { toast } from "react-toastify";
@@ -41,10 +41,10 @@ import { isAuthenticated } from "../../utils/authUtils.js";
 
 // ========== CONSTANTS ==========
 const CHARGING_EFFICIENCY = 0.9; // Match backend exactly
-const SIMULATION_UPDATE_INTERVAL = 1000; // 1 second
-const POLLING_INTERVAL = 2000; // 2 seconds
-const POWER_POLLING_INTERVAL = 10000; // 10 seconds
-const ENERGY_POLLING_INTERVAL = 30000; // 30 seconds - Poll Backend for accurate energy
+const SIMULATION_UPDATE_INTERVAL = 5000; // 5 seconds (optimized from 1s)
+const POLLING_INTERVAL = 5000; // 5 seconds (optimized from 2s)
+const POWER_POLLING_INTERVAL = 15000; // 15 seconds (optimized from 10s)
+const ENERGY_POLLING_INTERVAL = 60000; // 60 seconds (optimized from 30s) - Poll Backend for accurate energy
 
 // ========== UTILITY FUNCTIONS ==========
 const getBatteryCapacity = () => {
@@ -66,7 +66,7 @@ const round2 = (value) => {
 //
 // Frontend simulation approach:
 //   1. Estimate SOC increase from time + power + efficiency
-//   2. Calculate energy from deltaSoc (matching Backend)
+//   2. Calculate energy from deltaSoc (matching Backend)`
 const calculateChargingMetrics = ({
   startTime,
   initialSoc,
@@ -191,7 +191,7 @@ if (!document.head.querySelector("style[data-charging-session-styles]")) {
 }
 
 // Battery Progress Circle Component - Enhanced with Smooth Animation
-function BatteryProgressCircle({
+const BatteryProgressCircle = memo(function BatteryProgressCircle({
   initialSoc,
   energyKWh,
   capacity,
@@ -375,10 +375,16 @@ function BatteryProgressCircle({
       `}</style>
     </div>
   );
-}
+});
 
 // Info Card Component
-function InfoCard({ icon, label, value, color = "#00BFA6", unit = "" }) {
+const InfoCard = memo(function InfoCard({
+  icon,
+  label,
+  value,
+  color = "#00BFA6",
+  unit = "",
+}) {
   return (
     <div
       style={{
@@ -428,7 +434,7 @@ function InfoCard({ icon, label, value, color = "#00BFA6", unit = "" }) {
       </div>
     </div>
   );
-}
+});
 
 export default function ChargingSession() {
   const navigate = useNavigate();
@@ -1421,21 +1427,6 @@ export default function ChargingSession() {
       className="charging-session-container"
       style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}
     >
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          marginBottom: "20px",
-          padding: "10px 20px",
-          background: "#00BFA6",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-        }}
-      >
-        ← Quay lại
-      </button>
-
       <h1 style={{ color: "#00BFA6", marginBottom: "30px" }}>
         Phiên sạc hiện tại
       </h1>
