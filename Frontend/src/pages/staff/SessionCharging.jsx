@@ -56,7 +56,6 @@ export default function SessionCharging() {
     const init = async () => {
       try {
         setLoading(true);
-
         // ✅ ALWAYS fetch current staff's station (không dùng localStorage)
         const res = await stationAPI.getStationStaffMe();
         const staff = res?.data?.data || res?.data || res;

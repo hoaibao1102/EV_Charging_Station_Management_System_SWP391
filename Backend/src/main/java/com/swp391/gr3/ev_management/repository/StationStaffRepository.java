@@ -18,14 +18,15 @@ public interface StationStaffRepository extends JpaRepository<StationStaff, Long
     // - join fetch ss.staff và ss.station để load sẵn Staff & Station (tránh N+1)
     // - chỉ lấy khi Staff đang ACTIVE
     @Query("""
-        select ss from StationStaff ss
-        join fetch ss.staff s
-        join s.user u
-        join fetch ss.station st
-        where u.userId = :userId
-          and s.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
-    """)
-    Optional<StationStaff> findActiveByUserId(@Param("userId") Long userId);
+    select ss from StationStaff ss
+    join fetch ss.staff s
+    join s.user u
+    join fetch ss.station st
+    where u.userId = :userId
+      and s.status = com.swp391.gr3.ev_management.enums.StaffStatus.ACTIVE
+      and ss.unassignedAt is null
+""")
+    List<StationStaff> findActiveByUserId(@Param("userId") Long userId);
 
     // ✅ Tìm assignment theo stationStaffId (chỉ khi staff ACTIVE).
     // - Lấy chi tiết assignment + staff + station phục vụ hiển thị/kiểm tra quyền
