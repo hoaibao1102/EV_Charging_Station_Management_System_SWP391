@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.swp391.gr3.ev_management.entity.UserVehicle;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
@@ -24,6 +23,7 @@ import com.swp391.gr3.ev_management.dto.response.ViewCharSessionResponse;
 import com.swp391.gr3.ev_management.entity.Booking;
 import com.swp391.gr3.ev_management.entity.ChargingSession;
 import com.swp391.gr3.ev_management.entity.Notification;
+import com.swp391.gr3.ev_management.entity.UserVehicle;
 import com.swp391.gr3.ev_management.enums.BookingStatus;
 import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
 import com.swp391.gr3.ev_management.enums.NotificationTypes;
@@ -245,7 +245,7 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
 
     @Override
     @Transactional // Tài xế (chủ xe) chủ động dừng phiên sạc của chính mình (ở đây là STAFF dừng, nhưng code đang kiểm owner)
-    public StopCharSessionResponse staffStopSession(Long sessionId) {
+    public StopCharSessionResponse staffStopSession(Long sessionId, Integer finalSocFromRequest) {
         // 1) Tìm session kèm thông tin owner (join fetch) để kiểm tra quyền
         ChargingSession session = chargingSessionRepository.findWithOwnerById(sessionId)
                 .orElseThrow(() -> new ErrorException("Session not found"));
@@ -257,11 +257,16 @@ public class ChargingSessionServiceImpl implements ChargingSessionService {
 //                .getUser()
 //                .getUserId();
 
-        // 4) Lấy SOC cuối cùng từ cache
-        Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
-        Integer finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
-                ? cachedSoc
-                : null;
+        // 3) Ưu tiên finalSoc từ request (staff gửi lên từ frontend)
+        Integer finalSocIfAny = finalSocFromRequest;
+
+        // 4) Nếu không có từ request, lấy SOC cuối cùng từ cache
+        if (finalSocIfAny == null) {
+            Integer cachedSoc = sessionSocCache.get(sessionId).orElse(null);
+            finalSocIfAny = (cachedSoc != null && !cachedSoc.equals(session.getInitialSoc()))
+                    ? cachedSoc
+                    : null;
+        }
 
         // 5) Dừng session thông qua TX handler
         //    - StopInitiator.STAFF: đánh dấu người dừng là nhân viên

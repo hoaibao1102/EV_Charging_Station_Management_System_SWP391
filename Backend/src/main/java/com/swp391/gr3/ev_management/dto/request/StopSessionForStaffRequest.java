@@ -11,4 +11,7 @@ public class StopSessionForStaffRequest {
     @Positive(message = "ID phiên sạc phải là số dương")
     private Long sessionId;
 
+    // ✅ Thêm finalSoc để staff có thể gửi SOC cuối từ frontend
+    private Integer finalSoc;
+
 }

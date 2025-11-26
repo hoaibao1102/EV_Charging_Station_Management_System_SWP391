@@ -206,12 +206,30 @@ export default function SessionCharging() {
           console.debug("Failed to remove live SOC:", err);
         }
 
-        // ✅ Navigate to Payment page with session data from API response
-        const sessionResult = response.data ?? response;
-        console.log("Staff stop response:", sessionResult);
+        // ✅ Lưu response vào sessionStorage (cho cả staff xem completed & driver payment)
+        try {
+          const sessionResult = response.data ?? response;
+          const cacheKey = `completed_session_${sessionId}`;
+          sessionStorage.setItem(cacheKey, JSON.stringify(sessionResult));
 
-        // Navigate to payment to show final bill
-        navigate(paths.payment, { state: { sessionResult } });
+          // ✅ Lưu pointNumber riêng để driver dùng trong Payment page
+          if (sessionResult.pointNumber) {
+            sessionStorage.setItem(
+              `session_${sessionId}_pointNumber`,
+              sessionResult.pointNumber
+            );
+          }
+
+          console.log("✅ Cached session data:", sessionResult);
+        } catch (err) {
+          console.debug("Failed to cache session data:", err);
+        }
+
+        // ✅ Reload sessions list to show updated status
+        const sid = stationId || localStorage.getItem("stationId");
+        if (sid) {
+          await loadSessionsForStation(sid);
+        }
       } else {
         toast.error(response.message || "Dừng phiên sạc thất bại!");
       }
@@ -221,30 +239,34 @@ export default function SessionCharging() {
     }
   };
 
-  // Handle click on completed session to view payment details
   const handleCompletedSessionClick = (session) => {
-    // Navigate to Payment page with the completed session data
-    // Extract pointNumber from chargingPoint if available
-    const pointNumber =
-      session.pointNumber ||
-      session.chargingPoint?.pointNumber ||
-      session.chargingPoint?.chargingPointId ||
-      "-";
+    const cacheKey = `completed_session_${session.sessionId}`;
 
-    // Calculate pricePerKWh if not available
-    const pricePerKWh =
-      session.pricePerKWh ||
-      (session.cost && session.energyKWh && session.energyKWh > 0
-        ? session.cost / session.energyKWh
-        : null);
+    // Ưu tiên dùng cached data (đầy đủ thông tin)
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        navigate(paths.payment, {
+          state: { sessionResult: JSON.parse(cached) },
+        });
+        return;
+      }
+    } catch (err) {
+      console.debug("Cache read failed:", err);
+    }
 
+    // Fallback: extract từ session data (có thể thiếu pointNumber)
     const sessionResult = {
       ...session,
-      pointNumber,
-      pricePerKWh,
+      pointNumber:
+        session.pointNumber || session.chargingPoint?.pointNumber || "-",
+      pricePerKWh:
+        session.pricePerKWh ||
+        (session.cost && session.energyKWh > 0
+          ? session.cost / session.energyKWh
+          : null),
     };
 
-    console.log("Viewing completed session:", sessionResult);
     navigate(paths.payment, { state: { sessionResult } });
   };
 

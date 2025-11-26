@@ -1,21 +1,38 @@
 package com.swp391.gr3.ev_management.service;
 
-import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
-import com.swp391.gr3.ev_management.entity.*;
-import com.swp391.gr3.ev_management.enums.*;
-import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
-import com.swp391.gr3.ev_management.exception.ErrorException;
-import com.swp391.gr3.ev_management.mapper.StopCharSessionResponseMapper;
-import com.swp391.gr3.ev_management.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
+import com.swp391.gr3.ev_management.dto.response.StopCharSessionResponse;
+import com.swp391.gr3.ev_management.entity.Booking;
+import com.swp391.gr3.ev_management.entity.ChargingPoint;
+import com.swp391.gr3.ev_management.entity.ChargingSession;
+import com.swp391.gr3.ev_management.entity.ConnectorType;
+import com.swp391.gr3.ev_management.entity.Driver;
+import com.swp391.gr3.ev_management.entity.Invoice;
+import com.swp391.gr3.ev_management.entity.Notification;
+import com.swp391.gr3.ev_management.entity.SlotAvailability;
+import com.swp391.gr3.ev_management.entity.Tariff;
+import com.swp391.gr3.ev_management.entity.User;
+import com.swp391.gr3.ev_management.entity.UserVehicle;
+import com.swp391.gr3.ev_management.enums.BookingStatus;
+import com.swp391.gr3.ev_management.enums.ChargingSessionStatus;
+import com.swp391.gr3.ev_management.enums.InvoiceStatus;
+import com.swp391.gr3.ev_management.enums.NotificationTypes;
+import com.swp391.gr3.ev_management.enums.SlotStatus;
+import com.swp391.gr3.ev_management.enums.StopInitiator;
+import com.swp391.gr3.ev_management.events.NotificationCreatedEvent;
+import com.swp391.gr3.ev_management.exception.ErrorException;
+import com.swp391.gr3.ev_management.mapper.StopCharSessionResponseMapper;
+import com.swp391.gr3.ev_management.repository.ChargingSessionRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
