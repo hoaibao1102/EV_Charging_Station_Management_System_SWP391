@@ -63,6 +63,7 @@ export default function SessionCharging() {
             const r = await stationAPI.getChargingSessionsByStation(stored);
             const d = r?.data ?? r;
             const arr = Array.isArray(d) ? d : [d];
+            console.log("Loaded sessions for station from localStorage:", arr);
             setSessions(arr);
           } catch {
             /* ignore init fetch errors */
@@ -91,6 +92,7 @@ export default function SessionCharging() {
             );
             const d2 = r2?.data ?? r2;
             const arr2 = Array.isArray(d2) ? d2 : [d2];
+            console.log("Loaded sessions for station:", arr2);
             setSessions(arr2);
           } catch {
             /* ignore init fetch errors */

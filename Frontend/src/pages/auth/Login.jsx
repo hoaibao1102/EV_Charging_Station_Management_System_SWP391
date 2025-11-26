@@ -192,7 +192,7 @@ const Login = () => {
       return;
     }
 
-    const { success, message } = await login(form.phone, form.password);
+    const { success, message } = await login(form.phone.trim(), form.password);
 
     if (success) {
       setFailedAttempts(0);
