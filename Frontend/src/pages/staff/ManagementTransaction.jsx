@@ -2,9 +2,15 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import Nav from "react-bootstrap/Nav";
 import Table from "react-bootstrap/Table";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
 import {
   getStationTransactionsApi,
   getStationTransactionStatsApi,
+  getStationInvoicesApi,
+  getMyStationApi,
+  getInvoiceDetailApi,
+  payInvoiceApi,
 } from "../../api/staffApi.js";
 import Header from "../../components/admin/Header.jsx";
 import "../admin/ManagementUser.css";
@@ -21,19 +27,56 @@ export default function ManagementTransaction() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(null); // null = ALL, COMPLETED, PENDING, FAILED
   const [searchTerm, setSearchTerm] = useState("");
+  const [invoices, setInvoices] = useState([]);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [myStation, setMyStation] = useState(null);
+  const [payingInvoiceId, setPayingInvoiceId] = useState(null);
 
   useEffect(() => {
-    fetchStats();
+    const initData = async () => {
+      await fetchMyStation();
+      await fetchStats();
+    };
+    initData();
   }, []);
 
-  // ✅ Auto-refresh stats mỗi 30s
-  useEffect(() => {
-    fetchStats();
+  const fetchMyStation = async () => {
+    try {
+      const response = await getMyStationApi();
+      console.log("✅ Full API response:", response);
+      console.log("✅ Response.data:", response.data);
+      
+      // API trả về array, lấy phần tử đầu tiên
+      const stationData = Array.isArray(response.data) ? response.data[0] : response.data;
+      console.log("✅ StationData:", stationData);
+      
+      if (stationData?.station) {
+        console.log("✅ Station object:", stationData.station);
+        console.log("✅ Station ID:", stationData.station.stationId);
+        setMyStation(stationData.station);
+      } else if (stationData?.stationId) {
+        // Trường hợp data trực tiếp là station object
+        console.log("✅ Direct station data:", stationData);
+        setMyStation(stationData);
+      } else {
+        console.error("❌ Không tìm thấy thông tin station trong response");
+        console.error("❌ Response structure:", JSON.stringify(response.data, null, 2));
+        toast.error("Không tìm thấy trạm được phân công");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy thông tin trạm:", error);
+      console.error("❌ Error details:", error.response?.data);
+      toast.error("Không thể tải thông tin trạm");
+    }
+  };
 
+  // ✅ Auto-refresh stats mỗi 15s
+  useEffect(() => {
     const statsInterval = setInterval(() => {
       console.log("🔄 Auto-refreshing stats...");
       fetchStats();
-    }, 15000); // 30 seconds
+    }, 15000); // 15 seconds
 
     return () => clearInterval(statsInterval);
   }, []);
@@ -47,6 +90,7 @@ export default function ManagementTransaction() {
     try {
       const response = await getStationTransactionStatsApi();
       setStats(response.data);
+      console.log("✅ Thống kê giao dịch:", response.data);
     } catch (error) {
       console.error("Lỗi khi tải thống kê:", error);
       toast.error("Không thể tải thống kê giao dịch");
@@ -56,18 +100,62 @@ export default function ManagementTransaction() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
+      console.log("📡 [ManagementTransaction] Fetching transactions with filter:", filter);
+      
       const response = await getStationTransactionsApi({
         status: filter,
       });
 
-      const txList = response.data.content || response.data || [];
+      console.log("✅ [ManagementTransaction] Full response object:", response);
+      console.log("✅ [ManagementTransaction] response.success:", response.success);
+      console.log("✅ [ManagementTransaction] response.data:", response.data);
+      console.log("✅ [ManagementTransaction] response.data type:", typeof response.data);
+      
+      // ✅ Check if API call was successful
+      if (!response.success) {
+        console.error("❌ [ManagementTransaction] API returned success=false:", response.message);
+        toast.error(response.message || "Không thể tải danh sách giao dịch");
+        setTransactions([]);
+        return;
+      }
+      
+      // ✅ Backend trả về Spring Page object: {content: [], totalElements, totalPages, ...}
+      let txList = [];
+      if (response.data && Array.isArray(response.data.content)) {
+        txList = response.data.content;
+        console.log("✅ [ManagementTransaction] Extracted from Page.content:", txList);
+        console.log("✅ [ManagementTransaction] Total elements in DB:", response.data.totalElements);
+        console.log("✅ [ManagementTransaction] Total pages:", response.data.totalPages);
+      } else if (Array.isArray(response.data)) {
+        txList = response.data;
+        console.log("✅ [ManagementTransaction] Direct array:", txList);
+      } else {
+        console.warn("⚠️ [ManagementTransaction] Unexpected response.data structure:", response.data);
+        txList = [];
+      }
+      
+      console.log("✅ [ManagementTransaction] Final txList:", txList);
+      console.log("✅ [ManagementTransaction] Total transactions in current page:", txList.length);
+      
+      if (txList.length === 0) {
+        console.warn("⚠️ [ManagementTransaction] No transactions found");
+        console.warn("⚠️ [ManagementTransaction] Possible causes:");
+        console.warn("   1. Staff not assigned to any station with transactions");
+        console.warn("   2. Database has no transactions for this station");
+        console.warn("   3. Staff status is not ACTIVE");
+        console.warn("   4. Backend query filter issue");
+      }
+      
       setTransactions(txList);
 
       // ✅ Tính toán thống kê theo payment method (Cash vs VNPay)
       calculatePaymentStats(txList);
     } catch (error) {
-      console.error("Lỗi khi tải giao dịch:", error);
+      console.error("❌ [ManagementTransaction] Exception:", error);
+      console.error("❌ [ManagementTransaction] Error response:", error.response);
+      console.error("❌ [ManagementTransaction] Error message:", error.message);
       toast.error("Không thể tải danh sách giao dịch");
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -144,6 +232,94 @@ export default function ManagementTransaction() {
     setFilter(newFilter);
   };
 
+  const fetchInvoices = async () => {
+    console.log("🔍 Checking myStation:", myStation);
+    console.log("🔍 myStation.stationId:", myStation?.stationId);
+    
+    if (!myStation?.stationId) {
+      console.error("⚠️ myStation is null or missing stationId");
+      console.error("⚠️ myStation value:", myStation);
+      toast.warning("Đang tải thông tin trạm, vui lòng thử lại sau ít giây...");
+      return;
+    }
+
+    try {
+      setLoadingInvoices(true);
+      const stationId = myStation.stationId;
+      console.log("📡 Fetching invoices for stationId:", stationId);
+      console.log("📡 API URL will be: /api/invoice/station/" + stationId + "/details");
+      
+      const response = await getStationInvoicesApi(stationId);
+      console.log("✅ Invoices response:", response);
+      console.log("✅ Invoices data:", response.data);
+      
+      // Chỉ hiển thị hóa đơn chưa thanh toán
+      const unpaidInvoices = (response.data || []).filter(inv => inv.status === "UNPAID");
+      console.log("✅ Unpaid invoices:", unpaidInvoices);
+      
+      setInvoices(unpaidInvoices);
+      setShowInvoiceModal(true);
+    } catch (error) {
+      console.error("❌ Lỗi khi tải hóa đơn:", error);
+      console.error("❌ Error response:", error.response?.data);
+      console.error("❌ Error message:", error.message);
+      toast.error("Không thể tải danh sách hóa đơn: " + (error.response?.data?.message || error.message));
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  const getInvoiceStatusText = (status) => {
+    return status === "PAID" ? "Đã thanh toán" : "Chưa thanh toán";
+  };
+
+  const getInvoiceStatusStyle = (status) => {
+    return {
+      padding: "5px 10px",
+      borderRadius: "5px",
+      backgroundColor: status === "PAID" ? "#d4edda" : "#f8d7da",
+      color: status === "PAID" ? "#155724" : "#721c24",
+      fontWeight: "500",
+    };
+  };
+
+  const handlePayInvoice = async (invoiceId) => {
+    if (!window.confirm(`Xác nhận thanh toán hóa đơn #${invoiceId}?`)) {
+      return;
+    }
+
+    try {
+      setPayingInvoiceId(invoiceId);
+      console.log("💳 Bắt đầu thanh toán hóa đơn #", invoiceId);
+      
+      // Bước 1: Lấy chi tiết hóa đơn
+      console.log("📡 Lấy chi tiết hóa đơn...");
+      const detailResponse = await getInvoiceDetailApi(invoiceId);
+      console.log("✅ Chi tiết hóa đơn:", detailResponse.data);
+      
+      // Bước 2: Thanh toán hóa đơn
+      console.log("📡 Gọi API thanh toán...");
+      const payResponse = await payInvoiceApi(invoiceId);
+      console.log("✅ Kết quả thanh toán:", payResponse.data);
+      
+      toast.success(`Thanh toán hóa đơn #${invoiceId} thành công!`);
+      
+      // Bước 3: Cập nhật lại danh sách hóa đơn
+      console.log("🔄 Cập nhật lại danh sách hóa đơn...");
+      await fetchInvoices();
+      
+    } catch (error) {
+      console.error("❌ Lỗi khi thanh toán hóa đơn:", error);
+      console.error("❌ Error response:", error.response?.data);
+      toast.error(
+        "Thanh toán thất bại: " + 
+        (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setPayingInvoiceId(null);
+    }
+  };
+
   // Filter by search term (client-side for current page)
   const filteredTransactions = transactions.filter(
     (t) =>
@@ -208,25 +384,54 @@ export default function ManagementTransaction() {
         <div className="table-scroll-container">
           {/* Filter Section */}
           <div className="filter-section">
-            <Nav
-              justify
-              variant="tabs"
-              activeKey={filter || "all"}
-              onSelect={(k) => handleFilterChange(k === "all" ? null : k)}
-            >
-              <Nav.Item>
-                <Nav.Link eventKey="all">Tất cả giao dịch</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="COMPLETED">Hoàn tất</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="PENDING">Đang xử lý</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="FAILED">Thất bại</Nav.Link>
-              </Nav.Item>
-            </Nav>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <Nav
+                justify
+                variant="tabs"
+                activeKey={filter || "all"}
+                onSelect={(k) => handleFilterChange(k === "all" ? null : k)}
+                style={{ flex: 1 }}
+              >
+                <Nav.Item>
+                  <Nav.Link eventKey="all">Tất cả giao dịch</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="COMPLETED">Hoàn tất</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="PENDING">Đang xử lý</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="FAILED">Thất bại</Nav.Link>
+                </Nav.Item>
+              </Nav>
+              
+              <button
+                onClick={fetchInvoices}
+                className="btn"
+                style={{
+                  backgroundColor: "#fff3e0",
+                  color: "#e65100",
+                  border: "1px solid #e65100",
+                  padding: "8px 20px",
+                  borderRadius: "5px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.3s"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#e65100";
+                  e.target.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "#fff3e0";
+                  e.target.style.color = "#e65100";
+                }}
+              >
+                📄 Chưa thanh toán
+              </button>
+            </div>
 
             <div style={{ marginTop: "15px" }}>
               <input
@@ -283,6 +488,117 @@ export default function ManagementTransaction() {
           )}
         </div>
       </div>
+
+      {/* Modal hiển thị hóa đơn */}
+      <Modal 
+        show={showInvoiceModal} 
+        onHide={() => setShowInvoiceModal(false)}
+        size="xl"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>📄 Danh sách Hóa đơn Station chưa thanh toán</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          {loadingInvoices ? (
+            <div style={{ textAlign: "center", padding: "30px" }}>
+              Đang tải hóa đơn...
+            </div>
+          ) : (
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>Mã HĐ</th>
+                  <th>Biển số xe</th>
+                  <th>Trạm</th>
+                  <th>Điểm sạc</th>
+                  <th>Năng lượng (kWh)</th>
+                  <th>Thời gian (phút)</th>
+                  <th>Số tiền</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày phát hành</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.length > 0 ? (
+                  invoices.map((inv) => (
+                    <tr key={inv.invoiceId}>
+                      <td>#{inv.invoiceId}</td>
+                      <td>{inv.vehiclePlate || "N/A"}</td>
+                      <td>{inv.stationName || "N/A"}</td>
+                      <td>{inv.pointNumber || "N/A"}</td>
+                      <td>{inv.energyKWh?.toFixed(2) || "0.00"}</td>
+                      <td>{inv.durationMinutes || 0}</td>
+                      <td>{formatCurrency(inv.amount)}</td>
+                      <td>
+                        <span style={getInvoiceStatusStyle(inv.status)}>
+                          {inv.status === "PAID" ? "✅ " : "❌ "}
+                          {getInvoiceStatusText(inv.status)}
+                        </span>
+                      </td>
+                      <td>{formatDateTime(inv.issuedAt)}</td>
+                      <td>
+                        {inv.status === "UNPAID" ? (
+                          <button
+                            onClick={() => handlePayInvoice(inv.invoiceId)}
+                            disabled={payingInvoiceId === inv.invoiceId}
+                            style={{
+                              backgroundColor: payingInvoiceId === inv.invoiceId ? "#ccc" : "#28a745",
+                              color: "#fff",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "4px",
+                              cursor: payingInvoiceId === inv.invoiceId ? "not-allowed" : "pointer",
+                              fontWeight: "500",
+                              fontSize: "0.9em",
+                              transition: "all 0.3s"
+                            }}
+                            onMouseEnter={(e) => {
+                              if (payingInvoiceId !== inv.invoiceId) {
+                                e.target.style.backgroundColor = "#218838";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (payingInvoiceId !== inv.invoiceId) {
+                                e.target.style.backgroundColor = "#28a745";
+                              }
+                            }}
+                          >
+                            {payingInvoiceId === inv.invoiceId ? "Đang xử lý..." : "💳 Thanh toán"}
+                          </button>
+                        ) : (
+                          <span style={{ color: "#28a745", fontWeight: "500" }}>✓ Đã thanh toán</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="10" style={{ textAlign: "center", padding: "30px" }}>
+                      Không có hóa đơn nào
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          )}
+          {invoices.length > 0 && (
+            <div style={{ marginTop: "15px", padding: "10px", backgroundColor: "#fff3e0", borderRadius: "5px", border: "1px solid #e65100" }}>
+              <strong style={{ color: "#e65100" }}>📊 Thống kê hóa đơn chưa thanh toán:</strong>
+              <ul style={{ marginTop: "10px", marginBottom: "0" }}>
+                <li>Tổng số hóa đơn: <strong>{invoices.length}</strong></li>
+                <li>Tổng số tiền cần thanh toán: <strong style={{ color: "#d32f2f" }}>{formatCurrency(invoices.reduce((sum, i) => sum + (i.amount || 0), 0))}</strong></li>
+              </ul>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowInvoiceModal(false)}>
+            Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
