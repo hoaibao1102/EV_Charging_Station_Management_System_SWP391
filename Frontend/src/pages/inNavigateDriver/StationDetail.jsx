@@ -4,7 +4,7 @@ import "./StationDetail.css";
 import { stationAPI } from "../../api/stationApi.js";
 import { getMyVehiclesApi } from "../../api/driverApi.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
-import {getAllTariffs} from "../../api/tariffApi.js";
+import { getAllTariffs } from "../../api/tariffApi.js";
 
 const StationDetail = () => {
   const { id } = useParams();
@@ -100,10 +100,10 @@ const StationDetail = () => {
     fetchData();
   }, [id, isLoggedIn]);
 
-  // lấy ra giá tiền 
+  // lấy ra giá tiền
   useEffect(() => {
-    const fetchPrice = async () => {  
-      try { 
+    const fetchPrice = async () => {
+      try {
         const priceRes = await getAllTariffs();
         setPrice(priceRes.data);
         console.log("💰 Giá tải về:", priceRes.data);
@@ -113,7 +113,6 @@ const StationDetail = () => {
     };
     fetchPrice();
   }, []);
-
 
   const getConnectorDetail = (connectorTypeId) => {
     if (!connectorTypes || connectorTypes.length === 0) return null;
@@ -329,6 +328,7 @@ const StationDetail = () => {
           model: selectedVehicle?.model,
           connectorTypeName: selectedVehicle?.connectorTypeName,
           licensePlate: selectedVehicle?.licensePlate,
+          batteryCapacityKWh: selectedVehicle?.batteryCapacityKWh,
         },
       },
     });
@@ -571,8 +571,21 @@ const StationDetail = () => {
                 <div className="price-info">
                   {price ? (
                     <>
-                      <span>💰 Giá theo kWh: {price.find(t => t.connectorTypeName === point.connectorType)?.pricePerKWh || "Đang cập nhật"} VND/kWh</span><br />
-                      <span>💰  Giá theo phút: {price.find(t => t.connectorTypeName === point.connectorType)?.pricePerMin || "Đang cập nhật"} VND/phút</span>
+                      <span>
+                        💰 Giá theo kWh:{" "}
+                        {price.find(
+                          (t) => t.connectorTypeName === point.connectorType
+                        )?.pricePerKWh || "Đang cập nhật"}{" "}
+                        VND/kWh
+                      </span>
+                      <br />
+                      <span>
+                        💰 Giá theo phút:{" "}
+                        {price.find(
+                          (t) => t.connectorTypeName === point.connectorType
+                        )?.pricePerMin || "Đang cập nhật"}{" "}
+                        VND/phút
+                      </span>
                     </>
                   ) : (
                     <span>💰 Giá: Đang tải...</span>

@@ -40,12 +40,18 @@ import { isAuthenticated } from "../../utils/authUtils.js";
  */
 
 // ========== CONSTANTS ==========
-const DEFAULT_BATTERY_CAPACITY = 60; // kWh
 const CHARGING_EFFICIENCY = 0.9; // Match backend exactly
 const SIMULATION_UPDATE_INTERVAL = 1000; // 1 second
 const POLLING_INTERVAL = 2000; // 2 seconds
 const POWER_POLLING_INTERVAL = 10000; // 10 seconds
+const ENERGY_POLLING_INTERVAL = 30000; // 30 seconds - Poll Backend for accurate energy
 
+// ========== UTILITY FUNCTIONS ==========
+const getBatteryCapacity = () => {
+  const capacity = sessionStorage.getItem("batteryCapacityKWh");
+  return capacity ? parseFloat(capacity) : 60; // Default to 60 kWh if not found
+};
+console.log(`🔋 Using battery capacity: ${getBatteryCapacity()} kWh`);
 // ========== HELPER FUNCTIONS ==========
 
 // 📐 Helper: Backend's round2 function (rounds to 2 decimal places)
@@ -65,7 +71,7 @@ const calculateChargingMetrics = ({
   startTime,
   initialSoc,
   powerKW,
-  capacity = DEFAULT_BATTERY_CAPACITY,
+  capacity = getBatteryCapacity(),
   efficiency = CHARGING_EFFICIENCY,
 }) => {
   const now = new Date();
@@ -434,6 +440,8 @@ export default function ChargingSession() {
   const [stopping, setStopping] = useState(false);
   const [autoRedirected, setAutoRedirected] = useState(false);
   const [currentPower, setCurrentPower] = useState(0); // ✅ Track maxPowerKW separately
+  const [lastEnergySync, setLastEnergySync] = useState(null); // ✅ Track last Backend energy sync
+  const [batteryCapacity, setBatteryCapacity] = useState(getBatteryCapacity()); // ✅ Real battery capacity from vehicle model
 
   // QR / booking state (merged behavior)
   const qrFromState = location?.state?.qrBlobUrl;
@@ -445,7 +453,7 @@ export default function ChargingSession() {
   const [bookingLoading, setBookingLoading] = useState(false);
 
   // Battery capacity constant (used by BatteryProgressCircle)
-  const DEFAULT_BATTERY_CAPACITY = 60; // kWh
+  const DEFAULT_BATTERY_CAPACITY = getBatteryCapacity(); // kWh
 
   // 🎨 Status color mapping for cleaner code
   const statusColors = {
@@ -457,6 +465,12 @@ export default function ChargingSession() {
 
   // Helper to build sessionStorage key
   const qrStorageKey = (id) => (id ? `qr_booking_${id}` : null);
+
+  // Update battery capacity from sessionStorage on mount
+  useEffect(() => {
+    const capacity = getBatteryCapacity();
+    setBatteryCapacity(capacity);
+  }, []);
 
   // 🔋 Simulation state persistence helpers
   const getSimulationKey = (sessionId) =>
@@ -566,6 +580,11 @@ export default function ChargingSession() {
     fetchCurrentSession();
   }, [navigate]);
 
+  // ✅ Battery capacity now loaded from sessionStorage on mount
+  useEffect(() => {
+    // Battery capacity is now loaded from sessionStorage via getBatteryCapacity()
+  }, [currentSession?.vehicle?.model?.modelId]);
+
   const fetchCurrentSession = async () => {
     try {
       setLoading(true);
@@ -626,6 +645,180 @@ export default function ChargingSession() {
 
     return () => clearInterval(pollPowerInterval);
   }, [currentSession, currentPower]); // ✅ Include full currentSession
+
+  // ⚡ CRITICAL: Poll Backend energy every 30s to sync with actual calculation
+  // Backend calculates: energyKWh = round2((duration × power × efficiency) / capacity × 100)
+  // This prevents Frontend simulation from "jumping ahead" due to timing issues
+  useEffect(() => {
+    if (!currentSession || currentSession.status !== "IN_PROGRESS") return;
+
+    const pollEnergyInterval = setInterval(async () => {
+      try {
+        console.log(
+          `🔄 Syncing energy from Backend (every ${
+            ENERGY_POLLING_INTERVAL / 1000
+          }s)...`
+        );
+        const response = await stationAPI.getCurrentChargingSession();
+        const backendSession = response.data ?? response;
+
+        if (backendSession && backendSession.status === "IN_PROGRESS") {
+          // Calculate Backend energy using exact same formula
+          const startTime = new Date(backendSession.startTime);
+          const now = new Date();
+          const durationMs = now - startTime;
+          const durationMinutes = durationMs / (1000 * 60);
+          const hours = durationMinutes / 60;
+
+          const power = currentPower || 11.0;
+          const capacity = batteryCapacity; // ✅ Use real battery capacity from API
+          const efficiency = CHARGING_EFFICIENCY;
+          const initialSoc = backendSession.initialSoc ?? 20;
+
+          // Backend formula: energyKWh = round2((deltaSoc / 100.0) * batteryCapacity)
+          // where deltaSoc comes from: (hours × power × efficiency / capacity) × 100
+          const estimatedEnergyDelivered = hours * power * efficiency;
+          const estimatedSocIncrease =
+            (estimatedEnergyDelivered / capacity) * 100.0;
+          let rawFinalSOC = initialSoc + estimatedSocIncrease;
+
+          // Minimum 1% increase if charging
+          if (durationMinutes > 0 && Math.floor(rawFinalSOC) === initialSoc) {
+            rawFinalSOC = initialSoc + 1;
+          }
+
+          let finalSOC = Math.round(rawFinalSOC);
+          finalSOC = Math.min(100, Math.max(initialSoc, finalSOC));
+
+          const deltaSoc = finalSOC - initialSoc;
+          const backendEnergy = round2((deltaSoc / 100.0) * capacity);
+
+          console.log(
+            `📊 Backend energy sync: ${backendEnergy.toFixed(
+              2
+            )} kWh (SOC: ${initialSoc}% → ${finalSOC}%, duration: ${durationMinutes.toFixed(
+              1
+            )}min, power: ${power}kW)`
+          );
+
+          // Update session with Backend-calculated values
+          setCurrentSession((prev) => {
+            if (!prev || prev.status !== "IN_PROGRESS") return prev;
+
+            // ✅ Auto-stop if Backend calculated SOC >= 100
+            if (finalSOC >= 100) {
+              console.log(
+                "🔋 Backend calculated SOC >= 100% - auto-stopping session"
+              );
+
+              // Stop session with 100%
+              stationAPI
+                .stopChargingSession(prev.sessionId, 100)
+                .then((response) => {
+                  console.log(
+                    `✅ Session #${prev.sessionId} auto-stopped at 100% SOC from Backend`
+                  );
+                  const sessionResult = response.data ?? response;
+                  setCurrentSession((current) =>
+                    current
+                      ? syncSessionFromBackend(sessionResult, current)
+                      : current
+                  );
+                })
+                .catch((err) => {
+                  console.error("❌ Failed to auto-stop session at 100%:", err);
+                });
+
+              return prev; // Don't update state, let polling detect COMPLETED
+            }
+
+            return {
+              ...prev,
+              energyKWh: backendEnergy,
+              virtualSoc: finalSOC,
+              durationMinutes: durationMinutes,
+            };
+          });
+
+          setLastEnergySync(new Date());
+        }
+      } catch (err) {
+        console.debug("Energy polling error:", err);
+      }
+    }, ENERGY_POLLING_INTERVAL);
+
+    // Run immediately on mount, then every 30s
+    (async () => {
+      try {
+        const response = await stationAPI.getCurrentChargingSession();
+        const backendSession = response.data ?? response;
+        if (backendSession && backendSession.status === "IN_PROGRESS") {
+          const startTime = new Date(backendSession.startTime);
+          const now = new Date();
+          const durationMinutes = (now - startTime) / (1000 * 60);
+          const hours = durationMinutes / 60;
+          const power = currentPower || 11.0;
+          const capacity = batteryCapacity; // ✅ Use real battery capacity from API
+          const initialSoc = backendSession.initialSoc ?? 20;
+          const estimatedEnergyDelivered = hours * power * CHARGING_EFFICIENCY;
+          const estimatedSocIncrease =
+            (estimatedEnergyDelivered / capacity) * 100.0;
+          let rawFinalSOC = initialSoc + estimatedSocIncrease;
+          if (durationMinutes > 0 && Math.floor(rawFinalSOC) === initialSoc) {
+            rawFinalSOC = initialSoc + 1;
+          }
+          let finalSOC = Math.round(rawFinalSOC);
+          finalSOC = Math.min(100, Math.max(initialSoc, finalSOC));
+          const deltaSoc = finalSOC - initialSoc;
+          const backendEnergy = round2((deltaSoc / 100.0) * capacity);
+          console.log(
+            `📊 Initial Backend energy sync: ${backendEnergy.toFixed(2)} kWh`
+          );
+          setCurrentSession((prev) => {
+            if (!prev || prev.status !== "IN_PROGRESS") return prev;
+
+            // ✅ Auto-stop if Backend calculated SOC >= 100
+            if (finalSOC >= 100) {
+              console.log(
+                "🔋 Initial Backend sync: SOC >= 100% - auto-stopping session"
+              );
+
+              stationAPI
+                .stopChargingSession(prev.sessionId, 100)
+                .then((response) => {
+                  console.log(
+                    `✅ Session #${prev.sessionId} auto-stopped at 100% SOC from initial Backend sync`
+                  );
+                  const sessionResult = response.data ?? response;
+                  setCurrentSession((current) =>
+                    current
+                      ? syncSessionFromBackend(sessionResult, current)
+                      : current
+                  );
+                })
+                .catch((err) => {
+                  console.error("❌ Failed to auto-stop session at 100%:", err);
+                });
+
+              return prev;
+            }
+
+            return {
+              ...prev,
+              energyKWh: backendEnergy,
+              virtualSoc: finalSOC,
+              durationMinutes,
+            };
+          });
+          setLastEnergySync(new Date());
+        }
+      } catch (err) {
+        console.debug("Initial energy sync error:", err);
+      }
+    })();
+
+    return () => clearInterval(pollEnergyInterval);
+  }, [currentSession, currentPower, batteryCapacity]); // ✅ Include batteryCapacity
 
   // ⚡ Polling: check current session periodically (mainly for status changes)
   // During IN_PROGRESS, frontend handles all calculations via virtualSoc
@@ -776,9 +969,9 @@ export default function ChargingSession() {
     };
   }, []); // ✅ Empty deps - chỉ chạy một lần khi mount
 
-  // 🔋 Virtual SOC simulation - REALTIME CHARGING
-  // Tính toán dựa trên thời gian thực từ startTime
-  // Công thức: duration = now - startTime → energy = duration × power × efficiency → SOC = energy / capacity
+  // 🔋 Virtual SOC simulation - UI SMOOTHING ONLY
+  // Backend energy polling (every 30s) provides accurate values
+  // This just smooths the UI between Backend syncs for better UX
   useEffect(() => {
     if (!currentSession || currentSession.status !== "IN_PROGRESS") {
       // Clean up simulation state if session is not in progress
@@ -789,9 +982,7 @@ export default function ChargingSession() {
     }
 
     // Get parameters from session or use defaults
-    const capacity =
-      currentSession.vehicle?.model?.batteryCapacityKWh ??
-      DEFAULT_BATTERY_CAPACITY;
+    const capacity = batteryCapacity; // ✅ Use real battery capacity from API
     const efficiency = 0.9; // ✅ Match backend exactly (ChargingSessionTxHandler)
     const initialSoc = currentSession.initialSoc ?? 20;
 
@@ -806,24 +997,28 @@ export default function ChargingSession() {
       setCurrentSession((prev) => {
         if (!prev || prev.status !== "IN_PROGRESS") return prev;
 
-        // ✅ Sử dụng helper function để tính toán
-        const { finalSOC, energyKWh, durationMinutes } =
-          calculateChargingMetrics({
-            startTime: prev.startTime,
-            initialSoc: initialSoc,
-            powerKW: currentPower || 11.0,
-            capacity: capacity,
-            efficiency: efficiency,
-          });
+        // ✅ Use current energyKWh from Backend sync (updated every 30s)
+        // Only update durationMinutes for UI display
+        const startTime = new Date(prev.startTime);
+        const now = new Date();
+        const durationMs = now - startTime;
+        const durationMinutes = durationMs / (1000 * 60);
 
-        // ✅ Log để debug
+        // Calculate current SOC for smooth UI (between Backend syncs)
+        const { finalSOC } = calculateChargingMetrics({
+          startTime: prev.startTime,
+          initialSoc: initialSoc,
+          powerKW: currentPower || 11.0,
+          capacity: capacity,
+          efficiency: efficiency,
+        });
+
+        // ✅ Log every 5 minutes (less spam, Backend sync logs every 30s)
         if (Math.floor(durationMinutes) % 5 === 0 && durationMinutes > 0) {
           console.log(
-            `📊 Charging stats: duration=${durationMinutes.toFixed(
-              1
-            )}min, power=${
-              currentPower || 11.0
-            }kW, energy=${energyKWh}kWh, SOC=${finalSOC}%`
+            `📊 UI update: duration=${durationMinutes.toFixed(1)}min, energy=${(
+              prev.energyKWh ?? 0
+            ).toFixed(2)}kWh (from Backend), SOC=${finalSOC}%`
           );
         }
 
@@ -831,9 +1026,9 @@ export default function ChargingSession() {
         if (finalSOC >= 100) {
           console.log("🔋 Battery reached 100% - auto-stopping session");
 
-          // ✅ Gửi null để Backend tự tính chính xác (đồng nhất với manual stop)
+          // ✅ Gửi 100% vì đã đạt đầy pin
           stationAPI
-            .stopChargingSession(prev.sessionId, null)
+            .stopChargingSession(prev.sessionId, 100)
             .then((response) => {
               console.log(
                 `✅ Session #${prev.sessionId} auto-stopped - Backend calculated final values`
@@ -857,12 +1052,12 @@ export default function ChargingSession() {
           return prev;
         }
 
-        // Continuous update + persist state
+        // Update UI state (energy comes from Backend polling every 30s)
         const updatedSession = {
           ...prev,
           virtualSoc: finalSOC,
-          energyKWh,
           durationMinutes: durationMinutes,
+          // energyKWh: Keep value from Backend sync (updated every 30s via energy polling)
         };
 
         saveSimState(updatedSession);
@@ -874,9 +1069,10 @@ export default function ChargingSession() {
           const liveData = {
             sessionId: prev.sessionId,
             virtualSoc: Math.round(finalSOC), // Lưu số nguyên
-            energyKWh,
+            energyKWh: prev.energyKWh ?? 0, // ✅ Use Backend-synced value
             durationMinutes: durationMinutes,
             timestamp: Date.now(),
+            lastEnergySync: lastEnergySync?.toISOString() ?? null,
           };
           sessionStorage.setItem(liveDataKey, JSON.stringify(liveData));
         } catch (err) {
@@ -890,7 +1086,14 @@ export default function ChargingSession() {
     return () => {
       clearInterval(virtualChargeInterval);
     };
-  }, [currentSession, currentPower, clearSimState, saveSimState]); // ✅ Đầy đủ dependencies
+  }, [
+    currentSession,
+    currentPower,
+    clearSimState,
+    saveSimState,
+    lastEnergySync,
+    batteryCapacity,
+  ]); // ✅ Đầy đủ dependencies
 
   // 🧭 Auto redirect to payment page when charging completes
   // Triggers when status changes to COMPLETED or STOPPED (by Staff)
@@ -956,12 +1159,15 @@ export default function ChargingSession() {
       if (now >= endTime) {
         console.log("⏰ Booking time expired - auto-stopping session");
 
-        // ✅ Gửi null để Backend tự tính chính xác (đồng nhất với manual stop)
+        // ✅ Gửi virtualSoc hiện tại khi hết thời gian
+        const currentFinalSoc = Math.round(
+          currentSession.virtualSoc || currentSession.initialSoc || 20
+        );
         stationAPI
-          .stopChargingSession(currentSession.sessionId, null)
+          .stopChargingSession(currentSession.sessionId, currentFinalSoc)
           .then((response) => {
             console.log(
-              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry - Backend calculated final values`
+              `✅ Session #${currentSession.sessionId} auto-stopped at time expiry - finalSoc=${currentFinalSoc}%`
             );
             const sessionResult = response.data ?? response;
             // ✅ Sử dụng helper function
@@ -998,15 +1204,14 @@ export default function ChargingSession() {
         prev ? { ...prev, status: "STOPPING" } : prev
       );
 
-      // ✅ KHÔNG gửi virtualSoc - để Backend tự tính chính xác từ startTime
-      // Backend sẽ tính: duration = endTime - startTime
-      //                  energy = (duration × power × efficiency) / capacity × 100
-      //                  finalSoc = initialSoc + (energy / capacity × 100)
-      // Điều này đảm bảo năng lượng giống CHÍNH XÁC như khi hiển thị
-      const finalSocToSend = null; // Let Backend calculate from actual time
+      // ✅ Gửi virtualSoc hiện tại để Backend tính chính xác với battery capacity thực
+      // Frontend đã tính virtualSoc với battery capacity từ sessionStorage
+      const finalSocToSend = Math.round(
+        currentSession.virtualSoc || currentSession.initialSoc || 20
+      );
 
       console.log(
-        `🛑 Driver stopping session #${currentSession.sessionId} - Backend will calculate finalSoc from actual duration`
+        `🛑 Driver stopping session #${currentSession.sessionId} - Sending finalSoc=${finalSocToSend}% to Backend`
       );
 
       const response = await stationAPI.stopChargingSession(
@@ -1442,7 +1647,7 @@ export default function ChargingSession() {
             <BatteryProgressCircle
               initialSoc={currentSession.initialSoc}
               energyKWh={currentSession.energyKWh ?? 0}
-              capacity={DEFAULT_BATTERY_CAPACITY}
+              capacity={batteryCapacity}
               isCharging={currentSession.status === "IN_PROGRESS"}
               virtualSoc={currentSession.virtualSoc}
             />
@@ -1544,7 +1749,7 @@ export default function ChargingSession() {
                         Math.min(
                           currentSession.initialSoc +
                             ((currentSession.energyKWh ?? 0) /
-                              DEFAULT_BATTERY_CAPACITY) *
+                              getBatteryCapacity()) *
                               100,
                           100
                         )

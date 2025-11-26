@@ -39,6 +39,7 @@ public class DriverMapper {
                 .vehicleStatus(vehicle.getStatus()) // ✅ FIX: Lấy status thực từ entity (field name là 'status' không phải 'vehicleStatus')
                 .connectorTypeName(model.getConnectorType() != null ?
                         model.getConnectorType().getDisplayName() : null)
+                .batteryCapacityKWh(model.getBatteryCapacityKWh()) // ✅ Thêm dung lượng pin từ model
                 .build();
     }
 }
