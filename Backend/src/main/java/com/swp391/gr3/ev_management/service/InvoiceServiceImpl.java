@@ -198,4 +198,13 @@ public class InvoiceServiceImpl implements InvoiceService {
         // 6) Trả về DriverInvoiceDetail (status lúc này đã là PAID)
         return buildInvoiceDetail(invoice);
     }
+
+    @Override
+    public List<DriverInvoiceDetail> getInvoiceDetailsByStation(Long stationId) {
+        List<Invoice> invoices = invoiceRepository.findInvoiceDetailsByStation(stationId);
+
+        return invoices.stream()
+                .map(this::buildInvoiceDetail)   // reuse hàm dùng chung
+                .toList();
+    }
 }
