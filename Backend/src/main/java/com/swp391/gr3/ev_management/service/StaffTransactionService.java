@@ -17,4 +17,12 @@ public interface StaffTransactionService {
 
     // Lấy thống kê giao dịch của trạm
     StaffTransactionStatsResponse getStationTransactionStats(Long stationId);
+
+    StaffTransactionStatsResponse getStaffTransactionStats(Long userId);
+
+    Page<TransactionBriefResponse> getStaffTransactions(
+            Long userId,
+            TransactionStatus status,
+            Pageable pageable
+    );
 }

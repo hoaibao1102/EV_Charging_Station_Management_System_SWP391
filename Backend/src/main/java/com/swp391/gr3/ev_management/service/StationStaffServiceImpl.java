@@ -1,6 +1,7 @@
 package com.swp391.gr3.ev_management.service;
 
 import com.swp391.gr3.ev_management.entity.StationStaff;
+import com.swp391.gr3.ev_management.exception.ErrorException;
 import com.swp391.gr3.ev_management.repository.StationStaffRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +47,19 @@ public class StationStaffServiceImpl implements StationStaffService {
 
     @Override
     public Long getStationIdByUserId(Long userId) {
-        StationStaff stationStaff = stationStaffRepository.findActiveByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Staff not assigned to any station"));
-        return stationStaff.getStation().getStationId();
+        var list = stationStaffRepository.findActiveByUserId(userId);
+
+        if (list.isEmpty()) {
+            throw new ErrorException("Staff is not assigned to any active station");
+        }
+
+        if (list.size() > 1) {
+            // tuỳ bạn: hoặc log warning rồi lấy dòng mới nhất / dòng đầu tiên
+            log.warn("User {} has {} active station assignments, using the first one", userId, list.size());
+            // hoặc throw lỗi business rõ ràng
+            // throw new ErrorException("Staff is assigned to multiple active stations");
+        }
+
+        return list.get(0).getStation().getStationId();
     }
 }
