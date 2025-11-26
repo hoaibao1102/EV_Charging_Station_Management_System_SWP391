@@ -86,6 +86,7 @@ export default function Payment() {
               vehiclePlate: session.vehiclePlate,
               energyKWh: session.energyKWh,
               durationMinutes: session.durationMinutes,
+              pricePerKWh: session.pricePerKWh,
             })
           );
           window.location.href = response.data.paymentUrl;
