@@ -172,28 +172,34 @@ public class ChargingSessionTxHandler {
         double timeCost = 0.0;
         double energyCost = 0.0;
 
+        // khoảng thời gian driver "chiếm chỗ" trong khung windowStart → windowEnd
+        long windowMinutes = Math.max(0,
+                ChronoUnit.MINUTES.between(windowStart, windowEnd));
+
         if (initiator == StopInitiator.STAFF) {
-            // STAFF: tính phí theo năng lượng đã sạc
+            // STAFF: chỉ tính tiền điện
             energyCost = round2(energyKWh * tariff.getPricePerKWh());
 
         } else if (initiator == StopInitiator.DRIVER) {
-            // DRIVER: vừa bị phạt thời gian chiếm chỗ, vừa tính theo kWh
+
+            // 👉 Phạt phần thời gian đã giữ chỗ nhưng không sạc
+            //     penalty = (thời gian trong window) - (thời gian sạc thực tế)
             if (slotMinutes > 0 && bookedSlots > 0) {
-                long roundedSlots = (long) Math.ceil((double) sessionMinutes / slotMinutes);
-                long roundedMinutes = roundedSlots * slotMinutes;
-                long penaltyMinutes = Math.max(0, roundedMinutes - activeChargingMinutes);
+                long penaltyMinutes = Math.max(0, windowMinutes - activeChargingMinutes);
                 timeCost = round2(penaltyMinutes * tariff.getPricePerMin());
             }
+
+            // Vẫn tính tiền điện bình thường
             energyCost = round2(energyKWh * tariff.getPricePerKWh());
 
         } else { // SYSTEM_AUTO
-            // SYSTEM_AUTO: chỉ tính theo năng lượng
+            // SYSTEM_AUTO: chỉ tính tiền điện
             energyCost = round2(energyKWh * tariff.getPricePerKWh());
         }
 
         double totalCost = round2(timeCost + energyCost);
 
-        // Giải phóng các slot chưa dùng nếu DRIVER hoặc STAFF dừng sớm
+        // Giải phóng slot tương lai nếu DRIVER hoặc STAFF dừng sớm
         if (initiator == StopInitiator.DRIVER || initiator == StopInitiator.STAFF) {
             releaseUnusedFutureSlots(booking, endTime);
         }

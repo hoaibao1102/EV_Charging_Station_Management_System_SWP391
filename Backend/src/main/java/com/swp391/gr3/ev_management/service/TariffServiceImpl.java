@@ -153,8 +153,9 @@ public class TariffServiceImpl implements TariffService {
      */
     @Override
     public Optional<Tariff> findByConnectorType(ConnectorType connectorType) {
-        // Gọi repository tìm theo entity ConnectorType
-        return tariffRepository.findByConnectorType(connectorType);
+        return tariffRepository.findByConnectorType(connectorType)
+                .stream()
+                .findFirst(); // lấy bản ghi đầu tiên
     }
 
     /**
