@@ -10,7 +10,7 @@ import "./Profile.css";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { name, email, phone, gender } = localStorage.getItem("userDetails")
+  const { name, email, phoneNumber, gender } = localStorage.getItem("userDetails")
     ? JSON.parse(localStorage.getItem("userDetails"))
     : {};
   const { logout, loading } = useLogout();
@@ -64,9 +64,9 @@ export default function Profile() {
         {/* User Info */}
         <div className="user-info">
           <h2 className="user-name">{name}</h2>
-          {email && phone && (
+          {email && phoneNumber && (
             <p className="user-email">
-              {email} || {phone}
+              {email} || {phoneNumber}
             </p>
           )}
         </div>
