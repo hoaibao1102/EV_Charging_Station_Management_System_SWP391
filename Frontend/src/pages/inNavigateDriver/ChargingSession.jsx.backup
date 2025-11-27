@@ -6,48 +6,13 @@ import { stationAPI } from "../../api/stationApi.js";
 import { getMySessions } from "../../api/driverApi.js";
 import { isAuthenticated } from "../../utils/authUtils.js";
 
-/**
- * ========== CHARGING SESSION MANAGEMENT ==========
- *
- * Mục đích: Quản lý phiên sạc EV - mô phỏng quá trình sạc theo thời gian thực,
- * đồng bộ dữ liệu với backend, và điều hướng đến trang thanh toán khi hoàn tất.
- *
- * Kiến trúc đã refactor:
- * 1. Helper Functions - Tái sử dụng logic chung:
- *    - calculateChargingMetrics(): Tính SOC/energy theo công thức Backend
- *    - extractPowerKW(): Lấy công suất sạc từ nhiều nguồn (sessionStorage → session → default)
- *    - syncSessionFromBackend(): Đồng bộ dữ liệu từ Backend vào state một cách nhất quán
- *
- * 2. Simulation Engine:
- *    - Virtual SOC update mỗi 1s dựa trên: thời gian, công suất, hiệu suất
- *    - Auto-stop khi SOC = 100% hoặc hết thời gian booking
- *    - Persist state vào localStorage để khôi phục khi reload
- *
- * 3. Backend Sync:
- *    - Polling sessions mỗi 2s để detect thay đổi status (IN_PROGRESS → COMPLETED)
- *    - Polling power mỗi 10s để cập nhật công suất sạc real-time
- *    - Tất cả sync đều dùng syncSessionFromBackend() để đảm bảo nhất quán
- *
- * 4. Navigation Flow:
- *    - Manual stop: Driver bấm dừng → gọi API → sync state → navigate Payment
- *    - Auto-complete: Polling detect COMPLETED → auto-redirect Payment
- *    - Đảm bảo state đã đầy đủ (finalSoc, energyKWh, cost, pointNumber...) trước khi navigate
- *
- * 5. Memory Leak Prevention:
- *    - Tất cả intervals được cleanup trong useEffect return
- *    - Dependencies được quản lý cẩn thận để tránh tạo interval trùng lặp
- *    - useCallback cho functions được dùng làm dependencies
- */
-
-// ========== CONSTANTS ==========
-const CHARGING_EFFICIENCY = 0.9; // Match backend exactly
-const SIMULATION_UPDATE_INTERVAL = 5000; // 5 seconds (optimized from 1s)
-const POLLING_INTERVAL = 5000; // 5 seconds (optimized from 2s)
-const POWER_POLLING_INTERVAL = 15000; // 15 seconds (optimized from 10s)
-const ENERGY_POLLING_INTERVAL = 60000; // 60 seconds (optimized from 30s) - Poll Backend for accurate energy
-
-// ========== UTILITY FUNCTIONS ==========
-const getBatteryCapacity = () => {
+// Import separated modules
+import { CHARGING_EFFICIENCY, statusColors } from './chargingSessionConstants.js';
+import { getBatteryCapacity, round2, extractPowerKW, syncSessionFromBackend, initChargingSessionStyles } from './chargingSessionUtils.js';
+import BatteryProgressCircle from './BatteryProgressCircle.jsx';
+import InfoCard from './InfoCard.jsx';
+import { useChargingSessionPolling } from './useChargingSessionPolling.js';
+import { useChargingSimulation } from './useChargingSimulation.js';
   const capacity = sessionStorage.getItem("batteryCapacityKWh");
   return capacity ? parseFloat(capacity) : 60; // Default to 60 kWh if not found
 };
